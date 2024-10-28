@@ -1,11 +1,69 @@
-
+import os
 
 # 插入或更新数据库中的 swap price 数据
-from db_struct import EResultSwapPrice
+from typing import List, Optional
+from db_struct import EResultOptionChain, EResultSwapPrice
+from log import recordLog
 from unitls import timeToStr
+import aiomysql
+
+from dotenv import load_dotenv
+load_dotenv()
+
+mysql_user = os.getenv('MYSQL_USER')
+mysql_password = os.getenv('MYSQL_PASSWORD')
+mysql_host = os.getenv('MYSQL_HOST')
+mysql_port = int(os.getenv('MYSQL_PORT', 3306))
+mysql_dbname = os.getenv('MYSQL_DBNAME')
 
 
-async def updateDbSwapPrice(connection, data: EResultSwapPrice):
+async def getDbConn():
+    connection = await aiomysql.connect(
+        host=mysql_host,   
+        port=mysql_port,
+        user=mysql_user,
+        password=mysql_password,
+        db=mysql_dbname,   
+    )
+    return connection
+
+
+async def getDbSwapPrice(symbol: str) -> Optional[EResultSwapPrice]:
+
+    connection = await getDbConn()
+    '''
+    从数据库中获取 swap price 数据
+    @param connection: 数据库连接
+    @param symbol: 交易对 BTC/USD:BTC | ETH/USD:ETH
+    @return: EResultSwapPrice
+    '''
+    async with connection.cursor() as cursor:
+        # symbol=1, last='BTC/USD:BTC', bid=67115.2, ask=67115.1, high=67115.2, low=67360.5, timestamp=66666.0, datetime=1729999842614, type='2024-10-27 11:30:42', status=
+        await cursor.execute("SELECT symbol, last, bid, ask, high, low, timestamp, datetime, type, status FROM swap_price WHERE symbol = %s", (symbol,))
+        result = await cursor.fetchone()
+        if result:
+            return EResultSwapPrice(
+                symbol=result[0],
+                last=result[1],
+                bid=result[2],
+                ask=result[3],
+                high=result[4],
+                low=result[5],
+                timestamp=int(result[6])/1000,
+                datetime=result[7],
+                type=result[8],
+                status=result[9]
+            )
+        connection.close()
+        return None
+
+
+async def updateDbSwapPrice(data: EResultSwapPrice):
+    connection = await getDbConn()
+    '''
+    更新数据库中的 swap price 数据
+    @param data: EResultSwapPrice
+    '''
     async with connection.cursor() as cursor:
         insert_query = """
         INSERT INTO swap_price (symbol, last, bid, ask, high, low, timestamp, datetime, type, status)
@@ -34,3 +92,113 @@ async def updateDbSwapPrice(connection, data: EResultSwapPrice):
             data.status or 1
         ))
     await connection.commit()
+    connection.close()
+
+# async def updateDbBatchOptionChain(datalist: List[EResultOptionChain]):
+#     """
+#     批量更新数据库中的 option chain 数据
+#     @param datalist: EResultOptionChain[]
+#     """
+#     # 获取数据库连接
+#     connection = await getDbConn()
+    
+#     async with connection.cursor() as cursor:
+#         # 构建批量插入或更新的 SQL 查询
+#         insert_query = """
+#         INSERT INTO option_chain (
+#             symbol, timestamp, year, month, day, strike, option_type, bid_price, 
+#             bid_size, ask_price, ask_size, last_price, last_size, type, status
+#         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) AS new_values
+#         ON DUPLICATE KEY UPDATE
+#             timestamp = new_values.timestamp,
+#             year =new_values.year,
+#             month = new_values.month,
+#             day = new_values.day,
+#             strike = new_values.strike,
+#             option_type = new_values.option_type,
+#             bid_price = new_values.bid_price,
+#             bid_size = new_values.bid_size,
+#             ask_price = new_values.ask_price,
+#             ask_size =new_values.ask_size,
+#             last_price = new_values.last_price,
+#             last_size = new_values.last_size,
+#             type = new_values.type,
+#             status = new_values.status
+#         """
+        
+#         # 将数据转换为元组格式的列表
+#         values = [
+#             (
+#                 item.symbol, item.timestamp, item.year, item.month, item.day,
+#                 item.strike, item.option_type, item.bid_price, item.bid_size,
+#                 item.ask_price, item.ask_size, item.last_price, item.last_size,
+#                 item.type, item.status
+#             ) for item in datalist
+#         ]
+        
+#         # 执行批量插入或更新
+#         await cursor.executemany(insert_query, values)
+        
+#         # 提交更改
+#         await connection.commit()
+
+
+async def updateDbBatchOptionChain(datalist: List[EResultOptionChain], batch_size: int = 50):
+    """
+    批量更新数据库中的 option chain 数据
+    @param datalist: EResultOptionChain[]
+    @param batch_size: 每批次插入的记录数量，默认为 200
+    """
+
+    # 获取数据库连接
+    connection = await getDbConn()
+    
+    # 分批插入数据
+    for i in range(0, len(datalist), batch_size):
+        batch = datalist[i:i + batch_size]
+        # print(f"Inserting/Updating batch {batch[0].symbol}, {i // batch_size + 1} of {len(datalist) // batch_size + 1}")
+        recordLog(f"Inserting/Updating batch {batch[0].symbol}, {i // batch_size + 1} of {len(datalist) // batch_size + 1}")
+ 
+        async with connection.cursor() as cursor:
+            # 构建批量插入或更新的 SQL 查询
+            insert_query = """
+            INSERT INTO option_chain (
+                symbol, timestamp, year, month, day, expiration_date, strike, option_type, bid_price, 
+                bid_size, ask_price, ask_size, last_price, last_size, type, status
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            AS new_values
+            ON DUPLICATE KEY UPDATE
+                timestamp = new_values.timestamp,
+                year = new_values.year,
+                month = new_values.month,
+                day = new_values.day,
+                expiration_date = new_values.expiration_date,
+                strike = new_values.strike,
+                option_type = new_values.option_type,
+                bid_price = new_values.bid_price,
+                bid_size = new_values.bid_size,
+                ask_price = new_values.ask_price,
+                ask_size = new_values.ask_size,
+                last_price = new_values.last_price,
+                last_size = new_values.last_size,
+                type = new_values.type,
+                status = new_values.status
+            """
+        
+            # 将每个批次的数据转换为元组格式
+            values = [
+                (
+                    item.symbol, item.timestamp, item.year, item.month, item.day,
+                    item.expiration_date, item.strike, item.option_type, item.bid_price, item.bid_size,
+                    item.ask_price, item.ask_size, item.last_price, item.last_size,
+                    item.type, item.status
+                ) for item in batch
+            ]
+            
+            # 执行批量插入或更新
+            await cursor.executemany(insert_query, values)
+            
+            # 提交更改
+            await connection.commit()
+
+    connection.close()

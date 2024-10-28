@@ -1,27 +1,50 @@
-CREATE TABLE swap_price (
-    id BIGINT AUTO_INCREMENT COMMENT '唯一标识ID',
-    symbol VARCHAR(255) NOT NULL COMMENT '交易对符号，例如 BTC/USD',
-    last FLOAT NOT NULL COMMENT '最新成交价格',
-    bid FLOAT DEFAULT NULL COMMENT '买价',
-    ask FLOAT DEFAULT NULL COMMENT '卖价',
-    high FLOAT DEFAULT NULL COMMENT '24小时最高价',
-    low FLOAT DEFAULT NULL COMMENT '24小时最低价',
-    timestamp BIGINT DEFAULT NULL COMMENT 'Unix时间戳，记录价格时间',
-    datetime VARCHAR(255) DEFAULT NULL COMMENT '日期时间的字符串表示',
-    type INT DEFAULT NULL COMMENT '数据类型标识，1 表示有效数据',
-    status INT DEFAULT NULL COMMENT '状态标识，1 表示有效状态',
-    PRIMARY KEY (id),
-    UNIQUE KEY unique_symbol (symbol)
-);
+CREATE TABLE `swap_price` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '唯一标识ID',
+  `symbol` varchar(255) NOT NULL COMMENT '交易对符号，例如 BTC/USD',
+  `last` float NOT NULL COMMENT '最新成交价格',
+  `bid` float DEFAULT NULL COMMENT '买价',
+  `ask` float DEFAULT NULL COMMENT '卖价',
+  `high` float DEFAULT NULL COMMENT '24小时最高价',
+  `low` float DEFAULT NULL COMMENT '24小时最低价',
+  `timestamp` bigint DEFAULT NULL COMMENT 'Unix时间戳，记录价格时间',
+  `datetime` varchar(255) DEFAULT NULL COMMENT '日期时间的字符串表示',
+  `type` int DEFAULT NULL COMMENT '数据类型标识，1 表示有效数据',
+  `status` int DEFAULT NULL COMMENT '状态标识，1 表示有效状态',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `unique_symbol` (`symbol`),
+  KEY `idx_timestamp` (`timestamp`),
+  KEY `idx_datetime` (`datetime`),
+  KEY `idx_type` (`type`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB AUTO_INCREMENT=534 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- 为 timestamp 字段添加索引
-CREATE INDEX idx_timestamp ON swap_price (timestamp);
-
--- 为 datetime 字段添加索引
-CREATE INDEX idx_datetime ON swap_price (datetime);
-
--- 为 type 字段添加索引
-CREATE INDEX idx_type ON swap_price (type);
-
--- 为 status 字段添加索引
-CREATE INDEX idx_status ON swap_price (status);
+CREATE TABLE `option_chain` (
+  `id` int NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `symbol` varchar(255) NOT NULL COMMENT '合约符号',
+  `timestamp` bigint NOT NULL COMMENT '期权链最后更新的时间戳',
+  `year` int NOT NULL COMMENT '年',
+  `month` int NOT NULL COMMENT '月',
+  `day` int NOT NULL COMMENT '日',
+  `expiration_date` int NOT NULL DEFAULT '0',
+  `strike` float NOT NULL COMMENT '行权价格',
+  `option_type` char(1) NOT NULL COMMENT '行权方向，P 或 C',
+  `bid_price` float DEFAULT NULL COMMENT '买价',
+  `bid_size` int DEFAULT NULL COMMENT '买量',
+  `ask_price` float DEFAULT NULL COMMENT '卖价',
+  `ask_size` int DEFAULT NULL COMMENT '卖量',
+  `last_price` float DEFAULT NULL COMMENT '最新成交价',
+  `last_size` int DEFAULT NULL COMMENT '最新成交量',
+  `type` int DEFAULT '1' COMMENT '有效标志',
+  `status` int DEFAULT '1' COMMENT '状态标志',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `symbol` (`symbol`),
+  UNIQUE KEY `uniq_symbol` (`symbol`),
+  KEY `idx_timestamp` (`timestamp`),
+  KEY `idx_year` (`year`),
+  KEY `idx_day` (`day`),
+  KEY `idx_strike` (`strike`),
+  KEY `idx_option_type` (`option_type`),
+  KEY `idx_type` (`type`),
+  KEY `idx_status` (`status`),
+  KEY `idx_expiration_date` (`expiration_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

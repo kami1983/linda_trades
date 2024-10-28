@@ -1,16 +1,14 @@
-
-
-
-
+import asyncio
 from typing import Optional
 
-from db_operation import updateDbSwapPrice
+from db_operation import getDbConn, updateDbSwapPrice
 from db_struct import EResultSwapPrice
+from log import recordLog
 from unitls import timeToStr
 
 # symbol = 'BTC-USD-SWAP'
 # symbol = 'ETH-USD-SWAP'
-async def fetch_ticker(exchange, symbol) -> Optional[EResultSwapPrice]: 
+async def fetchTicker(exchange, symbol) -> Optional[EResultSwapPrice]: 
 
     try:
     
@@ -69,7 +67,6 @@ async def fetch_ticker(exchange, symbol) -> Optional[EResultSwapPrice]:
             timestamp=ticker['timestamp'],
             datetime=ticker.get('datetime'),
         )
-        # print(result)  # 获取标记价格
 
         return result
 
@@ -79,13 +76,25 @@ async def fetch_ticker(exchange, symbol) -> Optional[EResultSwapPrice]:
 
     
 
-async def recordTokenPrice(connection, exchange) -> bool:
-    if(connection and exchange):
-        btc_price = await fetch_ticker(exchange, 'BTC-USD-SWAP')
-        print('BTC' , btc_price.last, timeToStr(btc_price.timestamp))
-        await updateDbSwapPrice(connection, btc_price)
-        eth_price = await fetch_ticker(exchange, 'ETH-USD-SWAP')
-        print('ETH' , eth_price.last, timeToStr(eth_price.timestamp))
-        await updateDbSwapPrice(connection, eth_price)
+async def recordTokenPrice(exchange) -> bool:
+    if(exchange):
+
+        btc_task = asyncio.create_task(fetchTicker(exchange, 'BTC-USD-SWAP'))
+        eth_task = asyncio.create_task(fetchTicker(exchange, 'ETH-USD-SWAP'))
+
+        btc_price, eth_price = await asyncio.gather(btc_task, eth_task)
+
+        recordLog(f'Fetch BTC price: {btc_price.last}, {timeToStr(btc_price.timestamp)}')
+        recordLog(f'Fetch ETH price: {eth_price.last}, {timeToStr(eth_price.timestamp)}')
+
+        
+        await asyncio.gather(
+            updateDbSwapPrice(btc_price),
+            updateDbSwapPrice(eth_price)
+        )
+
+        # await updateDbSwapPrice(btc_price)
+        # await updateDbSwapPrice(eth_price)
+
         return True
     return False
