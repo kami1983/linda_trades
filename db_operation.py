@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 
 # 插入或更新数据库中的 swap price 数据
@@ -202,3 +203,42 @@ async def updateDbBatchOptionChain(datalist: List[EResultOptionChain], batch_siz
             await connection.commit()
 
     connection.close()
+
+
+# 给定某个时间戳，通过这个时间戳获取，符合日期的一组期权链数据，数据从数据表 option_chain 中获取
+async def getRecentOptionChainByTimestamp(timestamp: int) -> List[EResultOptionChain]:
+    """
+    给定某个时间戳，通过这个时间戳获取最近的一个期权链数据
+    @param timestamp: 时间戳
+    @return: EResultOptionChain
+    """
+    expiration_date = datetime.fromtimestamp(timestamp).strftime('%Y%m%d')[2:]
+
+    connection = await getDbConn()
+    async with connection.cursor() as cursor:
+        await cursor.execute(
+            "SELECT symbol, timestamp, year, month, day, expiration_date, strike, option_type, bid_price, bid_size, ask_price, ask_size, last_price, last_size, type, status FROM option_chain WHERE expiration_date = %s", (expiration_date,)
+        )
+        result = await cursor.fetchall()
+        connection.close()
+        return [
+            EResultOptionChain(
+                symbol=item[0],
+                timestamp=item[1],
+                year=item[2],
+                month=item[3],
+                day=item[4],
+                expiration_date=item[5],
+                strike=item[6],
+                option_type=item[7],
+                bid_price=item[8],
+                bid_size=item[9],
+                ask_price=item[10],
+                ask_size=item[11],
+                last_price=item[12],
+                last_size=item[13],
+                type=item[14],
+                status=item[15]
+            ) for item in result
+        ]
+    
