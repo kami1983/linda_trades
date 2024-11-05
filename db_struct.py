@@ -34,3 +34,20 @@ class EResultOptionChain:
     type: int = 1 # 1: vaild
     status: int = 1 # 1: vaild
     
+
+@dataclass
+class EResultIvData:
+    symbol: str
+    current_price: float
+    bid_price: float
+    ask_price: float
+    ask_bid_diff: float
+    bid_premium: float
+    ask_premium: float
+    execute_time: str
+    execute_flag: str
+    excute_strike: float
+    day_left: float
+    current_time: int
+    s_iv: float
+    b_iv: float

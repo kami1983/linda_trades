@@ -6,7 +6,7 @@ from db_struct import EResultOptionChain
 def timeToStr(timestamp):
     return datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S')
 
-def findAtmOptions(option_chains: List[EResultOptionChain], atm_price: float, option_type: str) -> Optional[EResultOptionChain]:
+def selectOptions(option_chains: List[EResultOptionChain], current_price: float, option_type: str) -> Optional[EResultOptionChain]:
     """
     从期权链数据中，找到距离标的资产最近的 ATM 期权
     @param option_chains: 期权链数据
@@ -19,7 +19,7 @@ def findAtmOptions(option_chains: List[EResultOptionChain], atm_price: float, op
     for option in option_chains:
         if option.option_type != option_type:
             continue
-        diff = abs(option.strike - atm_price)
+        diff = abs(option.strike - current_price)
         if min_diff is None or diff < min_diff:
             min_diff = diff
             atm_option = option

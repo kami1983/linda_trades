@@ -76,12 +76,12 @@ async def fetchTicker(exchange, symbol) -> Optional[EResultSwapPrice]:
 
     
 
-async def recordTokenPrice(exchange) -> bool:
+async def recordTokenPrice(exchange) -> dict['status': bool, 'data': Optional[dict]]:
     if(exchange):
 
-        btc_task = asyncio.create_task(fetchTicker(exchange, 'BTC-USD-SWAP'))
         eth_task = asyncio.create_task(fetchTicker(exchange, 'ETH-USD-SWAP'))
-
+        btc_task = asyncio.create_task(fetchTicker(exchange, 'BTC-USD-SWAP'))
+        
         btc_price, eth_price = await asyncio.gather(btc_task, eth_task)
 
         recordLog(f'Fetch BTC price: {btc_price.last}, {timeToStr(btc_price.timestamp)}')
@@ -96,5 +96,5 @@ async def recordTokenPrice(exchange) -> bool:
         # await updateDbSwapPrice(btc_price)
         # await updateDbSwapPrice(eth_price)
 
-        return True
-    return False
+        return {'status': True,'data': {'btc_price': btc_price.last, 'eth_price': eth_price.last}}
+    return {'status': False, 'data': None}

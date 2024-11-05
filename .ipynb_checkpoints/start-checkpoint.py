@@ -75,7 +75,7 @@ async def main():
                 if price_data['status'] == True:
                     btc_price, eth_price = price_data['data']['btc_price'], price_data['data']['eth_price']
 
-                    option_chains = await getRecentOptionChainByTimestamp(current_time, 'ETH', 3)
+                    option_chains = await getRecentOptionChainByTimestamp(current_time, 'ETH', 4)
                     expiration_date, options_data = option_chains['expiration_date'], option_chains['data']
                     print('Locked option date: ', expiration_date)
                     print('ATM price:', eth_price)

@@ -1,4 +1,5 @@
 import numpy as np
+from db_struct import EResultIvData
 from scipy.stats import norm
 from scipy.optimize import brentq
 # from implied_volatility import BlackScholes
@@ -53,19 +54,19 @@ import time
 # iv = implied_volatility_call(P, S, K, T, r)
 # print(f"隐含波动率: {iv}%")
 
-def calc_implied_volatility(price, spot, strike, time_to_expiry, rate, option_type):
-    """
-    计算欧式期权的隐含波动率
-    """
-    bs_model = BlackScholes(
-        price=price,
-        S=spot,
-        K=strike,
-        t=time_to_expiry,
-        r=rate,
-        flag=option_type
-    )
-    return bs_model.implied_volatility()
+# def calc_implied_volatility(price, spot, strike, time_to_expiry, rate, option_type):
+#     """
+#     计算欧式期权的隐含波动率
+#     """
+#     bs_model = BlackScholes(
+#         price=price,
+#         S=spot,
+#         K=strike,
+#         t=time_to_expiry,
+#         r=rate,
+#         flag=option_type
+#     )
+#     return bs_model.implied_volatility()
 
 # # 测试数据
 
@@ -96,3 +97,88 @@ flag = "c"  # 看涨期权 (c = call, p = put)
 
 iv = implied_volatility(P, S, K, T, r, flag)
 print(f"隐含波动率: {iv * 100:.2f}%")
+
+
+def cacluateIVRate(P, S, K, T, flag, r=0.05):
+    '''
+    计算隐含波动率
+    @param P: 期权的市场价格
+    @param S: 当前标的资产的价格
+    @param K: 期权行权价格
+    @param T: 距离到期时间
+    @param r: 无风险利率
+    @param flag: 看涨期权 (c = call, p = put)
+    '''
+    iv = implied_volatility(P, S, K, T, r, flag)
+    return iv
+
+
+
+
+async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
+     # 获取最新的标记数据
+    ticker = await exchange.fetch_ticker(symbol=symbol)
+    print('ticker = ', ticker)  # 获取标记价格
+
+    # 买方美元价值
+    bid_price = ticker['bid'] * current_price
+    # 卖方美元价值
+    ask_price = ticker['ask'] * current_price
+    # 计算买卖差值
+    ask_bid_diff = ask_price - bid_price
+    # 买方溢价率
+    bid_premium = ask_bid_diff / bid_price
+    # 卖方折价率
+    ask_premium = ask_bid_diff / ask_price
+    # print('买方美元价值：', bid_price, '卖方美元价值：', ask_price, '买卖差值：', ask_bid_diff, '买方溢价率：', bid_premium, '卖方折价率：', ask_premium)
+    # 将期权的 symbol = ETH/USD:ETH-241108-2650-C 转换成时间戳。
+    # 提取 241108，分割 - ，再提取 2650，再提取 C。
+    execute_date = symbol.split("-")[1]
+    execute_year = int(execute_date[:2])
+    execute_month = int(execute_date[2:4])
+    execute_day = int(execute_date[4:6])
+    expiration_time = f'20{execute_year}-{execute_month}-{execute_day} 18:00:00'
+    execute_flag = str(symbol.split("-")[3]).lower()
+
+    excute_strike = float(symbol.split("-")[2])
+
+    # print('expiration_time:', expiration_time)
+    # expiration_date = 2024-11-8 18:00:00
+    # 将字符串转换为时间戳
+    time_array = time.strptime(expiration_time, "%Y-%m-%d %H:%M:%S")
+    timestamp = int(time.mktime(time_array))
+    current_time =int(time.time())
+    # 计算剩余天数
+    day_left = (timestamp-current_time)/(3600*24)
+    # print("Current time", current_time , "Timestamp:", timestamp, '剩余时间：（天）', day_left)
+
+    S = current_price  # 当前标的资产的价格 (BTC/USD)
+    P = bid_price  # 期权的市场价格 (BTC)
+    K = excute_strike  # 期权行权价格
+    T = (1/365)*(day_left)  # 距离到期时间 (年)
+    r = 0.05  # 无风险利率
+    flag = execute_flag   # 看涨期权 (c = call, p = put)
+    s_iv = implied_volatility(P, S, K, T, r, flag)
+    # print(f"卖方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+
+    P = ask_price
+    b_iv = implied_volatility(P, S, K, T, r, flag)
+    # print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+
+    return EResultIvData(
+        symbol=symbol,
+        current_price=current_price,
+        bid_price=bid_price,
+        ask_price=ask_price,
+        ask_bid_diff=ask_bid_diff,
+        bid_premium=bid_premium,
+        ask_premium=ask_premium,
+        execute_time=expiration_time,
+        execute_flag=execute_flag,
+        excute_strike=excute_strike,
+        day_left=day_left,
+        current_time=current_time,
+        s_iv=s_iv,
+        b_iv=b_iv
+    )
+    

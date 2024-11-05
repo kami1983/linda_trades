@@ -15,12 +15,14 @@ async def main():
     timeArray = time.strptime("2024-10-31 16:00:00", "%Y-%m-%d %H:%M:%S")
     timestamp = int(time.mktime(timeArray))
     print('timestamp :', timestamp)
-    option_chains = await getRecentOptionChainByTimestamp(timestamp)
-    # print(option_chains)
+    options = await getRecentOptionChainByTimestamp(timestamp)
+    expiration_date, options_data = options['expiration_date'], options['data']
+
+    print(expiration_date)
     # 假设我是一个期权卖方，那么我就要留出一个安全区间，这个安全区间是标的资产价格的 10% 左右
-    atmOptionC = findAtmOptions(option_chains, 71988 * 1.1, 'C')
+    atmOptionC = findAtmOptions(options_data, 71988 * 1.1, 'C')
     print('atmOptionC:', atmOptionC)
-    atmOptionP = findAtmOptions(option_chains, 71988 * 0.9, 'P')
+    atmOptionP = findAtmOptions(options_data, 71988 * 0.9, 'P')
     print('atmOptionP:', atmOptionP)
 
 asyncio.run(main())

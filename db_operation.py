@@ -206,22 +206,44 @@ async def updateDbBatchOptionChain(datalist: List[EResultOptionChain], batch_siz
 
 
 # 给定某个时间戳，通过这个时间戳获取，符合日期的一组期权链数据，数据从数据表 option_chain 中获取
-async def getRecentOptionChainByTimestamp(timestamp: int) -> List[EResultOptionChain]:
+async def getRecentOptionChainByTimestamp(timestamp: int, code: str, offset_day=0) -> dict['expairation_date': str, 'data': List[EResultOptionChain]]: 
     """
     给定某个时间戳，通过这个时间戳获取最近的一个期权链数据
     @param timestamp: 时间戳
     @return: EResultOptionChain
     """
-    expiration_date = datetime.fromtimestamp(timestamp).strftime('%Y%m%d')[2:]
 
+    # 时间戳加上偏移时间
+    timestamp = timestamp + offset_day * 86400
+
+    expiration_date = datetime.fromtimestamp(timestamp).strftime('%Y%m%d')[2:]
+    type = 1 if code == 'BTC' else 2 if code == 'ETH' else 0
+    if type == 0:
+        raise Exception('Invalid code, code must be BTC or ETH')
+        
+    
     connection = await getDbConn()
+    # 查询距离给定时间戳最近的期权链数据，大致等于这个SQL语句：SELECT expiration_date FROM option_chain where expiration_date>241103 group by expiration_date order by expiration_date asc limit 0,1
     async with connection.cursor() as cursor:
         await cursor.execute(
-            "SELECT symbol, timestamp, year, month, day, expiration_date, strike, option_type, bid_price, bid_size, ask_price, ask_size, last_price, last_size, type, status FROM option_chain WHERE expiration_date = %s", (expiration_date,)
+            "SELECT expiration_date FROM option_chain WHERE expiration_date >= %s AND type = %s GROUP BY expiration_date ORDER BY expiration_date ASC", (expiration_date, type)
+        )
+        result = await cursor.fetchone()
+        if result:
+            expiration_date = result[0]
+        else:
+            return {'expiration_date': expiration_date, 'data': []}
+        
+    # 查询符合日期的期权链数据
+    # print("New from expiration_date:", expiration_date)
+
+    async with connection.cursor() as cursor:
+        await cursor.execute(
+            "SELECT symbol, timestamp, year, month, day, expiration_date, strike, option_type, bid_price, bid_size, ask_price, ask_size, last_price, last_size, type, status FROM option_chain WHERE expiration_date = %s AND type = %s", (expiration_date, type)
         )
         result = await cursor.fetchall()
         connection.close()
-        return [
+        res_list= [
             EResultOptionChain(
                 symbol=item[0],
                 timestamp=item[1],
@@ -241,4 +263,6 @@ async def getRecentOptionChainByTimestamp(timestamp: int) -> List[EResultOptionC
                 status=item[15]
             ) for item in result
         ]
+    
+    return {'expiration_date': expiration_date, 'data': res_list}
     
