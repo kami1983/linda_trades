@@ -1,10 +1,13 @@
 from datetime import datetime
 from typing import List, Optional
-
+import time
 from db_struct import EResultOptionChain
 
 def timeToStr(timestamp):
     return datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S')
+
+def getCrrrentTime(): 
+    return int(time.time())
 
 def selectOptions(option_chains: List[EResultOptionChain], current_price: float, option_type: str) -> Optional[EResultOptionChain]:
     """

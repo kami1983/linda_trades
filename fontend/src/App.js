@@ -5,6 +5,7 @@ import LineChart from './components/LineChart';
 // src/App.js
 import React, { useEffect, useState } from 'react';
 
+
 function App() {
     const [data, setData] = useState(null);
 
@@ -15,7 +16,12 @@ function App() {
     // }, []);
 
     const [labels, setLabels] = useState([]);
-    const [dataPoints, setDataPoints] = useState([]);
+    const [dataBivPoints, setDataBivPoints] = useState([]);
+    const [dataSivPoints, setDataSivPoints] = useState([]);
+    // 从 env 文件中获取 OPTION_OFFICE_DAYS
+    const optionOfficeDays = process.env.REACT_APP_OPTION_OFFICE_DAYS
+    console.log('optionOfficeDays: ', optionOfficeDays);
+
     const label = 'ETH IV History';
 
     // const fetchCallIvData = [
@@ -27,6 +33,18 @@ function App() {
     //   [1731186255, 2231, 0.52, 0.72],
     //   [1731286255, 1233, 0.82, 0.102],
     // ]
+
+    const timeToStr = (time) => {
+      const date = new Date(time*1000);
+      return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+    }
+
+    const extractChartData = (data) => {
+      const _labels = data.map(item => timeToStr(item[0]));
+      const _dataBivPoints = data.map(item => item[3]);
+      const _dataSivPoints = data.map(item => item[4]);
+      return [_labels, _dataBivPoints, _dataSivPoints];
+    }
 
     useEffect(() => {
 
@@ -41,27 +59,33 @@ function App() {
       const flag = 'c';
       // 定义一个异步函数
       async function fetchData() {
-        
-        const fetchCallIvData = await callFetchCallIvData(symbol, flag, -1);
-        // console.log('fetch_data: ', fetch_data);
 
-        const _labels = fetchCallIvData.map(item => item[0]);
-        const _dataPoints = fetchCallIvData.map(item => item[2]);
+        const optionChains = await callGetOptionChains(symbol, optionOfficeDays);
+        console.log('optionChains: ', optionChains);
+        if(optionChains.length === 0) {
+          return;
+        }
+        const fetchCallIvData = await callFetchIvData(symbol, flag, optionChains[0]);
+        const [_labels, _dataBivPoints, _dataSivPoints] = extractChartData(fetchCallIvData);
         setLabels(_labels);
-        setDataPoints(_dataPoints);
-
+        setDataBivPoints(_dataBivPoints);
+        setDataSivPoints(_dataSivPoints);
+        
+        let idx = _dataBivPoints.length
         // 每5秒更新一次数据
         const interval = setInterval(async () => {
-          const newFetchCallIvData = await callFetchCallIvData(symbol, flag, _dataPoints.length-2);
+          const newFetchCallIvData = await callFetchIvData(symbol, flag, optionChains[0], idx);
           console.log('newFetchCallIvData: ', newFetchCallIvData);
           if(newFetchCallIvData.length > 0) {
-            const _newLabels = newFetchCallIvData.map(item => item[0]);
-            const _newDataPoints = newFetchCallIvData.map(item => item[2]);
-            setLabels(prevLabels => [...prevLabels, _newLabels]);
-            setDataPoints(prevDataPoints => [...prevDataPoints, _newDataPoints]);
+            const [_newLabels, _newDataBivPoints, _newDataSivPoints] = extractChartData(newFetchCallIvData);
+            setLabels(prevLabels => [...prevLabels, ..._newLabels]);
+            setDataBivPoints(prevDataPoints => [...prevDataPoints, ..._newDataBivPoints]);
+            setDataSivPoints(prevDataPoints => [...prevDataPoints, ..._newDataSivPoints]);
           }
+          idx += newFetchCallIvData.length;
         }, 1000);
         return () => clearInterval(interval);
+
       }
 
       // 调用异步函数
@@ -70,9 +94,9 @@ function App() {
       
   }, []); // labels 改变时重置定时器
 
-  const callFetchCallIvData = (symbol, flag, index=-1) => {
+  const callFetchIvData = (symbol, flag, eday, sidx=-1) => {
     return new Promise((resolve, reject) => {
-      fetch(`http://127.0.0.1:5000/api/iv_data?symbol=${symbol}&flag=${flag}&index=${index}`)
+      fetch(`http://127.0.0.1:5000/api/iv_data?symbol=${symbol}&flag=${flag}&edate=${eday}&sidx=${sidx}`)
         .then(response => response.json())
         .then((data) => {
           if (data) {
@@ -82,7 +106,21 @@ function App() {
           }
         });
     });
+  }
 
+
+  const callGetOptionChains = (symbol, offset) =>{
+    return new Promise((resolve, reject) => {
+      fetch(`http://127.0.0.1:5000/api/option_chain?symbol=${symbol}&offset=${offset}`)
+        .then(response => response.json())
+        .then((data) => {
+          if (data) {
+            resolve(data);
+          } else {
+            reject('error');
+          }
+        });
+      });
   }
 
     return (
@@ -90,8 +128,8 @@ function App() {
             <h1>Flask + React</h1>
             {data ? <p>{data.message}</p> : <p>Loading...</p>}
             <h1>My Line Chart</h1>
-            <div style={{ width: '1000px', height: '400px' }}>
-            <LineChart labels={labels} dataPoints={dataPoints} label={label} />
+            <div style={{ width: '2000px', height: '400px' }}>
+            <LineChart labels={labels} bIvList={dataBivPoints} sIvList={dataSivPoints} label={label} />
             </div>
             
         </div>

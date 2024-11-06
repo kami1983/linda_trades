@@ -9,7 +9,8 @@ from dotenv import load_dotenv
 from fetch_options import fetchOptionChain, recordOptionChain
 from fetch_ticker import *
 from iv import extractIvData
-from unitls import selectOptions
+from log import toRecordIvData
+from unitls import getCrrrentTime, selectOptions
 from py_vollib.black_scholes.implied_volatility import implied_volatility
 
 load_dotenv()
@@ -23,6 +24,7 @@ mysql_password = os.getenv('MYSQL_PASSWORD')
 mysql_host = os.getenv('MYSQL_HOST')
 mysql_port = int(os.getenv('MYSQL_PORT', 3306))
 
+option_office_days = int(os.getenv('OPTION_OFFICE_DAYS'))
 
 
 exchange = ccxt.okx({
@@ -35,12 +37,10 @@ exchange = ccxt.okx({
 # 获取账户余额
 import asyncio
 
-getCrrrentTime = lambda: int(time.time())
-
 # fetch_tick_time
 FTT = dict()
 # 数组的第一位是一个时间戳，第二位是一个要触发的时间间隔
-FTT['recordTokenPrice'] = [0, 10]
+FTT['recordTokenPrice'] = [0, 60]
 # FTT['fetchBTCOptionChain'] = [0, 7200]
 # FTT['fetchETHOptionChain'] = [getCrrrentTime()+3600, 7200]
 FTT['fetchETHOptionChain'] = [0, 7200]
@@ -75,7 +75,7 @@ async def main():
                 if price_data['status'] == True:
                     btc_price, eth_price = price_data['data']['btc_price'], price_data['data']['eth_price']
 
-                    option_chains = await getRecentOptionChainByTimestamp(current_time, 'ETH', 3)
+                    option_chains = await getRecentOptionChainByTimestamp(current_time, 'ETH', option_office_days)
                     expiration_date, options_data = option_chains['expiration_date'], option_chains['data']
                     print('Locked option date: ', expiration_date)
                     print('ATM price:', eth_price)
@@ -85,11 +85,17 @@ async def main():
 
                     call_iv_res = await extractIvData(exchange, symbol=atmOptionC.symbol, current_price=eth_price) # {'b'=> 0.87, 's'=> 0.86, 'diff'=> 0.01, 'bid_premium'=>, 'ask_premium'=>}
                     print('call_iv_res:', call_iv_res)
+
+                    toRecordIvData(current_time, call_iv_res)
+
                     atmOptionP = selectOptions(options_data, eth_price * 0.9, 'P')
                     print('atmOptionP:', atmOptionP.symbol, atmOptionP.strike)
 
                     put_iv_res = await extractIvData(exchange, symbol=atmOptionP.symbol, current_price=eth_price) # {'b'=> 0.87, 's'=> 0.86, 'diff'=> 0.01, 'bid_premium'=>, 'ask_premium'=>}
                     print('put_iv_res:', put_iv_res)
+
+                    toRecordIvData(current_time, put_iv_res)
+
                 else:
                     recordLog('Fetch token price failed.')
 
