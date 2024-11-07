@@ -118,29 +118,33 @@ def cacluateIVRate(P, S, K, T, flag, r=0.05):
 async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
      # 获取最新的标记数据
     ticker = await exchange.fetch_ticker(symbol=symbol)
-    print('ticker = ', ticker)  # 获取标记价格
+    # print('symbol xxx = ', symbol, 'ticker = ', ticker)  # 获取标记价格
 
     # 买方美元价值
-    bid_price = ticker['bid'] * current_price
+    bid_price = 0 if ticker['bid'] == None else ticker['bid'] * current_price
     # 卖方美元价值
-    ask_price = ticker['ask'] * current_price
+    ask_price = 0 if ticker['ask'] == None else ticker['ask'] * current_price
     # 计算买卖差值
     ask_bid_diff = ask_price - bid_price
     # 买方溢价率
-    bid_premium = ask_bid_diff / bid_price
+    bid_premium = 0 if bid_price == 0 else ask_bid_diff / bid_price
     # 卖方折价率
-    ask_premium = ask_bid_diff / ask_price
+    ask_premium = 0 if ask_price == 0 else ask_bid_diff / ask_price
+
+    # print("symbol AA - ", symbol)
+    # print("symbol.split('-') BB :", symbol.split('-'))
+
     # print('买方美元价值：', bid_price, '卖方美元价值：', ask_price, '买卖差值：', ask_bid_diff, '买方溢价率：', bid_premium, '卖方折价率：', ask_premium)
     # 将期权的 symbol = ETH/USD:ETH-241108-2650-C 转换成时间戳。
     # 提取 241108，分割 - ，再提取 2650，再提取 C。
-    execute_date = symbol.split("-")[1]
+    execute_date = symbol.split('-')[1]
     execute_year = int(execute_date[:2])
     execute_month = int(execute_date[2:4])
     execute_day = int(execute_date[4:6])
     expiration_time = f'20{execute_year}-{execute_month}-{execute_day} 18:00:00'
-    execute_flag = str(symbol.split("-")[3]).lower()
-
-    excute_strike = float(symbol.split("-")[2])
+    execute_flag = str(symbol.split('-')[3]).lower()
+    
+    excute_strike = float(symbol.split('-')[2])
 
     # print('expiration_time:', expiration_time)
     # expiration_date = 2024-11-8 18:00:00
