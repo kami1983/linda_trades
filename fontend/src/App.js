@@ -20,6 +20,7 @@ function App() {
     const [dataSivPoints, setDataSivPoints] = useState([]);
     // 从 env 文件中获取 OPTION_OFFICE_DAYS
     const optionOfficeDays = process.env.REACT_APP_OPTION_OFFICE_DAYS
+    const apiHosts = process.env.REACT_APP_API_HOSTS
     console.log('optionOfficeDays: ', optionOfficeDays);
 
     const label = 'ETH IV History';
@@ -96,7 +97,7 @@ function App() {
 
   const callFetchIvData = (symbol, flag, eday, sidx=-1) => {
     return new Promise((resolve, reject) => {
-      fetch(`http://127.0.0.1:5000/api/iv_data?symbol=${symbol}&flag=${flag}&edate=${eday}&sidx=${sidx}`)
+      fetch(`http://${apiHosts}/api/iv_data?symbol=${symbol}&flag=${flag}&edate=${eday}&sidx=${sidx}`)
         .then(response => response.json())
         .then((data) => {
           if (data) {
@@ -111,7 +112,7 @@ function App() {
 
   const callGetOptionChains = (symbol, offset) =>{
     return new Promise((resolve, reject) => {
-      fetch(`http://127.0.0.1:5000/api/option_chain?symbol=${symbol}&offset=${offset}`)
+      fetch(`http://${apiHosts}/api/option_chain?symbol=${symbol}&offset=${offset}`)
         .then(response => response.json())
         .then((data) => {
           if (data) {

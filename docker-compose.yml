@@ -16,3 +16,6 @@ services:
     volumes:
       - ./dbdata/mysql:/var/lib/mysql
       - ./dbdata/struct:/docker-entrypoint-initdb.d
+
+
+# Login try to with command: docker exec -it linda-trade-mysql-container mysql -u root -p
