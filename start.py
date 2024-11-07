@@ -83,7 +83,6 @@ async def main():
                 price_data = await asyncio.create_task(recordTokenPrice(exchange))
                 if price_data['status'] == True:
                     btc_price, eth_price = price_data['data']['btc_price'], price_data['data']['eth_price']
-
                     option_chains = await getRecentOptionChainByTimestamp(current_time, 'ETH', option_office_days)
                     expiration_date, options_data = option_chains['expiration_date'], option_chains['data']
                     print('Locked option date: ', expiration_date)
