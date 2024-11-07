@@ -37,14 +37,23 @@ exchange = ccxt.okx({
 # 获取账户余额
 import asyncio
 
+# 读取 .env 文件 的 LOOP_INTERVAL_OF_TOKEN_PRICE
+LOOP_INTERVAL_OF_TOKEN_PRICE = int(os.getenv('LOOP_INTERVAL_OF_TOKEN_PRICE', 61))
+LOOP_INTERVAL_OF_FETCH_ETH_OPTION_CHAIN = int(os.getenv('LOOP_INTERVAL_OF_FETCH_ETH_OPTION_CHAIN', 7201))
+LOOP_INTERVAL_OF_FETCH_BTC_OPTION_CHAIN = int(os.getenv('LOOP_INTERVAL_OF_FETCH_BTC_OPTION_CHAIN', 7201))
+
+print('LOOP_INTERVAL_OF_TOKEN_PRICE:', LOOP_INTERVAL_OF_TOKEN_PRICE)
+print('LOOP_INTERVAL_OF_FETCH_ETH_OPTION_CHAIN:', LOOP_INTERVAL_OF_FETCH_ETH_OPTION_CHAIN)
+print('LOOP_INTERVAL_OF_FETCH_BTC_OPTION_CHAIN:', LOOP_INTERVAL_OF_FETCH_BTC_OPTION_CHAIN)
+
 # fetch_tick_time
 FTT = dict()
 # 数组的第一位是一个时间戳，第二位是一个要触发的时间间隔
-FTT['recordTokenPrice'] = [0, 60]
+FTT['recordTokenPrice'] = [0, LOOP_INTERVAL_OF_TOKEN_PRICE]
 # FTT['fetchBTCOptionChain'] = [0, 7200]
 # FTT['fetchETHOptionChain'] = [getCrrrentTime()+3600, 7200]
-FTT['fetchETHOptionChain'] = [0, 7200]
-FTT['fetchBTCOptionChain'] = [getCrrrentTime()+3600, 7200]
+FTT['fetchETHOptionChain'] = [0, LOOP_INTERVAL_OF_FETCH_ETH_OPTION_CHAIN]
+FTT['fetchBTCOptionChain'] = [getCrrrentTime()+3600, LOOP_INTERVAL_OF_FETCH_BTC_OPTION_CHAIN]
 
 async def main():
     
