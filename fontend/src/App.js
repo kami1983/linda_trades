@@ -32,7 +32,13 @@ function App() {
 
     const timeToStr = (time) => {
       const date = new Date(time*1000);
-      return `${date.getMonth()}-${date.getDay()} ${date.getHours()}:${date.getMinutes()}`;
+      const year = date.getFullYear().toString().slice(-2);
+      const month = date.getMonth() + 1;
+      const day = date.getDate();
+      const hours = date.getHours();
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const formattedDate = `${year}/${month}/${day} ${hours}:${minutes}`;
+      return formattedDate;
     }
 
     const extractChartData = (data) => {
@@ -133,7 +139,6 @@ function App() {
             <div style={{ width: '2000px', height: '400px' }}>
             <LineChart labels={labels} bIvList={dataBivPoints} sIvList={dataSivPoints} label={label} />
             </div>
-            
         </div>
     );
 }

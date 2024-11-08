@@ -7,6 +7,19 @@ import reportWebVitals from './reportWebVitals';
 // import dotenv from 'dotenv';
 // dotenv.config();
 
+
+// const timeToStr = (time) => {
+//   const date = new Date(time*1000);
+//   const year = date.getFullYear().toString().slice(-2);
+//   const month = date.getMonth() + 1;
+//   const day = date.getDate();
+//   const hours = date.getHours();
+//   const minutes = date.getMinutes().toString().padStart(2, '0');
+//   const formattedDate = `${year}/${month}/${day} ${hours}:${minutes}`;
+//   return formattedDate;
+// }
+// console.log('timeToStr: ', timeToStr(1731076383));
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   // <React.StrictMode>
