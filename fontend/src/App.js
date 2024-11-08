@@ -32,7 +32,7 @@ function App() {
 
     const timeToStr = (time) => {
       const date = new Date(time*1000);
-      return `${date.getMonth()}${date.getDay()} ${date.getHours()}:${date.getMinutes()}`;
+      return `${date.getMonth()}-${date.getDay()} ${date.getHours()}:${date.getMinutes()}`;
     }
 
     const extractChartData = (data) => {
