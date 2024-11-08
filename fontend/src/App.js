@@ -18,7 +18,7 @@ function App() {
     const apiHosts = process.env.REACT_APP_API_HOSTS
     // console.log('optionOfficeDays: ', optionOfficeDays);
 
-    const label = 'ETH IV History';
+    const label = 'IV History';
 
     // const fetchCallIvData = [
     //   // time, price, buy_iv, sell_iv
@@ -32,11 +32,11 @@ function App() {
 
     const timeToStr = (time) => {
       const date = new Date(time*1000);
-      return `${date.getMonth()}-${date.getDay()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      return `${date.getMonth()}${date.getDay()} ${date.getHours()}:${date.getMinutes()}`;
     }
 
     const extractChartData = (data) => {
-      const _labels = data.map(item => timeToStr(item[0]));
+      const _labels = data.map(item => `${timeToStr(item[0])}#${item[1]}`);
       const _dataBivPoints = data.map(item => item[3]);
       const _dataSivPoints = data.map(item => item[4]);
       return [_labels, _dataBivPoints, _dataSivPoints];
