@@ -97,7 +97,7 @@ function App() {
 
   const callFetchIvData = (symbol, flag, eday, sidx=-1) => {
     return new Promise((resolve, reject) => {
-      fetch(`http://${apiHosts}/api/iv_data?symbol=${symbol}&flag=${flag}&edate=${eday}&sidx=${sidx}`)
+      fetch(`${apiHosts}/api/iv_data?symbol=${symbol}&flag=${flag}&edate=${eday}&sidx=${sidx}`)
         .then(response => response.json())
         .then((data) => {
           if (data) {
@@ -112,7 +112,7 @@ function App() {
 
   const callGetOptionChains = (symbol, offset) =>{
     return new Promise((resolve, reject) => {
-      fetch(`http://${apiHosts}/api/option_chain?symbol=${symbol}&offset=${offset}`)
+      fetch(`${apiHosts}/api/option_chain?symbol=${symbol}&offset=${offset}`)
         .then(response => response.json())
         .then((data) => {
           if (data) {

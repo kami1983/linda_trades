@@ -25,6 +25,9 @@ python --version
 * conda create --name linda-trades python=3.9
 * conda activate linda-trades
 
+## Ubuntu need open  port
+* sudo ufw allow 3000/tcp
+* sudo ufw allow 5000/tcp
 
 ## Framework mutual
 * https://docs.ccxt.com/
