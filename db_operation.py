@@ -19,6 +19,15 @@ mysql_dbname = os.getenv('MYSQL_DBNAME')
 
 
 async def getDbConn():
+
+    print('mysql_host:', {
+        mysql_user,
+        mysql_password,
+        mysql_host,
+        mysql_port,
+        mysql_dbname
+    })
+
     connection = await aiomysql.connect(
         host=mysql_host,   
         port=mysql_port,

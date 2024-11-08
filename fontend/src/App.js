@@ -9,19 +9,14 @@ import React, { useEffect, useState } from 'react';
 function App() {
     const [data, setData] = useState(null);
 
-    // useEffect(() => {
-    //     fetch("http://127.0.0.1:5000/api/data")
-    //         .then(response => response.json())
-    //         .then(data => setData(data));
-    // }, []);
-
     const [labels, setLabels] = useState([]);
     const [dataBivPoints, setDataBivPoints] = useState([]);
     const [dataSivPoints, setDataSivPoints] = useState([]);
+    const [optionSymbol, setOptionSymbol] = useState('');
     // 从 env 文件中获取 OPTION_OFFICE_DAYS
-    const optionOfficeDays = process.env.REACT_APP_OPTION_OFFICE_DAYS
+    // const optionOfficeDays = process.env.REACT_APP_OPTION_OFFICE_DAYS
     const apiHosts = process.env.REACT_APP_API_HOSTS
-    console.log('optionOfficeDays: ', optionOfficeDays);
+    // console.log('optionOfficeDays: ', optionOfficeDays);
 
     const label = 'ETH IV History';
 
@@ -37,7 +32,7 @@ function App() {
 
     const timeToStr = (time) => {
       const date = new Date(time*1000);
-      return `${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+      return `${date.getMonth()}-${date.getDay()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
     }
 
     const extractChartData = (data) => {
@@ -49,23 +44,29 @@ function App() {
 
     useEffect(() => {
 
-      // 模拟从服务器获取数据，获取的数据存储到 fetchCallIvData
-      // const _labels = fetchCallIvData.map(item => item[0]);
-      // const _dataPoints = fetchCallIvData.map(item => item[1]);
-      // setLabels(_labels);
-      // setDataPoints(_dataPoints);
+      const params = new URLSearchParams(window.location.search);
+      const param_symbol = params.get('symbol'); 
+      const param_flag = params.get('flag');  
+      const param_offset = parseInt(params.get('offset'));
 
-      
-      const symbol = 'ETH';
-      const flag = 'c';
+      console.log('param_symbol: ', param_symbol);
+      console.log('param_flag: ', param_flag);
+      console.log('param_offset: ', param_offset);
+
+      const symbol = param_symbol.toUpperCase()
+      const flag = param_flag.toLowerCase()
+
       // 定义一个异步函数
       async function fetchData() {
 
-        const optionChains = await callGetOptionChains(symbol, optionOfficeDays);
+        const optionChains = await callGetOptionChains(symbol, param_offset);
         console.log('optionChains: ', optionChains);
         if(optionChains.length === 0) {
+          setOptionSymbol('No option chain data');
           return;
         }
+        setOptionSymbol(`${symbol}-${optionChains[0]}-${flag.toUpperCase()}`);
+
         const fetchCallIvData = await callFetchIvData(symbol, flag, optionChains[0]);
         const [_labels, _dataBivPoints, _dataSivPoints] = extractChartData(fetchCallIvData);
         setLabels(_labels);
@@ -126,9 +127,8 @@ function App() {
 
     return (
         <div>
-            <h1>Flask + React</h1>
-            {data ? <p>{data.message}</p> : <p>Loading...</p>}
-            <h1>My Line Chart</h1>
+            <h1>{optionSymbol}</h1>
+            <h3>Example link <a href='/?symbol=eth&flag=c&offset=2'>Example link</a></h3>
             <div style={{ width: '2000px', height: '400px' }}>
             <LineChart labels={labels} bIvList={dataBivPoints} sIvList={dataSivPoints} label={label} />
             </div>

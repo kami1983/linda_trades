@@ -1,3 +1,4 @@
+import os
 from urllib import request
 from db_operation import getRecentOptionChainByTimestamp
 # from flask import Flask, jsonify, request
@@ -6,6 +7,8 @@ from quart import Quart, jsonify, request
 from quart_cors import cors
 
 from unitls import getCrrrentTime
+
+APP_PORT = os.getenv('APP_PORT', 5000)
 
 # app = Flask(__name__)
 app = Quart(__name__)
@@ -41,6 +44,9 @@ async def get_iv_data():
 
     file_name = f'trace_data/iv_data/{symbol}-{edate}-{flag}.csv'
     print('file_name:', file_name)
+    # 判断文件是否存在如果不粗中直接返回 return jsonify([])
+    if not os.path.exists(file_name):
+        return jsonify([])
 
     # 从文件中读取数据
     res_data = []
@@ -68,4 +74,4 @@ async def get_iv_data():
         return jsonify(res_data[sidx:])
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(host="0.0.0.0", port=APP_PORT, debug=True)
