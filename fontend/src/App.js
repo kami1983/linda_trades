@@ -102,6 +102,7 @@ function App() {
         .then(response => response.json())
         .then((data) => {
           if (data) {
+            console.log('callFetchIvData: ', data);
             resolve(data);
           } else {
             reject('error');
