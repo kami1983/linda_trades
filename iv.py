@@ -118,7 +118,7 @@ def cacluateIVRate(P, S, K, T, flag, r=0.05):
 async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
      # 获取最新的标记数据
     ticker = await exchange.fetch_ticker(symbol=symbol)
-    # print('symbol xxx = ', symbol, 'ticker = ', ticker)  # 获取标记价格
+    print('symbol extractIvData = ', symbol, 'ticker = ', ticker)  # 获取标记价格
 
     # 买方美元价值
     bid_price = 0 if ticker['bid'] == None else ticker['bid'] * current_price

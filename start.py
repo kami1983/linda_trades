@@ -6,6 +6,7 @@ import aiomysql
 
 from db_operation import getDbSwapPrice, getRecentOptionChainByTimestamp
 from dotenv import load_dotenv
+from exchange import createExchangeConn
 from fetch_options import fetchOptionChain, recordOptionChain
 from fetch_ticker import *
 from iv import extractIvData
@@ -15,14 +16,10 @@ from py_vollib.black_scholes.implied_volatility import implied_volatility
 
 load_dotenv()
 
-key = os.getenv('OKEX_API_KEY')
-secret = os.getenv('OKEX_API_SECRET')
-password = os.getenv('OKEX_API_PASSWORD')
+# key = os.getenv('OKEX_API_KEY')
+# secret = os.getenv('OKEX_API_SECRET')
+# password = os.getenv('OKEX_API_PASSWORD')
 
-mysql_user = os.getenv('MYSQL_USER')
-mysql_password = os.getenv('MYSQL_PASSWORD')
-mysql_host = os.getenv('MYSQL_HOST')
-mysql_port = int(os.getenv('MYSQL_PORT', 3306))
 
 # 获取期权对应的币种
 option_coins = [str(i).strip() for i in os.getenv('OPTION_COIN', 'ETH,BTC').split(',')]
@@ -43,13 +40,7 @@ print('option_office_rate:', option_office_rate)
 option_offset_index = 0
 option_max_count = len(option_office_days)
 
-
-exchange = ccxt.okx({
-    'apiKey': key,
-    'secret': secret,
-    'password': password,
-})
-
+exchange = createExchangeConn()
 
 # 获取账户余额
 import asyncio
@@ -134,7 +125,6 @@ async def main():
                     print('put_iv_res:', put_iv_res)
 
                     toRecordIvData(current_time, put_iv_res)
-
 
                     option_offset_index=(option_offset_index+1)%option_max_count
 
