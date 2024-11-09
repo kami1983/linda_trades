@@ -13,9 +13,9 @@ function App() {
     return (
       <div>
         <h3><a href='/ivhistory?symbol=eth&flag=c&offset=2'>IV History | symbol=eth&flag=c&offset=2</a></h3>
-        <h3><a href='/ivhistory?symbol=eth&flag=c&offset=2'>IV History | symbol=eth&flag=p&offset=2</a></h3>
-        <h3><a href='/ivhistory?symbol=eth&flag=c&offset=2'>IV History | symbol=eth&flag=c&offset=14</a></h3>
-        <h3><a href='/ivhistory?symbol=eth&flag=c&offset=2'>IV History | symbol=eth&flag=p&offset=14</a></h3>
+        <h3><a href='/ivhistory?symbol=eth&flag=p&offset=2'>IV History | symbol=eth&flag=p&offset=2</a></h3>
+        <h3><a href='/ivhistory?symbol=eth&flag=c&offset=14'>IV History | symbol=eth&flag=c&offset=14</a></h3>
+        <h3><a href='/ivhistory?symbol=eth&flag=p&offset=14'>IV History | symbol=eth&flag=p&offset=14</a></h3>
       </div>
     )
     // return (
