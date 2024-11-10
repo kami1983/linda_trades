@@ -88,7 +88,7 @@ function IVHistory() {
             setDataSivPoints(prevDataPoints => [...prevDataPoints, ..._newDataSivPoints]);
           }
           idx += newFetchCallIvData.length;
-        }, 1000);
+        }, 5000);
         return () => clearInterval(interval);
 
       }
