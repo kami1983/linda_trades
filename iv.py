@@ -178,8 +178,12 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     # else:  # Put Option
     #     delta = norm.cdf(d1) - 1
 
+    # 打印参数
+    print(f"标的资产价格: {S}, 行权价格: {K}, 到期时间: {T}, 无风险利率: {r}, 期权类型: {flag}, 卖方隐含波动率: {s_iv}, 买方隐含波动率: {b_iv}")
+
     # 使用平均波动率来计算 Delta
-    avg_iv = (s_iv + b_iv) / 2  # 使用买卖波动率的平均值
+    # avg_iv = (s_iv + b_iv) / 2  # 使用买卖波动率的平均值
+    avg_iv = s_iv # 使用卖方波动率，因为卖方波动率更接近实际波动率
     d1 = (math.log(S / K) + (r + 0.5 * avg_iv ** 2) * T) / (avg_iv * math.sqrt(T))
 
     if flag == 'c':  # Call Option

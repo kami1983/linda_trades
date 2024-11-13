@@ -76,6 +76,7 @@ function AtmIV() {
 
       }
 
+      _fetchAtmIv();
       // 调用异步函数
       fetchData();
 
@@ -103,15 +104,15 @@ function AtmIV() {
       <h3>symbol: {paramData.symbol}, price: {paramData.price}, rate: {paramData.rate} <a href="/atmprice">Back to atm price</a></h3>
       <div>
         <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0`}>Rate - 0</a></div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=5`}>Rate - 5</a></div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=10`}>Rate - 10</a></div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=15`}>Rate - 15</a></div>
+        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=5`}>Rate - 0.05</a></div>
+        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=10`}>Rate - 0.10</a></div>
+        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=15`}>Rate - 0.15</a></div>
       </div>
       <table border="1">
         <thead>
           <tr>
             <th>symbol</th>
-            <th>current_price</th>
+            <th>strike</th>
             <th>day_left</th>
             <th>delta</th>
             <th>ask_bid_diff</th>
@@ -132,7 +133,7 @@ function AtmIV() {
                 <>
                   <tr>
                     <td>{atmIv.data.call_iv.symbol}</td>
-                    <td>{atmIv.data.call_iv.current_price}</td>
+                    <td>{atmIv.data.call_iv.strike}</td>
                     <td>{parseFloat(atmIv.data.call_iv.day_left).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.ask_bid_diff).toFixed(2)}</td>
@@ -147,7 +148,7 @@ function AtmIV() {
                   </tr>
                   <tr>
                     <td>{atmIv.data.put_iv.symbol}</td>
-                    <td>{parseFloat(atmIv.data.put_iv.current_price).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.strike).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.day_left).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.ask_bid_diff).toFixed(2)}</td>

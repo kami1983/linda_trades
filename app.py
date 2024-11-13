@@ -9,6 +9,7 @@ from iv import extractIvData
 from quart import Quart, jsonify, request
 # from flask_cors import CORS
 from quart_cors import cors
+import traceback
 
 from unitls import getCrrrentTime, selectOptions
 
@@ -94,6 +95,7 @@ async def get_atm_iv():
         return jsonify({"status": True, "data": {"call_iv": call_iv_res, "put_iv": put_iv_res }})
     except Exception as e:
         print("An error occurred:", e)
+        traceback.print_exc()  # 打印详细的错误跟踪信息
         return jsonify({"status": False, "message": e.args[0]})
     finally:
         await exchange.close()
