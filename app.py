@@ -25,69 +25,79 @@ def get_data():
 
 @app.route('/api/current_price')
 async def get_current_price():
-    # 获取URL参数
-    symbol = str(request.args.get('symbol')).upper()
-    if symbol != 'BTC' and symbol != 'ETH':
-        return jsonify({"status": False, "message": "Symbol is not supported!"})
-    
-    exchange = createExchangeConn()
-    task = asyncio.create_task(fetchTicker(exchange, f'{symbol}-USD-SWAP'))
-    price = await asyncio.gather(task)
-    await exchange.close()
+    try:
+        # 获取URL参数
+        symbol = str(request.args.get('symbol')).upper()
+        if symbol != 'BTC' and symbol != 'ETH':
+            return jsonify({"status": False, "message": "Symbol is not supported!"})
+        
+        exchange = createExchangeConn()
+        task = asyncio.create_task(fetchTicker(exchange, f'{symbol}-USD-SWAP'))
+        price = await asyncio.gather(task)
+        
+        print('DEBUG: price:', price)
 
-    print('DEBUG: price:', price)
-
-    return jsonify({"status": True, "data": {"price": price[0].last, "symbol": symbol } })
+        return jsonify({"status": True, "data": {"price": price[0].last, "symbol": symbol } })
+    except Exception as e:
+        return jsonify({"status": False, "message":e.args[0]})
+    finally:
+        await exchange.close()
 
 @app.route('/api/atm_iv')
 async def get_atm_iv():
-    # 获取URL参数
-    symbol = str(request.args.get('symbol')).upper()
-    if symbol != 'BTC' and symbol != 'ETH':
-        return jsonify({"status": False, "message": "Symbol is not supported!"})
     
-    price = float(request.args.get('price'))
-    if price <= 0:
-        return jsonify({"status": False, "message": "Price is invalid!"})
-    
-    rate = float(request.args.get('rate'))
-    
-    day = int(request.args.get('day'))
-    if day <= 0:
-        return jsonify({"status": False, "message": "Day is invalid!"})
-    
-    exchange = createExchangeConn()
-    current_time = getCrrrentTime()
-    _coin_name = symbol
-    _offset_day = day
-    _offset_rate = rate
+    try:
+        # 获取URL参数
+        symbol = str(request.args.get('symbol')).upper()
+        if symbol != 'BTC' and symbol != 'ETH':
+            return jsonify({"status": False, "message": "Symbol is not supported!"})
+        
+        price = float(request.args.get('price'))
+        if price <= 0:
+            return jsonify({"status": False, "message": "Price is invalid!"})
+        
+        rate = float(request.args.get('rate'))
+        
+        day = int(request.args.get('day'))
+        if day <= 0:
+            return jsonify({"status": False, "message": "Day is invalid!"})
+        
+        exchange = createExchangeConn()
+        current_time = getCrrrentTime()
+        _coin_name = symbol
+        _offset_day = day
+        _offset_rate = rate
 
-    print('current_time:', current_time, 'coin_name:', _coin_name, 'offset_day:', _offset_day, 'offset_rate:', _offset_rate)
+        print('current_time:', current_time, 'coin_name:', _coin_name, 'offset_day:', _offset_day, 'offset_rate:', _offset_rate)
 
-    option_chains = await getRecentOptionChainByTimestamp(current_time, _coin_name, _offset_day)
-    expiration_date, options_data = option_chains['expiration_date'], option_chains['data']
-    
-    atmOptionC = selectOptions(options_data, price * (1+_offset_rate), 'C')
-    if(atmOptionC == None):
-        print('wran: atmOptionC is None')
-        return jsonify({"status": False, "message": "atmOptionC is None!"})
+        option_chains = await getRecentOptionChainByTimestamp(current_time, _coin_name, _offset_day)
+        expiration_date, options_data = option_chains['expiration_date'], option_chains['data']
+        
+        atmOptionC = selectOptions(options_data, price * (1+_offset_rate), 'C')
+        if(atmOptionC == None):
+            print('wran: atmOptionC is None')
+            return jsonify({"status": False, "message": "atmOptionC is None!"})
 
-    call_iv_res = await extractIvData(exchange, symbol=atmOptionC.symbol, current_price=price)
-    print('call_iv_res:', call_iv_res)
+        call_iv_res = await extractIvData(exchange, symbol=atmOptionC.symbol, current_price=price)
+        print('call_iv_res:', call_iv_res)
 
-    atmOptionP = selectOptions(options_data, price * (1-_offset_rate), 'P')
-    if(atmOptionP == None):
-        print('wran: atmOptionP is None')
-        return jsonify({"status": False, "message": "atmOptionP is None!"})
-    
-    print('atmOptionP:', atmOptionP.symbol, atmOptionP.strike)
+        atmOptionP = selectOptions(options_data, price * (1-_offset_rate), 'P')
+        if(atmOptionP == None):
+            print('wran: atmOptionP is None')
+            return jsonify({"status": False, "message": "atmOptionP is None!"})
+        
+        print('atmOptionP:', atmOptionP.symbol, atmOptionP.strike)
 
-    put_iv_res = await extractIvData(exchange, symbol=atmOptionP.symbol, current_price=price)
-    print('put_iv_res:', put_iv_res)
+        put_iv_res = await extractIvData(exchange, symbol=atmOptionP.symbol, current_price=price)
+        print('put_iv_res:', put_iv_res)
 
-    await exchange.close()
+        return jsonify({"status": True, "data": {"call_iv": call_iv_res, "put_iv": put_iv_res }})
+    except Exception as e:
+        print("An error occurred:", e)
+        return jsonify({"status": False, "message": e.args[0]})
+    finally:
+        await exchange.close()
 
-    return jsonify({"status": True, "data": {"call_iv": call_iv_res, "put_iv": put_iv_res }})
 
 @app.route('/api/option_chain')
 async def get_option_chain():
