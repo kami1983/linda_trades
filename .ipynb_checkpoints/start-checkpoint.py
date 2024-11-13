@@ -81,7 +81,7 @@ async def main():
                     print('ATM price:', eth_price)
                     # 假设我是一个期权卖方，那么我就要留出一个安全区间，这个安全区间是标的资产价格的 10% 左右
                     atmOptionC = selectOptions(options_data, eth_price * 1.1, 'C')
-                    print('atmOptionC:', atmOptionC.symbol, atmOptionC.strike)
+                    print('atmOptionC B:', atmOptionC.symbol, atmOptionC.strike)
 
                     call_iv_res = await extractIvData(exchange, symbol=atmOptionC.symbol, current_price=eth_price) # {'b'=> 0.87, 's'=> 0.86, 'diff'=> 0.01, 'bid_premium'=>, 'ask_premium'=>}
                     print('call_iv_res:', call_iv_res)

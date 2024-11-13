@@ -108,7 +108,7 @@ async def main():
                         print('wran: atmOptionC is None')
                         continue
 
-                    print('atmOptionC:', atmOptionC.symbol, atmOptionC.strike)
+                    print('atmOptionC A:', atmOptionC.symbol, atmOptionC.strike, ' END')
 
                     call_iv_res = await extractIvData(exchange, symbol=atmOptionC.symbol, current_price=eth_price) # {'b'=> 0.87, 's'=> 0.86, 'diff'=> 0.01, 'bid_premium'=>, 'ask_premium'=>}
                     print('call_iv_res:', call_iv_res)
