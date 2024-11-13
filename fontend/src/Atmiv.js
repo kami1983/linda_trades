@@ -49,19 +49,19 @@ function AtmIV() {
 
       setParamData({symbol: param_symbol, price: param_price, rate: param_rate});
 
+      const _fetchAtmIv = () => {
+        console.log('_fetchPrice: ', days);
+        const promises = days.map(day => callFetchIv(param_symbol, param_price, day, param_rate));
+          Promise.all(promises).then((values) => {
+            console.log('values: ', values);
+            setAtmIvList(values);
+          });
+      }
       
       // 定义一个异步函数
       async function fetchData() {
 
-        const _fetchAtmIv = () => {
-          console.log('_fetchPrice: ', days);
-          const promises = days.map(day => callFetchIv(param_symbol, param_price, day, param_rate));
-            Promise.all(promises).then((values) => {
-              console.log('values: ', values);
-              setAtmIvList(values);
-            });
-        }
-        
+      
         // 每5秒更新一次数据
         const interval = setInterval(async () => {
           try{
@@ -133,7 +133,7 @@ function AtmIV() {
                 <>
                   <tr>
                     <td>{atmIv.data.call_iv.symbol}</td>
-                    <td>{atmIv.data.call_iv.strike}</td>
+                    <td>{atmIv.data.call_iv.excute_strike}</td>
                     <td>{parseFloat(atmIv.data.call_iv.day_left).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.ask_bid_diff).toFixed(2)}</td>
@@ -148,7 +148,7 @@ function AtmIV() {
                   </tr>
                   <tr>
                     <td>{atmIv.data.put_iv.symbol}</td>
-                    <td>{parseFloat(atmIv.data.put_iv.strike).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.excute_strike).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.day_left).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.ask_bid_diff).toFixed(2)}</td>
