@@ -1,3 +1,4 @@
+import math
 import numpy as np
 from db_struct import EResultIvData
 from scipy.stats import norm
@@ -170,6 +171,23 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     b_iv = implied_volatility(P, S, K, T, r, flag)
     # print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
 
+    # # 计算 Delta
+    # d1 = (math.log(S / K) + (r + 0.5 * s_iv ** 2) * T) / (s_iv * math.sqrt(T))
+    # if flag == 'c':  # Call Option
+    #     delta = norm.cdf(d1)
+    # else:  # Put Option
+    #     delta = norm.cdf(d1) - 1
+
+    # 使用平均波动率来计算 Delta
+    avg_iv = (s_iv + b_iv) / 2  # 使用买卖波动率的平均值
+    d1 = (math.log(S / K) + (r + 0.5 * avg_iv ** 2) * T) / (avg_iv * math.sqrt(T))
+
+    if flag == 'c':  # Call Option
+        delta = norm.cdf(d1)
+    else:  # Put Option
+        delta = norm.cdf(d1) - 1
+
+
     return EResultIvData(
         symbol=symbol,
         current_price=current_price,
@@ -184,6 +202,7 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
         day_left=day_left,
         current_time=current_time,
         s_iv=s_iv,
-        b_iv=b_iv
+        b_iv=b_iv,
+        delta=delta
     )
     

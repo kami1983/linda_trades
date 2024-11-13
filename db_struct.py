@@ -51,3 +51,4 @@ class EResultIvData:
     current_time: int
     s_iv: float
     b_iv: float
+    delta: float

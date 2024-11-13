@@ -113,6 +113,7 @@ function AtmIV() {
             <th>symbol</th>
             <th>current_price</th>
             <th>day_left</th>
+            <th>delta</th>
             <th>ask_bid_diff</th>
             <th>ask_premium</th>
             <th>bid_premium</th>
@@ -133,6 +134,7 @@ function AtmIV() {
                     <td>{atmIv.data.call_iv.symbol}</td>
                     <td>{atmIv.data.call_iv.current_price}</td>
                     <td>{parseFloat(atmIv.data.call_iv.day_left).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.ask_bid_diff).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.ask_premium).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.bid_premium).toFixed(2)}</td>
@@ -147,6 +149,7 @@ function AtmIV() {
                     <td>{atmIv.data.put_iv.symbol}</td>
                     <td>{parseFloat(atmIv.data.put_iv.current_price).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.day_left).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.ask_bid_diff).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.ask_premium).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.bid_premium).toFixed(2)}</td>
@@ -160,7 +163,7 @@ function AtmIV() {
                 </>
               ) : (
                 <tr>
-                  <td colSpan="12">Error...</td>
+                  <td colSpan="13">Error...</td>
                 </tr>
               )}
             </React.Fragment>
