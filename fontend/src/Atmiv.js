@@ -104,9 +104,9 @@ function AtmIV() {
       <h3>symbol: {paramData.symbol}, price: {paramData.price}, rate: {paramData.rate} <a href="/atmprice">Back to atm price</a></h3>
       <div>
         <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0`}>Rate - 0</a></div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=5`}>Rate - 0.05</a></div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=10`}>Rate - 0.10</a></div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=15`}>Rate - 0.15</a></div>
+        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0.05`}>Rate - 5%</a></div>
+        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0.10`}>Rate - 10%</a></div>
+        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0.15`}>Rate - 15%</a></div>
       </div>
       <table border="1">
         <thead>

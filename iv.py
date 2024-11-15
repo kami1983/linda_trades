@@ -86,18 +86,18 @@ import time
 # r = 0.05  # 无风险利率
 # flag = "c"  # 看涨期权 (c = call, p = put)
 
-S = 67458.9  # 当前标的资产的价格 (BTC/USD)
-P = 0.0016*S  # 期权的市场价格 (BTC)
-K = 68250  # 期权行权价格
-T = 1/365/24*16  # 距离到期时间 (年)
-r = 0.05  # 无风险利率
-flag = "c"  # 看涨期权 (c = call, p = put)
+# S = 67458.9  # 当前标的资产的价格 (BTC/USD)
+# P = 0.0016*S  # 期权的市场价格 (BTC)
+# K = 68250  # 期权行权价格
+# T = 1/365/24*16  # 距离到期时间 (年)
+# r = 0.05  # 无风险利率
+# flag = "c"  # 看涨期权 (c = call, p = put)
 
-# implied_volatility = calc_implied_volatility(price, spot, strike, time_to_expiry, rate, option_type)
-# print("隐含波动率:", implied_volatility)
+# # implied_volatility = calc_implied_volatility(price, spot, strike, time_to_expiry, rate, option_type)
+# # print("隐含波动率:", implied_volatility)
 
-iv = implied_volatility(P, S, K, T, r, flag)
-print(f"隐含波动率: {iv * 100:.2f}%")
+# iv = implied_volatility(P, S, K, T, r, flag)
+# print(f"隐含波动率: {iv * 100:.2f}%")
 
 
 def cacluateIVRate(P, S, K, T, flag, r=0.05):
@@ -114,7 +114,18 @@ def cacluateIVRate(P, S, K, T, flag, r=0.05):
     return iv
 
 
+def calculate_delta(S, K, T, r, sigma, option_type):
+    # 计算 d1
+    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
 
+    if option_type == 'c':
+        delta = norm.cdf(d1)  # Call 的 Delta
+    elif option_type == 'p':
+        delta = norm.cdf(d1) - 1  # Put 的 Delta
+    else:
+        raise ValueError("Invalid option type. Must be 'call' or 'put'.")
+
+    return delta
 
 async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     print('DEBUG - extractIvData = ', symbol, 'current_price = ', current_price)
@@ -161,8 +172,8 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     S = current_price  # 当前标的资产的价格 (BTC/USD)
     P = bid_price  # 期权的市场价格 (BTC)
     K = excute_strike  # 期权行权价格
-    T = (1/365)*(day_left)  # 距离到期时间 (年)
-    r = 0.05  # 无风险利率
+    T = (day_left/365)  # 距离到期时间 (年)
+    r = 0.045  # 无风险利率
     flag = execute_flag   # 看涨期权 (c = call, p = put)
     s_iv = implied_volatility(P, S, K, T, r, flag)
     # print(f"卖方，隐含波动率: {iv * 100:.2f}%， P: {P}")
@@ -181,15 +192,18 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     # 打印参数
     print(f"标的资产价格: {S}, 行权价格: {K}, 到期时间: {T}, 无风险利率: {r}, 期权类型: {flag}, 卖方隐含波动率: {s_iv}, 买方隐含波动率: {b_iv}")
 
-    # 使用平均波动率来计算 Delta
-    # avg_iv = (s_iv + b_iv) / 2  # 使用买卖波动率的平均值
-    avg_iv = s_iv # 使用卖方波动率，因为卖方波动率更接近实际波动率
-    d1 = (math.log(S / K) + (r + 0.5 * avg_iv ** 2) * T) / (avg_iv * math.sqrt(T))
+    # # 使用平均波动率来计算 Delta
+    # # avg_iv = (s_iv + b_iv) / 2  # 使用买卖波动率的平均值
+    # avg_iv = s_iv # 使用卖方波动率，因为卖方波动率更接近实际波动率
+    # d1 = (math.log(S / K) + (r + 0.5 * avg_iv ** 2) * T) / (avg_iv * math.sqrt(T))
 
-    if flag == 'c':  # Call Option
-        delta = norm.cdf(d1)
-    else:  # Put Option
-        delta = norm.cdf(d1) - 1
+    # if flag == 'c':  # Call Option
+    #     delta = norm.cdf(d1)
+    # else:  # Put Option
+    #     delta = norm.cdf(d1) - 1
+
+    delta = calculate_delta(S, K, T, r, s_iv, flag)
+    # delta = delta(s=S,k=K,r=r,T,sigma,n)
 
 
     return EResultIvData(

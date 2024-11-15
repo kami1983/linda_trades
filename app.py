@@ -24,6 +24,9 @@ app = cors(app, allow_origin="*")
 def get_data():
     return jsonify({"message": "Hello from Flask!"})
 
+
+
+
 @app.route('/api/current_price')
 async def get_current_price():
     try:
