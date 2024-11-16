@@ -52,3 +52,5 @@ class EResultIvData:
     s_iv: float
     b_iv: float
     delta: float
+    gamma: float
+    theta: float

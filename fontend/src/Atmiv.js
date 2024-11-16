@@ -43,7 +43,7 @@ function AtmIV() {
 
       const params = new URLSearchParams(window.location.search);
       const param_symbol = params.get('symbol');
-      const param_price = params.get('price');
+      const param_price = parseFloat(params.get('price'));
       const param_rate = parseInt(params.get('rate'));
       const days = [2, 7, 14, 30, 60, 90];
 
@@ -102,12 +102,20 @@ function AtmIV() {
       <div>
       <h1>Iv infos</h1>
       <h3>symbol: {paramData.symbol}, price: {paramData.price}, rate: {paramData.rate} <a href="/atmprice">Back to atm price</a></h3>
+      
       <div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0`}>Rate - 0</a></div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0.05`}>Rate - 5%</a></div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0.10`}>Rate - 10%</a></div>
-        <div><a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0.15`}>Rate - 15%</a></div>
+        <a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=0`}>Rate - 0</a> |
+        <a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=5`}>Rate - 5%</a> |
+        <a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=10`}>Rate - 10%</a> |
+        <a href={`/atmiv?symbol=${paramData.symbol}&price=${paramData.price}&rate=15`}>Rate - 15%</a> |
       </div>
+      <div>
+        <ul>
+        <li>正 Delta：看涨期权价格与标的资产价格同方向变化。</li>
+        <li>负 Delta：看跌期权价格与标的资产价格反方向变化。</li>
+        </ul>
+      </div>
+      
       <table border="1">
         <thead>
           <tr>
@@ -115,13 +123,17 @@ function AtmIV() {
             <th>strike</th>
             <th>day_left</th>
             <th>delta</th>
+            <th>gamma</th>
+            <th>theta</th>
+            <th>s_iv</th>
+            <th>b_iv</th>
             <th>ask_bid_diff</th>
             <th>ask_premium</th>
             <th>bid_premium</th>
             <th>ask_price</th>
+            <th>ask_yield</th>
             <th>bid_price</th>
-            <th>s_iv</th>
-            <th>b_iv</th>
+            <th>bid_yield</th>
             <th>execute_flag</th>
             <th>execute_time</th>
           </tr>
@@ -136,13 +148,17 @@ function AtmIV() {
                     <td>{atmIv.data.call_iv.excute_strike}</td>
                     <td>{parseFloat(atmIv.data.call_iv.day_left).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.gamma).toFixed(6)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.theta).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.s_iv).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.b_iv).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.ask_bid_diff).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.ask_premium).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.bid_premium).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.ask_price).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.ask_price/paramData.price/parseFloat(atmIv.data.call_iv.day_left)*365*100).toFixed(2)} %</td>
                     <td>{parseFloat(atmIv.data.call_iv.bid_price).toFixed(2)}</td>
-                    <td>{parseFloat(atmIv.data.call_iv.s_iv).toFixed(2)}</td>
-                    <td>{parseFloat(atmIv.data.call_iv.b_iv).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.bid_price/paramData.price/parseFloat(atmIv.data.call_iv.day_left)*365*100).toFixed(2)} %</td>
                     <td>{atmIv.data.call_iv.execute_flag}</td>
                     <td>{atmIv.data.call_iv.execute_time}</td>
                   </tr>
@@ -150,14 +166,18 @@ function AtmIV() {
                     <td>{atmIv.data.put_iv.symbol}</td>
                     <td>{parseFloat(atmIv.data.put_iv.excute_strike).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.day_left).toFixed(2)}</td>
-                    <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.delta).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.gamma).toFixed(6)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.theta).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.s_iv).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.b_iv).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.ask_bid_diff).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.ask_premium).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.bid_premium).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.ask_price).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.ask_price/paramData.price/parseFloat(atmIv.data.put_iv.day_left)*365*100).toFixed(2)} %</td>
                     <td>{parseFloat(atmIv.data.put_iv.bid_price).toFixed(2)}</td>
-                    <td>{parseFloat(atmIv.data.put_iv.s_iv).toFixed(2)}</td>
-                    <td>{parseFloat(atmIv.data.put_iv.b_iv).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.bid_price/paramData.price/parseFloat(atmIv.data.put_iv.day_left)*365*100).toFixed(2)} %</td>
                     <td>{atmIv.data.put_iv.execute_flag}</td>
                     <td>{atmIv.data.put_iv.execute_time}</td>
                   </tr>

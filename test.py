@@ -25,7 +25,6 @@ from py_vollib.black_scholes.implied_volatility import implied_volatility
 #     atmOptionP = findAtmOptions(options_data, 71988 * 0.9, 'P')
 #     print('atmOptionP:', atmOptionP)
 
-
 def callDetails():
     S = 2.7780  # 当前标的资产的价格 (BTC/USD)
     P = 0.298  # 期权的市场价格 (BTC)
@@ -36,7 +35,6 @@ def callDetails():
 
     print("IMT ---------")
     showGreeks(S=S, P=P, K=K, T=T, r=r, flag=flag)
-
 
 def callAtmDetails():
     S = 2.7780  # 当前标的资产的价格 (BTC/USD)
@@ -49,7 +47,6 @@ def callAtmDetails():
     print("ATM ---------")
     showGreeks(S=S, P=P, K=K, T=T, r=r, flag=flag)
 
-
 def putDetails():
     S = 2.7780  # 当前标的资产的价格 (BTC/USD)
     P = 0.0200  # 期权的市场价格 (BTC)
@@ -60,7 +57,6 @@ def putDetails():
     
     print("OTM ----------")
     showGreeks(S=S, P=P, K=K, T=T, r=r, flag=flag)
-
 
 def showGreeks(S,P,K,T,r,flag):
     _iv = implied_volatility(P, S, K, T, r, flag)
@@ -74,8 +70,6 @@ def showGreeks(S,P,K,T,r,flag):
 
     _theta = theta(s=S,k=K,r=r,T=T,sigma=_iv,n=1 if flag == 'c' else -1)
     print(f"Theta: {_theta}")
-
-
 
 async def main():
     callDetails()

@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from db_struct import EResultIvData
+from option_greeks import delta, gamma, theta
 from scipy.stats import norm
 from scipy.optimize import brentq
 # from implied_volatility import BlackScholes
@@ -114,18 +115,18 @@ def cacluateIVRate(P, S, K, T, flag, r=0.05):
     return iv
 
 
-def calculate_delta(S, K, T, r, sigma, option_type):
-    # 计算 d1
-    d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+# def calculate_delta(S, K, T, r, sigma, option_type):
+#     # 计算 d1
+#     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
 
-    if option_type == 'c':
-        delta = norm.cdf(d1)  # Call 的 Delta
-    elif option_type == 'p':
-        delta = norm.cdf(d1) - 1  # Put 的 Delta
-    else:
-        raise ValueError("Invalid option type. Must be 'call' or 'put'.")
+#     if option_type == 'c':
+#         delta = norm.cdf(d1)  # Call 的 Delta
+#     elif option_type == 'p':
+#         delta = norm.cdf(d1) - 1  # Put 的 Delta
+#     else:
+#         raise ValueError("Invalid option type. Must be 'call' or 'put'.")
 
-    return delta
+#     return delta
 
 async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     print('DEBUG - extractIvData = ', symbol, 'current_price = ', current_price)
@@ -202,8 +203,11 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     # else:  # Put Option
     #     delta = norm.cdf(d1) - 1
 
-    delta = calculate_delta(S, K, T, r, s_iv, flag)
+    # delta = calculate_delta(S, K, T, r, s_iv, flag)
     # delta = delta(s=S,k=K,r=r,T,sigma,n)
+    _delta = delta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
+    _gamma = gamma(s=S,k=K,r=r,T=T,sigma=s_iv)
+    _theta = theta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
 
 
     return EResultIvData(
@@ -221,6 +225,8 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
         current_time=current_time,
         s_iv=s_iv,
         b_iv=b_iv,
-        delta=delta
+        delta=_delta,
+        gamma=_gamma,
+        theta=_theta
     )
     

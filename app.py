@@ -60,7 +60,7 @@ async def get_atm_iv():
         if price <= 0:
             return jsonify({"status": False, "message": "Price is invalid!"})
         
-        rate = float(request.args.get('rate'))
+        rate = float(request.args.get('rate'))/100
         
         day = int(request.args.get('day'))
         if day <= 0:
