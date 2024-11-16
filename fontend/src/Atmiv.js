@@ -71,7 +71,7 @@ function AtmIV() {
             setCoinPrices(defaultPriceData);
             console.log('error: ', err);
           }
-        }, 30000);
+        }, 100000);
         return () => clearInterval(interval);
 
       }
