@@ -1,6 +1,6 @@
 import math
 import numpy as np
-from db_struct import EResultIvData
+from db_struct import EResultIvData, EResultOptionChain
 from option_greeks import delta, gamma, theta
 from scipy.stats import norm
 from scipy.optimize import brentq
@@ -115,18 +115,101 @@ def cacluateIVRate(P, S, K, T, flag, r=0.05):
     return iv
 
 
-# def calculate_delta(S, K, T, r, sigma, option_type):
-#     # 计算 d1
-#     d1 = (np.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * np.sqrt(T))
+def calculateIvData(option: EResultOptionChain, current_price) -> EResultIvData:
+    '''
+    计算隐含波动率数据
+    @param option: 期权数据
+    @param current_price: 当前标的资产的价格
+    '''
 
-#     if option_type == 'c':
-#         delta = norm.cdf(d1)  # Call 的 Delta
-#     elif option_type == 'p':
-#         delta = norm.cdf(d1) - 1  # Put 的 Delta
-#     else:
-#         raise ValueError("Invalid option type. Must be 'call' or 'put'.")
+    # 买方美元价值
+    # print('DEBUG - bid_price = ', option.bid_price, 'current_price = ', current_price, 'strike = ', option.strike, 'size', option.bid_size)
+    bid_price = 0 if option.bid_price == None else option.bid_price * current_price
+    # 卖方美元价值
+    # print('DEBUG - ask_price = ', option.ask_price, 'current_price = ', current_price, 'strike = ', option.strike, 'size', option.ask_size)
+    ask_price = 0 if option.ask_price == None else option.ask_price * current_price
+    # 计算买卖差值
+    ask_bid_diff = ask_price - bid_price
+    # 买方溢价率
+    bid_premium = 0 if bid_price == 0 else ask_bid_diff / bid_price
+    # 卖方折价率
+    ask_premium = 0 if ask_price == 0 else ask_bid_diff / ask_price
 
-#     return delta
+    # 将期权的 symbol = ETH/USD:ETH-241108-2650-C 转换成时间戳。
+    # 提取 241108，分割 - ，再提取 2650，再提取 C。
+    execute_date = option.symbol.split('-')[1]
+    execute_year = int(execute_date[:2])
+    execute_month = int(execute_date[2:4])
+    execute_day = int(execute_date[4:6])
+    expiration_time = f'20{execute_year}-{execute_month}-{execute_day} 18:00:00'
+    execute_flag = str(option.symbol.split('-')[3]).lower()
+    
+    excute_strike = float(option.symbol.split('-')[2])
+
+    # print('expiration_time:', expiration_time)
+    # expiration_date = 2024-11-8 18:00:00
+    # 将字符串转换为时间戳
+    time_array = time.strptime(expiration_time, "%Y-%m-%d %H:%M:%S")
+    timestamp = int(time.mktime(time_array))
+    current_time =int(time.time())
+    # 计算剩余天数
+    day_left = (timestamp-current_time)/(3600*24)
+    # print("Current time", current_time , "Timestamp:", timestamp, '剩余时间：（天）', day_left)
+
+    S = current_price  # 当前标的资产的价格 (BTC/USD)
+    P = bid_price  # 期权的市场价格 (BTC)
+    K = excute_strike  # 期权行权价格
+    T = (day_left/365)  # 距离到期时间 (年)
+    r = 0.045  # 无风险利率
+    flag = execute_flag   # 看涨期权 (c = call, p = put)
+
+    # print({ 'bid_price':bid_price, 'ask_price': ask_price, 'S': S,'P': P,'K': K,'T': T,'r': r,'flag': flag, 'current_price': current_price})
+
+    print(f's_iv = P: {P}, S: {S}, K: {K}, T: {T}, r: {r}, flag: {flag}')
+    s_iv = implied_volatility(P, S, K, T, r, flag)
+
+    P = ask_price
+    print(f'b_iv = P: {P}, S: {S}, K: {K}, T: {T}, r: {r}, flag: {flag}')
+    b_iv = implied_volatility(P, S, K, T, r, flag)
+
+    _delta = delta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
+    _gamma = gamma(s=S,k=K,r=r,T=T,sigma=s_iv)
+    _theta = theta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
+
+    # 计算内在价值和时间价值
+    intrinsic_value = max(S - K, 0)
+    # 为什么使用 bid_price 而不是 ask_price 来计算时间价值？
+    # 因为我们是期权的卖方，我们的收益是 bid_price
+    time_value = bid_price - intrinsic_value
+
+    if flag == 'p':
+        intrinsic_value = max(K - S, 0)
+        time_value = bid_price - intrinsic_value
+
+
+    return EResultIvData(
+        symbol=option.symbol,
+        current_price=current_price,
+        bid_price=bid_price,
+        ask_price=ask_price,
+        ask_bid_diff=ask_bid_diff,
+        bid_premium=bid_premium,
+        ask_premium=ask_premium,
+        execute_time=expiration_time,
+        execute_flag=execute_flag,
+        excute_strike=excute_strike,
+        day_left=day_left,
+        current_time=current_time,
+        execute_date=execute_date,
+        s_iv=s_iv,
+        b_iv=b_iv,
+        delta=_delta,
+        gamma=_gamma,
+        theta=_theta,
+        intrinsic_value=intrinsic_value,
+        time_value=time_value
+    )
+
 
 async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     print('DEBUG - extractIvData = ', symbol, 'current_price = ', current_price)
@@ -209,6 +292,17 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     _gamma = gamma(s=S,k=K,r=r,T=T,sigma=s_iv)
     _theta = theta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
 
+    # 计算内在价值和时间价值,需要区分看涨和看跌期权
+    # 这里的 intrinsic_value 指的是看涨期权的内在价值
+    intrinsic_value = max(S - K, 0)
+    # 为什么使用 bid_price 而不是 ask_price 来计算时间价值？
+    # 因为我们是期权的卖方，我们的收益是 bid_price
+    time_value = bid_price - intrinsic_value
+
+    if flag == 'p':
+        intrinsic_value = max(K - S, 0)
+        time_value = bid_price - intrinsic_value
+
 
     return EResultIvData(
         symbol=symbol,
@@ -223,10 +317,13 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
         excute_strike=excute_strike,
         day_left=day_left,
         current_time=current_time,
+        execute_date=execute_date,
         s_iv=s_iv,
         b_iv=b_iv,
         delta=_delta,
         gamma=_gamma,
-        theta=_theta
+        theta=_theta,
+        intrinsic_value=intrinsic_value,
+        time_value=time_value
     )
     

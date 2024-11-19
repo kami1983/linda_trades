@@ -1,11 +1,12 @@
 import asyncio
 import os
 from urllib import request
-from db_operation import getRecentOptionChainByTimestamp
+from db_operation import getOptionChainByExpirationDate, getRecentOptionChainByTimestamp
 # from flask import Flask, jsonify, request
 from exchange import createExchangeConn
+from fetch_options import fetchOptionChain
 from fetch_ticker import fetchTicker
-from iv import extractIvData
+from iv import calculateIvData, extractIvData
 from quart import Quart, jsonify, request
 # from flask_cors import CORS
 from quart_cors import cors
@@ -157,6 +158,71 @@ async def get_iv_data():
         if len(res_data) <= int(sidx):
             return jsonify([])
         return jsonify(res_data[sidx:])
+    
+# 获取某个行权日的T型期权报价列表
+@app.route('/api/t_option_chain')
+async def get_t_option_chain():
+    '''
+    获取某个行权日的T型期权报价列表
+    '''
+    expiration_date = int(request.args.get('edate'))
+    symbol = str(request.args.get('symbol')).upper()
+    price = float(request.args.get('price'))
+    # results = await getOptionChainByExpirationDate(expiration_date=expiration_date, code=symbol)
+    # # print('results:', results)
+    # return jsonify(results)
+    try:
+        exchange = createExchangeConn()
+        result = await fetchOptionChain(exchange, symbol)
+        result = [item for item in result if item.expiration_date == expiration_date]
+        # 对 result 按照 strike 进行排序
+        result = sorted(result, key=lambda x: x.strike)
+        warp_result = []
+        # 遍历 result 的数据，计算其 IVdata （EResultIvData）
+        for item in result:
+            iv_data = None
+            if(item.ask_price == 0 or 
+               item.bid_price == 0 or 
+               item.ask_price == None or 
+               item.bid_price == None or 
+               item.ask_size == 0 or 
+               item.bid_size == 0):
+                iv_data = None
+            else:
+                try:
+                    iv_data = calculateIvData(option=item, current_price=price)
+                except Exception as e:
+                    iv_data = None
+                    print('Error:', e)
+
+            print('item:', item)
+            warp_result.append([item, iv_data])
+
+        return jsonify({"status": True, "data": warp_result})
+
+    except Exception as e:
+        return jsonify({"status": False, "message": e.args[0]})
+    finally:
+        await exchange.close()
+
+@app.route('/api/extract_iv_data')
+async def get_extract_iv_data():
+    '''
+    提取某个期权的隐含波动率数据
+    '''
+    try:
+        exchange = createExchangeConn()
+        symbol = str(request.args.get('symbol')).upper()
+        current_price = float(request.args.get('current_price'))
+        results = await extractIvData(exchange, symbol=symbol, current_price=current_price)
+        return jsonify({"status": True, "data": results})
+    except Exception as e:
+        return jsonify({"status": False, "message": e.args[0]})
+    finally:
+        await exchange.close()
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=APP_PORT, debug=True)
+
+

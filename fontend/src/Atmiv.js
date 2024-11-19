@@ -4,12 +4,7 @@ import LineChart from './components/LineChart';
 import React, { useEffect, useState } from 'react';
 
 function AtmIV() {
-    const [data, setData] = useState(null);
-
-    const [labels, setLabels] = useState([]);
-    const [dataBivPoints, setDataBivPoints] = useState([]);
-    const [dataSivPoints, setDataSivPoints] = useState([]);
-    const [optionSymbol, setOptionSymbol] = useState('');
+    
     const [paramData, setParamData] = useState({symbol: '', price: 0, rate: 0});
     const [atmIvList, setAtmIvList] = useState([]);
 
@@ -21,23 +16,6 @@ function AtmIV() {
 
     const apiHosts = process.env.REACT_APP_API_HOSTS
 
-    const timeToStr = (time) => {
-      const date = new Date(time*1000);
-      const year = date.getFullYear().toString().slice(-2);
-      const month = date.getMonth() + 1;
-      const day = date.getDate();
-      const hours = date.getHours();
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      const formattedDate = `${year}/${month}/${day} ${hours}:${minutes}`;
-      return formattedDate;
-    }
-
-    const extractChartData = (data) => {
-      const _labels = data.map(item => `${timeToStr(item[0])}#${item[1]}`);
-      const _dataBivPoints = data.map(item => item[3]);
-      const _dataSivPoints = data.map(item => item[4]);
-      return [_labels, _dataBivPoints, _dataSivPoints];
-    }
 
     useEffect(() => {
 
@@ -61,7 +39,6 @@ function AtmIV() {
       // 定义一个异步函数
       async function fetchData() {
 
-      
         // 每5秒更新一次数据
         const interval = setInterval(async () => {
           try{
@@ -123,18 +100,20 @@ function AtmIV() {
             <th>strike</th>
             <th>day_left</th>
             <th>delta</th>
+            <th>intrinsic_value</th>
+            <th>time_value</th>
             <th>gamma</th>
             <th>theta</th>
             <th>s_iv</th>
             <th>b_iv</th>
             <th>ask_bid_diff</th>
-            <th>ask_premium</th>
-            <th>bid_premium</th>
+            
             <th>ask_price</th>
             <th>ask_yield</th>
             <th>bid_price</th>
             <th>bid_yield</th>
-            <th>execute_flag</th>
+            <th>ask_premium</th>
+            <th>bid_premium</th>
             <th>execute_time</th>
           </tr>
         </thead>
@@ -144,22 +123,24 @@ function AtmIV() {
               {atmIv.status ? (
                 <>
                   <tr>
-                    <td>{atmIv.data.call_iv.symbol}</td>
+                    <td><a href={`/optionlist?edate=${atmIv.data.call_iv.execute_date}&symbol=${paramData.symbol}&price=${paramData.price}`}>{atmIv.data.call_iv.symbol}</a></td>
                     <td>{atmIv.data.call_iv.excute_strike}</td>
                     <td>{parseFloat(atmIv.data.call_iv.day_left).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.intrinsic_value).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.time_value).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.gamma).toFixed(6)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.theta).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.s_iv).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.b_iv).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.ask_bid_diff).toFixed(2)}</td>
-                    <td>{parseFloat(atmIv.data.call_iv.ask_premium).toFixed(2)}</td>
-                    <td>{parseFloat(atmIv.data.call_iv.bid_premium).toFixed(2)}</td>
+                    
                     <td>{parseFloat(atmIv.data.call_iv.ask_price).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.ask_price/paramData.price/parseFloat(atmIv.data.call_iv.day_left)*365*100).toFixed(2)} %</td>
                     <td>{parseFloat(atmIv.data.call_iv.bid_price).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.bid_price/paramData.price/parseFloat(atmIv.data.call_iv.day_left)*365*100).toFixed(2)} %</td>
-                    <td>{atmIv.data.call_iv.execute_flag}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.ask_premium).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.call_iv.bid_premium).toFixed(2)}</td>
                     <td>{atmIv.data.call_iv.execute_time}</td>
                   </tr>
                   <tr>
@@ -167,18 +148,20 @@ function AtmIV() {
                     <td>{parseFloat(atmIv.data.put_iv.excute_strike).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.day_left).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.delta).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.intrinsic_value).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.time_value).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.gamma).toFixed(6)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.theta).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.s_iv).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.b_iv).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.ask_bid_diff).toFixed(2)}</td>
-                    <td>{parseFloat(atmIv.data.put_iv.ask_premium).toFixed(2)}</td>
-                    <td>{parseFloat(atmIv.data.put_iv.bid_premium).toFixed(2)}</td>
+                    
                     <td>{parseFloat(atmIv.data.put_iv.ask_price).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.ask_price/paramData.price/parseFloat(atmIv.data.put_iv.day_left)*365*100).toFixed(2)} %</td>
                     <td>{parseFloat(atmIv.data.put_iv.bid_price).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.put_iv.bid_price/paramData.price/parseFloat(atmIv.data.put_iv.day_left)*365*100).toFixed(2)} %</td>
-                    <td>{atmIv.data.put_iv.execute_flag}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.ask_premium).toFixed(2)}</td>
+                    <td>{parseFloat(atmIv.data.put_iv.bid_premium).toFixed(2)}</td>
                     <td>{atmIv.data.put_iv.execute_time}</td>
                   </tr>
                 </>

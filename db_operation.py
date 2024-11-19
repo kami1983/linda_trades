@@ -19,15 +19,6 @@ mysql_dbname = os.getenv('MYSQL_DBNAME')
 
 
 async def getDbConn():
-
-    print('mysql_host:', {
-        mysql_user,
-        mysql_password,
-        mysql_host,
-        mysql_port,
-        mysql_dbname
-    })
-
     connection = await aiomysql.connect(
         host=mysql_host,   
         port=mysql_port,
@@ -104,53 +95,6 @@ async def updateDbSwapPrice(data: EResultSwapPrice):
     await connection.commit()
     connection.close()
 
-# async def updateDbBatchOptionChain(datalist: List[EResultOptionChain]):
-#     """
-#     批量更新数据库中的 option chain 数据
-#     @param datalist: EResultOptionChain[]
-#     """
-#     # 获取数据库连接
-#     connection = await getDbConn()
-    
-#     async with connection.cursor() as cursor:
-#         # 构建批量插入或更新的 SQL 查询
-#         insert_query = """
-#         INSERT INTO option_chain (
-#             symbol, timestamp, year, month, day, strike, option_type, bid_price, 
-#             bid_size, ask_price, ask_size, last_price, last_size, type, status
-#         ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) AS new_values
-#         ON DUPLICATE KEY UPDATE
-#             timestamp = new_values.timestamp,
-#             year =new_values.year,
-#             month = new_values.month,
-#             day = new_values.day,
-#             strike = new_values.strike,
-#             option_type = new_values.option_type,
-#             bid_price = new_values.bid_price,
-#             bid_size = new_values.bid_size,
-#             ask_price = new_values.ask_price,
-#             ask_size =new_values.ask_size,
-#             last_price = new_values.last_price,
-#             last_size = new_values.last_size,
-#             type = new_values.type,
-#             status = new_values.status
-#         """
-        
-#         # 将数据转换为元组格式的列表
-#         values = [
-#             (
-#                 item.symbol, item.timestamp, item.year, item.month, item.day,
-#                 item.strike, item.option_type, item.bid_price, item.bid_size,
-#                 item.ask_price, item.ask_size, item.last_price, item.last_size,
-#                 item.type, item.status
-#             ) for item in datalist
-#         ]
-        
-#         # 执行批量插入或更新
-#         await cursor.executemany(insert_query, values)
-        
-#         # 提交更改
-#         await connection.commit()
 
 
 async def updateDbBatchOptionChain(datalist: List[EResultOptionChain], batch_size: int = 50):
@@ -274,4 +218,44 @@ async def getRecentOptionChainByTimestamp(timestamp: int, code: str, offset_day=
         ]
     
     return {'expiration_date': expiration_date, 'data': res_list}
+
+# 给定某个期权的行权日比如 241129 返回其T型数据
+async def getOptionChainByExpirationDate(expiration_date: str, code: str) -> List[EResultOptionChain]:
+    """
+    给定某个期权的行权日比如 241129 返回其T型数据
+    @param expiration_date: 期权的行权日
+    @return: EResultOptionChain[]
+    """
+    type = 1 if code == 'BTC' else 2 if code == 'ETH' else 0
+    if type == 0:
+        raise Exception('Invalid code, code must be BTC or ETH')
+    
+    connection = await getDbConn()
+    async with connection.cursor() as cursor:
+        # 注意需要按照行权价格进行排序 strike
+        await cursor.execute(
+            "SELECT symbol, timestamp, year, month, day, expiration_date, strike, option_type, bid_price, bid_size, ask_price, ask_size, last_price, last_size, type, status FROM option_chain WHERE expiration_date = %s AND type = %s ORDER BY strike ASC", (expiration_date, type)
+        )
+        result = await cursor.fetchall()
+        connection.close()
+        return [
+            EResultOptionChain(
+                symbol=item[0],
+                timestamp=item[1],
+                year=item[2],
+                month=item[3],
+                day=item[4],
+                expiration_date=item[5],
+                strike=item[6],
+                option_type=item[7],
+                bid_price=item[8],
+                bid_size=item[9],
+                ask_price=item[10],
+                ask_size=item[11],
+                last_price=item[12],
+                last_size=item[13],
+                type=item[14],
+                status=item[15]
+            ) for item in result
+        ]
     

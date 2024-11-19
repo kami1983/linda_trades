@@ -1,0 +1,10 @@
+
+/* In your CSS file or within a <style> block */
+.table-row {
+  transition: background-color 0.3s ease; /* Add transition for smooth effect */
+}
+
+.table-row:hover {
+  background-color: lightgreen; /* Change to your desired hover color */
+}
+  

@@ -49,8 +49,11 @@ class EResultIvData:
     excute_strike: float
     day_left: float
     current_time: int
+    execute_date: str
     s_iv: float
     b_iv: float
     delta: float
     gamma: float
     theta: float
+    intrinsic_value: float
+    time_value: float
