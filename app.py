@@ -221,6 +221,29 @@ async def get_extract_iv_data():
     finally:
         await exchange.close()
 
+# 获取我的期权订单
+@app.route('/api/my_option_orders')
+async def get_my_option_orders():
+    '''
+    获取我的期权订单
+    '''
+    try:
+        exchange = createExchangeConn()
+        # async def fetch_open_orders(self, symbol: Str = None, since: Int = None, limit: Int = None, params={}) -> List[Order]:
+        # markets =await exchange.load_markets()
+        # print('markets:', markets) # 打印全部的市场信息，symbol='BTC/USD:BTC-241129'
+        open_orders = await exchange.fetch_open_orders()
+        # orders1 = await exchange.fetch_my_trades()
+        # orders2 = await exchange.fetch_closed_orders()
+        positions = await exchange.fetch_positions()
+        # orders = await exchange.fetch_orders(symbol='BTC/USD:BTC')
+        # print('orders:', [orders1, orders2])
+        return jsonify({"status": True, "positions": positions, "open_orders": open_orders})
+    except Exception as e:
+        return jsonify({"status": False, "message": e.args[0]})
+    finally:
+        await exchange.close()
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=APP_PORT, debug=True)

@@ -123,7 +123,7 @@ function AtmIV() {
               {atmIv.status ? (
                 <>
                   <tr>
-                    <td><a href={`/optionlist?edate=${atmIv.data.call_iv.execute_date}&symbol=${paramData.symbol}&price=${paramData.price}`}>{atmIv.data.call_iv.symbol}</a></td>
+                    <td><a href={`/optionlist?edate=${atmIv.data.call_iv.execute_date}&symbol=${paramData.symbol}&price=${paramData.price}&dayleft=${atmIv.data.call_iv.day_left}`}>{atmIv.data.call_iv.symbol}</a></td>
                     <td>{atmIv.data.call_iv.excute_strike}</td>
                     <td>{parseFloat(atmIv.data.call_iv.day_left).toFixed(2)}</td>
                     <td>{parseFloat(atmIv.data.call_iv.delta).toFixed(2)}</td>

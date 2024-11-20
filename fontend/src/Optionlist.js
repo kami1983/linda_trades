@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 
 function OptionList() {
 
-    const [paramData, setParamData] = useState({symbol: '', edate: 0, price: 0});
+    const [paramData, setParamData] = useState({symbol: '', edate: 0, price: 0, dayleft: 0});
     const [tOptionData, setTOptionData] = useState([]);
 
     const apiHosts = process.env.REACT_APP_API_HOSTS
@@ -30,8 +30,9 @@ function OptionList() {
       const param_symbol = params.get('symbol');
       const param_edate = parseFloat(params.get('edate'));
       const param_price = parseFloat(params.get('price'));
+      const param_dayleft = parseFloat(params.get('dayleft'));
 
-      setParamData({symbol: param_symbol, edate: param_edate, price: param_price});
+      setParamData({symbol: param_symbol, edate: param_edate, price: param_price, dayleft: param_dayleft});
 
       const _fetchAtmIv = () => {
         callFetchTOptionChain(param_symbol, param_edate, param_price).then((res) => {
@@ -123,8 +124,7 @@ function OptionList() {
             <th>theta</th>
             <th>内在价值</th>
             <th>时间价值</th>
-            <th>ask_yield</th>
-            <th>bid_yield</th>
+            <th>时间年华</th>
           </tr>
         </thead>
         <tbody>
@@ -155,12 +155,11 @@ function OptionList() {
                         <td>{parseFloat(option[1].theta).toFixed(2)}</td>
                         <td sytle={{color: 'green'}}>[{parseFloat(option[1].intrinsic_value).toFixed(2)}]</td>
                         <td style={{color: 'blue'}}>{parseFloat(option[1].time_value).toFixed(2)}</td>
-                        <td>{parseFloat(option[1].ask_price/paramData.price/parseFloat(option[1].day_left)*365*100).toFixed(2)} %</td>
-                        <td>{parseFloat(option[1].bid_price/paramData.price/parseFloat(option[1].day_left)*365*100).toFixed(2)} %</td>
+                        <td>{parseFloat(option[1].time_value/paramData.price/parseFloat(option[1].day_left)*365*100).toFixed(2)} %</td>
                       </>
                     ) : (
                       <>
-                        <td colSpan={9}>No data</td>
+                        <td colSpan={8}>No data</td>
                       </>
                     )}  
                   </tr>

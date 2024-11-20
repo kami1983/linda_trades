@@ -14,6 +14,6 @@ def createExchangeConn():
     exchange = ccxt.okx({
         'apiKey': key,
         'secret': secret,
-        'password': password,
+        'password': password
     })
     return exchange
