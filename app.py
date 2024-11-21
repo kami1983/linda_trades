@@ -4,7 +4,7 @@ from urllib import request
 from db_operation import getOptionChainByExpirationDate, getRecentOptionChainByTimestamp
 # from flask import Flask, jsonify, request
 from exchange import createExchangeConn
-from fetch_options import fetchOptionChain
+from fetch_options import fetchOpenOrders, fetchOptionChain, fetchPostions
 from fetch_ticker import fetchTicker
 from iv import calculateIvData, extractIvData
 from quart import Quart, jsonify, request
@@ -26,6 +26,23 @@ def get_data():
     return jsonify({"message": "Hello from Flask!"})
 
 
+# 这是一个非常综合的方法，会尝试向交易所请求多个数据，两张期权详细数据，一个当前币种的数据。
+@app.route('/api/postion_infos')
+async def get_postion_infos():
+    try:
+        exchange = createExchangeConn()
+        # 获取要关闭的期权数据
+        finalopt = str(request.args.get('finalopt')).upper()
+        task_will_final_option = fetchOptionChain(exchange, finalopt)
+        # 获取当前币种的价格
+        symbol = str(request.args.get('symbol')).upper()
+        task_price = asyncio.create_task(fetchTicker(exchange, f'{symbol}-USD-SWAP'))
+        open_orders, positions, price = await asyncio.gather(task_open_orders, task_positions, task_price)
+
+    except Exception as e:
+        return jsonify({"status": False, "message": e.args[0]})
+    finally:
+        await exchange.close()
 
 
 @app.route('/api/current_price')
@@ -232,15 +249,15 @@ async def get_my_option_orders():
         # async def fetch_open_orders(self, symbol: Str = None, since: Int = None, limit: Int = None, params={}) -> List[Order]:
         # markets =await exchange.load_markets()
         # print('markets:', markets) # 打印全部的市场信息，symbol='BTC/USD:BTC-241129'
-        open_orders = await exchange.fetch_open_orders()
+        open_orders = await fetchOpenOrders(exchange)
         # orders1 = await exchange.fetch_my_trades()
         # orders2 = await exchange.fetch_closed_orders()
-        positions = await exchange.fetch_positions()
+        positions = await fetchPostions(exchange)
         # orders = await exchange.fetch_orders(symbol='BTC/USD:BTC')
         # print('orders:', [orders1, orders2])
-        return jsonify({"status": True, "positions": positions, "open_orders": open_orders})
+        return jsonify({"status": True, "open_orders": open_orders, "positions": positions})
     except Exception as e:
-        return jsonify({"status": False, "message": e.args[0]})
+        return jsonify({"status": False, "Error message": e.args[0]})
     finally:
         await exchange.close()
 

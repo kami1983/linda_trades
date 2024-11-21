@@ -8,6 +8,7 @@ import IVHistory from './Ivhistroy';
 import AtmIV from './Atmiv';
 import AtmPrice from './Atmprice';
 import OptionList from './Optionlist';
+import OptionExec from './Optionexec';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -18,6 +19,7 @@ root.render(
         <Route path="/atmprice" element={<AtmPrice />} />
         <Route path="/atmiv" element={<AtmIV />} />
         <Route path="/optionlist" element={<OptionList />} />
+        <Route path='/optionexec' element={<OptionExec />} />
       </Routes>
   </Router>
 );

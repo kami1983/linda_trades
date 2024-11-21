@@ -15,47 +15,6 @@ async def fetchTicker(exchange, symbol) -> Optional[EResultSwapPrice]:
         # 获取期权的市场标记价格（可能间接反映波动率）
         # symbol = 'BTC/USD:BTC-241026-68250-C'
         ticker = await exchange.fetch_ticker(symbol)
-        # {
-        #     'symbol': 'BTC/USD:BTC',
-        #     'timestamp': 1729909713806,
-        #     'datetime': '2024-10-26T02:28:33.806Z',
-        #     'high': 68744.0,
-        #     'low': 65500.0,
-        #     'bid': 66650.0,
-        #     'bidVolume': 1173.0,
-        #     'ask': 66650.1,
-        #     'askVolume': 821.0,
-        #     'vwap': None,
-        #     'open': 67896.3,
-        #     'close': 66650.3,
-        #     'last': 66650.3,
-        #     'previousClose': None,
-        #     'change': -1246.0,
-        #     'percentage': -1.8351515472860818,
-        #     'average': 67273.3,
-        #     'baseVolume': 14342238.0,
-        #     'quoteVolume': None,
-        #     'markPrice': None,
-        #     'indexPrice': None,
-        #     'info': {
-        #         'instType': 'SWAP',
-        #         'instId': 'BTC-USD-SWAP',
-        #         'last': '66650.3',
-        #         'lastSz': '1',
-        #         'askPx': '66650.1',
-        #         'askSz': '821',
-        #         'bidPx': '66650',
-        #         'bidSz': '1173',
-        #         'open24h': '67896.3',
-        #         'high24h': '68744',
-        #         'low24h': '65500',
-        #         'volCcy24h': '21357.4335',
-        #         'vol24h': '14342238',
-        #         'ts': '1729909713806',
-        #         'sodUtc0': '66584',
-        #         'sodUtc8': '67650.1'
-        #     }
-        # }
         
         result = EResultSwapPrice(
             symbol=ticker['symbol'],

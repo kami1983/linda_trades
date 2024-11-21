@@ -9,6 +9,8 @@ function OptionList() {
 
     const [paramData, setParamData] = useState({symbol: '', edate: 0, price: 0, dayleft: 0});
     const [tOptionData, setTOptionData] = useState([]);
+    const [chooseData, setChooseData] = useState([]);
+    const [chooseLabel, setChooseLabel] = useState('all');
 
     const apiHosts = process.env.REACT_APP_API_HOSTS
 
@@ -21,6 +23,24 @@ function OptionList() {
       const minutes = date.getMinutes().toString().padStart(2, '0');
       const formattedDate = `${year}/${month}/${day} ${hours}:${minutes}`;
       return formattedDate;
+    }
+
+    // 单选按钮点击后出发的事件
+    const handleChooseLabel = (e) => {
+      setChooseLabel(e.target.value);
+      refreshChooseData(e.target.value, tOptionData);
+    }
+
+    const refreshChooseData = (label, optionData) => {
+      if(label === 'call'){
+        const data = optionData.filter(item => item[0].option_type === 'C');
+        setChooseData(data);
+      }else if(label === 'put'){
+        const data = optionData.filter(item => item[0].option_type === 'P');
+        setChooseData(data);
+      }else {
+        setChooseData(optionData);
+      }
     }
 
 
@@ -48,6 +68,7 @@ function OptionList() {
           //   setTOptionData(data);
           // }
           setTOptionData(res.data);
+          refreshChooseData(chooseLabel, res.data);
         });
       }
       
@@ -67,7 +88,7 @@ function OptionList() {
       _fetchAtmIv();
       // 调用异步函数
       fetchData();
-
+      
     }, []); // labels 改变时重置定时器
 
     // /api/t_option_chain
@@ -85,27 +106,20 @@ function OptionList() {
       });
     }
 
-    // http://localhost:5001/api/extract_iv_data?current_price=3138&symbol=ETH%2FUSD%3AETH-241227-3100-P
-    const callFetchIvData = (symbol, current_price) => {
-      return new Promise((resolve, reject) => {
-        fetch(`${apiHosts}/api/extract_iv_data?symbol=${symbol}&current_price=${current_price}`)
-          .then(response => response.json())
-          .then((data) => {
-            if (data) {
-              resolve(data);
-            } else {
-              reject('error');
-            }
-          });
-      });
-    }
-
-
     return (
       <div>
       <h1>Iv infos</h1>
-      <h3>symbol: {paramData.symbol}, price: {paramData.price}, rate: {paramData.rate} <a href="/atmprice">Back to atm price</a></h3>
-    
+      <h3>symbol: {paramData.symbol}, price: {paramData.price}, dayleft: {parseFloat(paramData.dayleft).toFixed(2)} <a href="/atmprice">Back to atm price</a></h3>
+      <div>
+        {/* 建立一组单选按钮（radio），选项是 all、call、put 用于提供筛选数据列表的选项，点击后触发 handleChooseLabel */}
+        <input type="radio" id="all" name="flag" value="all" defaultChecked onClick={handleChooseLabel} />
+        <label htmlFor="all">All</label>
+        <input type="radio" id="call" name="flag" value="call" onClick={handleChooseLabel} />
+        <label htmlFor="call">Call</label>
+        <input type="radio" id="put" name="flag" value="put" onClick={handleChooseLabel} />
+        <label htmlFor="put">Put</label>
+        
+      </div>
       
       <table border="1">
         <thead>
@@ -128,7 +142,7 @@ function OptionList() {
           </tr>
         </thead>
         <tbody>
-          {tOptionData.map((option, idx) => (
+          {chooseData.map((option, idx) => (
             <React.Fragment key={idx}>
               {option[0] ? (
                 <>

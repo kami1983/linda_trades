@@ -1,7 +1,7 @@
 import asyncio
 from typing import List, Optional
 from db_operation import updateDbBatchOptionChain
-from db_struct import EResultOptionChain
+from db_struct import EResultOpenOrder, EResultOptionChain, EResultOptionPosition
 from log import recordLog
 
 # '''
@@ -97,4 +97,217 @@ async def recordOptionChain(exchange, symbol) -> bool:
     
 
 
+
+# order_item = 
+#     {
+#         "amount": 1,
+#         "average": null,
+#         "clientOrderId": null,
+#         "cost": 0,
+#         "datetime": "2024-11-20T12:55:56.142Z",
+#         "fee": {
+#             "cost": 0,
+#             "currency": "BTC"
+#         },
+#         "fees": [
+#             {
+#                 "cost": 0,
+#                 "currency": "BTC"
+#             }
+#         ],
+#         "filled": 0,
+#         "id": "2000010447760261120",
+#         "lastTradeTimestamp": null,
+#         "lastUpdateTimestamp": 1732107356142,
+#         "postOnly": null,
+#         "price": 0.1,
+#         "reduceOnly": false,
+#         "remaining": 1,
+#         "side": "sell",
+#         "status": "open",
+#         "stopLossPrice": null,
+#         "stopPrice": null,
+#         "symbol": "BTC/USD:BTC-241129-100000-C",
+#         "takeProfitPrice": null,
+#         "timeInForce": null,
+#         "timestamp": 1732107356142,
+#         "trades": [],
+#         "triggerPrice": null,
+#         "type": "limit"
+#     }
+
+
+# @dataclass
+# class EResultOpenOrder:
+#     symbol: str
+#     timestamp: int
+#     datetime: str
+#     amount: int
+#     average: Optional[float] = None
+#     clientOrderId: Optional[str] = None
+#     cost: float
+#     fee: dict
+#     fees: list
+#     filled: int
+#     id: str
+#     lastTradeTimestamp: Optional[int] = None
+#     lastUpdateTimestamp: int
+#     postOnly: Optional[bool] = None
+#     price: float
+#     reduceOnly: bool
+#     remaining: int
+#     side: str
+#     status: str
+#     stopLossPrice: Optional[float] = None
+#     stopPrice: Optional[float] = None
+#     takeProfitPrice: Optional[float] = None
+#     timeInForce: Optional[str] = None
+#     trades: list
+#     triggerPrice: Optional[float] = None
+#     type: str
+async def fetchOpenOrders(exchange) -> List[EResultOptionPosition]:
+    '''
+    获取期权持仓数据
+    @param exchange: 交易所对象
+    @return: List[EResultOptionPosition]
+    '''
+    open_orders = await exchange.fetch_open_orders()
+    res = []
+    for order in open_orders:
+        res.append(EResultOpenOrder(
+            symbol=order['symbol'],
+            timestamp=order['timestamp'],
+            datetime=order['datetime'],
+            amount=order['amount'],
+            average=order['average'],
+            clientOrderId=order['clientOrderId'],
+            cost=order['cost'],
+            fee=order['fee'],
+            fees=order['fees'],
+            filled=order['filled'],
+            id=order['id'],
+            lastTradeTimestamp=order['lastTradeTimestamp'],
+            lastUpdateTimestamp=order['lastUpdateTimestamp'],
+            postOnly=order['postOnly'],
+            price=order['price'],
+            reduceOnly=order['reduceOnly'],
+            remaining=order['remaining'],
+            side=order['side'],
+            status=order['status'],
+            stopLossPrice=order['stopLossPrice'],
+            stopPrice=order['stopPrice'],
+            takeProfitPrice=order['takeProfitPrice'],
+            timeInForce=order['timeInForce'],
+            trades=order['trades'],
+            triggerPrice=order['triggerPrice'],
+            type=order['type'],
+        ))
+
+    if(len(res) != len(open_orders)):
+        raise Exception('Error: fetchOpenOrders data not match with original data') 
+    return res
+
+
+# postion_example =  {
+#         "collateral": 0.0067589397784254,
+#         "contractSize": 1,
+#         "contracts": 1,
+#         "datetime": "2024-11-16T08:09:36.221Z",
+#         "entryPrice": 0.039,
+#         "hedged": false,
+#         "id": "1987837573570101248",
+#         
+#         "initialMargin": null,
+#         "initialMarginPercentage": null,
+#         "lastPrice": null,
+#         "lastUpdateTimestamp": 1732107310933,
+#         "leverage": null,
+#         "liquidationPrice": null,
+#         "maintenanceMargin": 0.0008170502193306,
+#         "maintenanceMarginPercentage": 0,
+#         "marginMode": "isolated",
+#         "marginRatio": 0.1208,
+#         "markPrice": 0.0517050219330564,
+#         "notional": 19.340481110224097,
+#         "percentage": -32.57697931552918,
+#         "realizedPnl": -0.000003,
+#         "side": "short",
+#         "stopLossPrice": null,
+#         "symbol": "BTC/USD:BTC-241129-92000-C",
+#         "takeProfitPrice": null,
+#         "timestamp": 1731744576221,
+#         "unrealizedPnl": -0.0001270502193306
+#     }
+
+# @dataclass
+# class EResultOptionPosition:
+#     symbol: str
+#     timestamp: int
+#     datetime: str
+#     side: str
+#     collateral: float
+#     contractSize: int
+#     contracts: int
+#     entryPrice: float
+#     hedged: bool
+#     id: str
+#     initialMargin: Optional[float] = None
+#     initialMarginPercentage: Optional[float] = None
+#     lastPrice: Optional[float] = None
+#     lastUpdateTimestamp: int
+#     leverage: Optional[float] = None
+#     liquidationPrice: Optional[float] = None
+#     maintenanceMargin: float
+#     maintenanceMarginPercentage: float
+#     marginMode: str
+#     marginRatio: float
+#     markPrice: float
+#     notional: float
+#     percentage: float
+#     realizedPnl: float
+#     stopLossPrice: Optional[float] = None
+#     takeProfitPrice: Optional[float] = None
+#     unrealizedPnl: float
+async def fetchPostions (exchange) -> List[EResultOpenOrder]:
+    '''
+    获取期权的开仓订单
+    @param exchange: 交易所对象
+    @return: List[EResultOpenOrder]
+    '''
+    postions = await exchange.fetch_positions()
+    res = []
+    for order in postions:
+        res.append(EResultOptionPosition(
+            symbol=order['symbol'],
+            timestamp=order['timestamp'],
+            datetime=order['datetime'],
+            side=order['side'],
+            collateral=order['collateral'],
+            contractSize=order['contractSize'],
+            contracts=order['contracts'],
+            entryPrice=order['entryPrice'],
+            hedged=order['hedged'],
+            id=order['id'],
+            initialMargin=order['initialMargin'],
+            initialMarginPercentage=order['initialMarginPercentage'],
+            lastPrice=order['lastPrice'],
+            lastUpdateTimestamp=order['lastUpdateTimestamp'],
+            leverage=order['leverage'],
+            liquidationPrice=order['liquidationPrice'],
+            maintenanceMargin=order['maintenanceMargin'],
+            maintenanceMarginPercentage=order['maintenanceMarginPercentage'],
+            marginMode=order['marginMode'],
+            marginRatio=order['marginRatio'],
+            markPrice=order['markPrice'],
+            notional=order['notional'],
+            percentage=order['percentage'],
+            realizedPnl=order['realizedPnl'],
+            stopLossPrice=order['stopLossPrice'],
+            takeProfitPrice=order['takeProfitPrice'],
+            unrealizedPnl=order['unrealizedPnl'],
+        ))
+
+    if(len(res) != len(postions)):
+        raise Exception('Error: fetchPostions data not match with original data') 
     
+    return res

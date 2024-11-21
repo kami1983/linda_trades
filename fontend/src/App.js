@@ -23,6 +23,10 @@ function App() {
         <h3><a href='/atmPrice'>Atm Price</a></h3>
         <h3><a href='/atmiv'>Atm IV</a></h3>
       </div>
+      <div>
+        <h2>Options execute</h2>
+        <h3><a href='/optionexec'>Option Executer</a></h3>
+      </div>
 
       </>
     )
