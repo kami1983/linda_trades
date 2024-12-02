@@ -182,11 +182,11 @@ def calculateIvData(option: EResultOptionChain, current_price) -> EResultIvData:
     intrinsic_value = max(S - K, 0)
     # 为什么使用 bid_price 而不是 ask_price 来计算时间价值？
     # 因为我们是期权的卖方，我们的收益是 bid_price
-    time_value = bid_price - intrinsic_value
+    time_value = bid_usd - intrinsic_value
 
     if flag == 'p':
         intrinsic_value = max(K - S, 0)
-        time_value = bid_price - intrinsic_value
+        time_value = bid_usd - intrinsic_value
 
 
     return EResultIvData(

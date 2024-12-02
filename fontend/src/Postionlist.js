@@ -497,9 +497,6 @@ function PostionList() {
         console.log('handlerToCreatePosition: ', res);
         backCall();
       });
-
-      
-
     }
 
     return (

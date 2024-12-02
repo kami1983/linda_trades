@@ -302,7 +302,7 @@ async def get_t_option_chain():
                     iv_data = None
                     print('Error:', e)
 
-            print('item:', item)
+            # print('item:', item)
             warp_result.append([item, iv_data])
 
         return jsonify({"status": True, "data": warp_result})
