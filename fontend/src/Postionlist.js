@@ -402,15 +402,31 @@ function PostionList() {
     //   });
     // }
         
-    const handleCopyToClipboard = (text) => {
-      navigator.clipboard.writeText(text)
-          .then(() => {
-              alert(`Copied to clipboard: ${text}`);
-          })
-          .catch((err) => {
-              console.error('Failed to copy: ', err);
-          });
-    };
+    // const handleCopyToClipboard = (text) => {
+    //   navigator.clipboard.writeText(text)
+    //       .then(() => {
+    //           alert(`Copied to clipboard: ${text}`);
+    //       })
+    //       .catch((err) => {
+    //           console.error('Failed to copy: ', err);
+    //       });
+    // };
+
+    function handleCopyToClipboard(text) {
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text)
+              .then(() => {
+                  console.log("Text copied to clipboard successfully!");
+              })
+              .catch(err => {
+                  console.error("Failed to copy text to clipboard:", err);
+              });
+      } else {
+          console.warn("Clipboard API is not supported or unavailable.");
+          alert("Your browser does not support clipboard functionality.");
+      }
+    }
+  
 
     /**
      * 
