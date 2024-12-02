@@ -124,16 +124,18 @@ def calculateIvData(option: EResultOptionChain, current_price) -> EResultIvData:
 
     # 买方美元价值
     # print('DEBUG - bid_price = ', option.bid_price, 'current_price = ', current_price, 'strike = ', option.strike, 'size', option.bid_size)
-    bid_price = 0 if option.bid_price == None else option.bid_price * current_price
+    bid_price = 0 if option.bid_price == None else option.bid_price
+    bid_usd = 0 if option.bid_price == None else option.bid_price * current_price
     # 卖方美元价值
     # print('DEBUG - ask_price = ', option.ask_price, 'current_price = ', current_price, 'strike = ', option.strike, 'size', option.ask_size)
-    ask_price = 0 if option.ask_price == None else option.ask_price * current_price
+    ask_price = 0 if option.ask_price == None else option.ask_price
+    ask_usd = 0 if option.ask_price == None else option.ask_price * current_price
     # 计算买卖差值
-    ask_bid_diff = ask_price - bid_price
+    ask_bid_diff = ask_usd - bid_usd
     # 买方溢价率
-    bid_premium = 0 if bid_price == 0 else ask_bid_diff / bid_price
+    bid_premium = 0 if bid_usd == 0 else ask_bid_diff / bid_usd
     # 卖方折价率
-    ask_premium = 0 if ask_price == 0 else ask_bid_diff / ask_price
+    ask_premium = 0 if ask_usd == 0 else ask_bid_diff / ask_usd
 
     # 将期权的 symbol = ETH/USD:ETH-241108-2650-C 转换成时间戳。
     # 提取 241108，分割 - ，再提取 2650，再提取 C。
@@ -191,7 +193,9 @@ def calculateIvData(option: EResultOptionChain, current_price) -> EResultIvData:
         symbol=option.symbol,
         current_price=current_price,
         bid_price=bid_price,
+        bid_usd=bid_usd,
         ask_price=ask_price,
+        ask_usd=ask_usd,
         ask_bid_diff=ask_bid_diff,
         bid_premium=bid_premium,
         ask_premium=ask_premium,
@@ -218,9 +222,11 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     print('symbol extractIvData = ', symbol, 'ticker = ', ticker)  # 获取标记价格
 
     # 买方美元价值
-    bid_price = 0 if ticker['bid'] == None else ticker['bid'] * current_price
+    bid_price = 0 if ticker['bid'] == None else ticker['bid']
+    bid_usd = 0 if ticker['bid'] == None else ticker['bid'] * current_price
     # 卖方美元价值
-    ask_price = 0 if ticker['ask'] == None else ticker['ask'] * current_price
+    ask_price = 0 if ticker['ask'] == None else ticker['ask']
+    ask_usd = 0 if ticker['ask'] == None else ticker['ask'] * current_price
     # 计算买卖差值
     ask_bid_diff = ask_price - bid_price
     # 买方溢价率
@@ -254,7 +260,7 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     # print("Current time", current_time , "Timestamp:", timestamp, '剩余时间：（天）', day_left)
 
     S = current_price  # 当前标的资产的价格 (BTC/USD)
-    P = bid_price  # 期权的市场价格 (BTC)
+    P = bid_usd  # 期权的市场价格 (BTC)
     K = excute_strike  # 期权行权价格
     T = (day_left/365)  # 距离到期时间 (年)
     r = 0.045  # 无风险利率
@@ -262,7 +268,7 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     s_iv = implied_volatility(P, S, K, T, r, flag)
     # print(f"卖方，隐含波动率: {iv * 100:.2f}%， P: {P}")
 
-    P = ask_price
+    P = ask_usd
     b_iv = implied_volatility(P, S, K, T, r, flag)
     # print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
 
@@ -297,18 +303,20 @@ async def extractIvData(exchange, symbol, current_price) -> EResultIvData:
     intrinsic_value = max(S - K, 0)
     # 为什么使用 bid_price 而不是 ask_price 来计算时间价值？
     # 因为我们是期权的卖方，我们的收益是 bid_price
-    time_value = bid_price - intrinsic_value
+    time_value = bid_usd - intrinsic_value
 
     if flag == 'p':
         intrinsic_value = max(K - S, 0)
-        time_value = bid_price - intrinsic_value
+        time_value = bid_usd - intrinsic_value
 
 
     return EResultIvData(
         symbol=symbol,
         current_price=current_price,
         bid_price=bid_price,
+        bid_usd=bid_usd,
         ask_price=ask_price,
+        ask_usd=ask_usd,
         ask_bid_diff=ask_bid_diff,
         bid_premium=bid_premium,
         ask_premium=ask_premium,

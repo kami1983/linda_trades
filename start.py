@@ -2,7 +2,7 @@
 import time
 import ccxt.async_support as ccxt
 import os
-import aiomysql
+import traceback
 
 from db_operation import getDbSwapPrice, getRecentOptionChainByTimestamp
 from dotenv import load_dotenv
@@ -143,6 +143,8 @@ async def main():
     except Exception as e:
         # print("An error occurred:", e)
         recordLog(f"An error occurred: {e}")
+        error_details = traceback.format_exc()  # 获取完整的堆栈信息
+        print(error_details)
     finally:
         await exchange.close()
         # print("Resources have been closed.")

@@ -40,7 +40,9 @@ class EResultIvData:
     symbol: str
     current_price: float
     bid_price: float
+    bid_usd: float
     ask_price: float
+    ask_usd: float
     ask_bid_diff: float
     bid_premium: float
     ask_premium: float

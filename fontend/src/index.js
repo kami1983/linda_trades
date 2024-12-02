@@ -9,19 +9,27 @@ import AtmIV from './Atmiv';
 import AtmPrice from './Atmprice';
 import OptionList from './Optionlist';
 import OptionExec from './Optionexec';
+import PostionList from './Postionlist';
+import {LoginStatusProvider} from './context/LoginStautsContext';
+import { PriceProvider } from './context/PriceContext';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
-  <Router> 
-    <Routes>
-        <Route path="*" element={<App />} />
-        <Route path="/ivhistory" element={<IVHistory />} />
-        <Route path="/atmprice" element={<AtmPrice />} />
-        <Route path="/atmiv" element={<AtmIV />} />
-        <Route path="/optionlist" element={<OptionList />} />
-        <Route path='/optionexec' element={<OptionExec />} />
-      </Routes>
-  </Router>
+  <LoginStatusProvider>
+    <PriceProvider>
+      <Router> 
+        <Routes>
+            <Route path="*" element={<App />} />
+            <Route path="/ivhistory" element={<IVHistory />} />
+            <Route path="/atmprice" element={<AtmPrice />} />
+            <Route path="/atmiv" element={<AtmIV />} />
+            <Route path="/optionlist" element={<OptionList />} />
+            <Route path='/optionexec' element={<OptionExec />} />
+            <Route path="/postionlist" element={<PostionList />} />
+          </Routes>
+      </Router>
+    </PriceProvider>
+  </LoginStatusProvider>
 );
 
 reportWebVitals();

@@ -56,17 +56,6 @@ function OptionList() {
 
       const _fetchAtmIv = () => {
         callFetchTOptionChain(param_symbol, param_edate, param_price).then((res) => {
-          // if(data.length > 0){
-          //   const mapData = data.map((item, idx) => {
-          //     callFetchIvData(item.symbol, param_price).then((ivData) => {
-          //       item.ask_price = ivData.ask_price;
-          //       item.ask_size = ivData.ask_size;
-          //       item.bid_price = ivData.bid_price;
-          //       item.bid_size = ivData.bid_size;
-          //     });
-          //   });
-          //   setTOptionData(data);
-          // }
           setTOptionData(res.data);
           refreshChooseData(chooseLabel, res.data);
         });
@@ -126,9 +115,9 @@ function OptionList() {
           <tr>
             <th>symbol</th>
             <th>ask_price</th>
-            <th>ask_size</th>
+            {/* <th>ask_size</th> */}
             <th>bid_price</th>
-            <th>bid_size</th>
+            {/* <th>bid_size</th> */}
             <th>涨幅</th>
             <th>纯内在[溢折]</th>
             <th>s_iv</th>
@@ -138,7 +127,7 @@ function OptionList() {
             <th>theta</th>
             <th>内在价值</th>
             <th>时间价值</th>
-            <th>时间年华</th>
+            <th>时间年化</th>
           </tr>
         </thead>
         <tbody>
@@ -155,9 +144,9 @@ function OptionList() {
                 >
                     <td>{option[0].symbol}</td>
                     <td>[s|{option[0].ask_price}]{(option[0].ask_price*paramData.price).toFixed(2)}</td>
-                    <td>{option[0].ask_size}</td>
+                    {/* <td>{option[0].ask_size}</td> */}
                     <td>[b|{option[0].bid_price}]{(option[0].bid_price*paramData.price).toFixed(2)}</td>
-                    <td>{option[0].bid_size}</td>
+                    {/* <td>{option[0].bid_size}</td> */}
                     <td style={{color: 'lightcoral'}}>{((parseFloat(option[0].strike) - parseFloat(paramData.price)) / parseFloat(paramData.price)).toFixed(2)}</td>
                     <td>{(paramData.price-(option[0].strike)).toFixed(2)}[{((option[0].bid_price*paramData.price)-(paramData.price-(option[0].strike))).toFixed(2)}]</td>
                     {option[1] ? (
@@ -180,7 +169,7 @@ function OptionList() {
                 </>
               ) : (
                 <tr>
-                  <td colSpan="20">No data</td>
+                  <td colSpan="13">No data</td>
                 </tr>
               )}
             </React.Fragment>
