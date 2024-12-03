@@ -358,24 +358,6 @@ async def get_open_orders():
         await exchange.close()
 
 
-# # 这是一个非常综合的方法，会尝试向交易所请求多个数据，两张期权详细数据，一个当前币种的数据。
-# @app.route('/api/postion_infos')
-# async def get_postion_infos():
-#     try:
-#         exchange = createExchangeConn()
-#         # 获取要关闭的期权数据
-#         finalopt = str(request.args.get('finalopt')).upper()
-#         task_will_final_option = fetchOptionChain(exchange, finalopt)
-#         # 获取当前币种的价格
-#         symbol = str(request.args.get('symbol')).upper()
-#         task_price = asyncio.create_task(fetchTicker(exchange, f'{symbol}-USD-SWAP'))
-#         open_orders, positions, price = await asyncio.gather(task_open_orders, task_positions, task_price)
-
-#     except Exception as e:
-#         return jsonify({"status": False, "message": e.args[0]})
-#     finally:
-#         await exchange.close()
-
 # 调用一个方法，取消某个订单
 @app.route('/api/cancel_order')
 @login_required

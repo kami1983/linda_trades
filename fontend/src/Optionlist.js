@@ -153,7 +153,7 @@ function OptionList() {
                       <>
                         <td>{parseFloat(option[1].s_iv).toFixed(2)}</td>
                         <td>{parseFloat(option[1].b_iv).toFixed(2)}</td>
-                        <td style={{color: 'red'}}>{parseFloat(option[1].delta).toFixed(2)}</td>
+                        <td style={{color: 'red'}}>{parseFloat(option[1].delta).toFixed(4)}</td>
                         <td>{parseFloat(option[1].gamma).toFixed(6)}</td>
                         <td>{parseFloat(option[1].theta).toFixed(2)}</td>
                         <td sytle={{color: 'green'}}>[{parseFloat(option[1].intrinsic_value).toFixed(2)}]</td>

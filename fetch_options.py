@@ -207,67 +207,6 @@ async def fetchOpenOrders(exchange) -> List[EResultOptionPosition]:
         raise Exception('Error: fetchOpenOrders data not match with original data') 
     return res
 
-
-# postion_example =  {
-#         "collateral": 0.0067589397784254,
-#         "contractSize": 1,
-#         "contracts": 1,
-#         "datetime": "2024-11-16T08:09:36.221Z",
-#         "entryPrice": 0.039,
-#         "hedged": false,
-#         "id": "1987837573570101248",
-#         
-#         "initialMargin": null,
-#         "initialMarginPercentage": null,
-#         "lastPrice": null,
-#         "lastUpdateTimestamp": 1732107310933,
-#         "leverage": null,
-#         "liquidationPrice": null,
-#         "maintenanceMargin": 0.0008170502193306,
-#         "maintenanceMarginPercentage": 0,
-#         "marginMode": "isolated",
-#         "marginRatio": 0.1208,
-#         "markPrice": 0.0517050219330564,
-#         "notional": 19.340481110224097,
-#         "percentage": -32.57697931552918,
-#         "realizedPnl": -0.000003,
-#         "side": "short",
-#         "stopLossPrice": null,
-#         "symbol": "BTC/USD:BTC-241129-92000-C",
-#         "takeProfitPrice": null,
-#         "timestamp": 1731744576221,
-#         "unrealizedPnl": -0.0001270502193306
-#     }
-
-# @dataclass
-# class EResultOptionPosition:
-#     symbol: str
-#     timestamp: int
-#     datetime: str
-#     side: str
-#     collateral: float
-#     contractSize: int
-#     contracts: int
-#     entryPrice: float
-#     hedged: bool
-#     id: str
-#     initialMargin: Optional[float] = None
-#     initialMarginPercentage: Optional[float] = None
-#     lastPrice: Optional[float] = None
-#     lastUpdateTimestamp: int
-#     leverage: Optional[float] = None
-#     liquidationPrice: Optional[float] = None
-#     maintenanceMargin: float
-#     maintenanceMarginPercentage: float
-#     marginMode: str
-#     marginRatio: float
-#     markPrice: float
-#     notional: float
-#     percentage: float
-#     realizedPnl: float
-#     stopLossPrice: Optional[float] = None
-#     takeProfitPrice: Optional[float] = None
-#     unrealizedPnl: float
 async def fetchPostions (exchange) -> List[EResultOpenOrder]:
     '''
     获取期权的开仓订单
