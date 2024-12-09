@@ -52,7 +52,7 @@ function App() {
       <div>
         <h2>Options execute</h2>
         <h3><a href='/postionlist'>Postion List</a></h3>
-        <h3><a href='/optionexec'>Option Executer</a></h3>
+        <h3><a href='/prepare'>Prepare</a></h3>
       </div>
 
       </>

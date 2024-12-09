@@ -210,10 +210,10 @@ async def fetchOpenOrders(exchange) -> List[EResultOptionPosition]:
 async def fetchPostions (exchange) -> List[EResultOpenOrder]:
     '''
     获取期权的开仓订单
-    @param exchange: 交易所对象
+    @param exchange: Exchange 交易所对象
     @return: List[EResultOpenOrder]
     '''
-    postions = await exchange.fetch_positions()
+    postions = await exchange.fetch_positions(params={'instType': 'OPTION'})
     res = []
     for order in postions:
         res.append(EResultOptionPosition(

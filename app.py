@@ -272,7 +272,9 @@ async def get_t_option_chain():
     '''
     获取某个行权日的T型期权报价列表
     '''
-    expiration_date = int(request.args.get('edate'))
+    expiration_date = request.args.get('edate')
+    if expiration_date != None:
+        expiration_date = int(expiration_date)
     symbol = str(request.args.get('symbol')).upper()
     price = float(request.args.get('price'))
     # results = await getOptionChainByExpirationDate(expiration_date=expiration_date, code=symbol)
@@ -281,7 +283,9 @@ async def get_t_option_chain():
     try:
         exchange = createExchangeConn()
         result = await fetchOptionChain(exchange, symbol)
-        result = [item for item in result if item.expiration_date == expiration_date]
+        if expiration_date != None:
+            result = [item for item in result if item.expiration_date == expiration_date]
+        
         # 对 result 按照 strike 进行排序
         result = sorted(result, key=lambda x: x.strike)
         warp_result = []
@@ -392,7 +396,7 @@ async def change_order_price(user_data):
     finally:
         await exchange.close()
 
-# 新增一个以市场价平仓的操作
+# 新增一个以市场价平仓的操作 【对于期权这个方法无法使用，期权是通过反向开单实现平仓的】
 @app.route('/api/close_position')
 @login_required
 async def close_position(user_data):
@@ -409,7 +413,7 @@ async def close_position(user_data):
 
         print('DEBUG: symbol: A ---- close_position', symbol, 'side:', side, 'params:', params)
         
-        result = await exchange.close_position(symbol=symbol, side='short')
+        result = await exchange.close_position(symbol=symbol, side='short', params=params)
         print('DEBUG: result: B ---- ', result)
         return jsonify({"status": True, "data": result})
     except Exception as e:

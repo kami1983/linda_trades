@@ -136,12 +136,7 @@ function OptionList() {
               {option[0] ? (
                 <>
                 {/* 如果是 option[0].option_type = C 显示这行为淡绿色，否则淡红色 */}
-                <tr
-                  className="table-row"
-                  // style={{
-                  //   backgroundColor: option[0].option_type === 'C' ? 'lightgreen' : 'lightcoral',
-                  // }}
-                >
+                <tr className="table-row" >
                     <td>{option[0].symbol}</td>
                     <td>[s|{option[0].ask_price}]{(option[0].ask_price*paramData.price).toFixed(2)}</td>
                     {/* <td>{option[0].ask_size}</td> */}

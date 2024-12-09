@@ -51,3 +51,9 @@ python --version
 ## 新增一个Web 交互
 * pip install jupyterlab
 * jupyter lab
+
+## OKEx API 模拟交易
+* https://www.okx.com/zh-hans/demo-trading-explorer/v5/zh
+
+## OKEx 调试开发的时候如何切换到模拟盘
+* https://www.okx.com/zh-hans/demo-trading-explorer/v5/zh

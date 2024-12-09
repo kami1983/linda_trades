@@ -10,6 +10,7 @@ import AtmPrice from './Atmprice';
 import OptionList from './Optionlist';
 import OptionExec from './Optionexec';
 import PostionList from './Postionlist';
+import Prepare from './Prepare';
 import {LoginStatusProvider} from './context/LoginStautsContext';
 import { PriceProvider } from './context/PriceContext';
 
@@ -26,6 +27,7 @@ root.render(
             <Route path="/optionlist" element={<OptionList />} />
             <Route path='/optionexec' element={<OptionExec />} />
             <Route path="/postionlist" element={<PostionList />} />
+            <Route path='/prepare' element={<Prepare />} />
           </Routes>
       </Router>
     </PriceProvider>
