@@ -6,7 +6,7 @@ from db_operation import getOptionChainByExpirationDate, getRecentOptionChainByT
 from exchange import createExchangeConn
 from fetch_options import fetchOpenOrders, fetchOptionChain, fetchPostions
 from fetch_ticker import fetchTicker
-from iv import calculateIvData, extractIvData
+from iv import bsmOptionPrice, calculateIvData, extractIvData, handlerCalculateIv, inferCurrentPrice
 from quart import Quart, jsonify, request, make_response
 # from flask_cors import CORS
 from quart_cors import cors
@@ -498,6 +498,50 @@ async def create_position(user_data):
         return jsonify({"status": False, "message": e.args[0]})
     finally:
         await exchange.close()
+
+# 调用方法，修改某个订单下单的价格
+@app.route('/api/cacluate_options_price')
+async def cacluate_options_price():
+    price = float(request.args.get('price'))
+    strike = float(request.args.get('strike'))
+    iv = float(request.args.get('iv'))
+    day_left = float(request.args.get('day_left'))
+    option_type= str(request.args.get('option_type')).lower()
+    r = 0.045
+    order_price = bsmOptionPrice(current_price=price, strike_price=strike, iv=iv, r=r, day_left=day_left, option_type=option_type)
+    token_amount = order_price / price
+    # print('order_price:', order_price)
+    current_time = getCrrrentTime()
+
+    
+    # 接下来要 day_left 转换成日期，计算成 241108 这种格式
+    # symbol 的格式 'ETH/USD:ETH-241108-2650-C'
+    execute_time = current_time + int(day_left) * 24 * 60 * 60
+    # print('execute_time:', execute_time)
+    # 转换成 241108 这种格式
+    excute_date = datetime.fromtimestamp(execute_time).strftime('%y%m%d')
+    # print('excute_date:', excute_date)
+    symbol = f'ETH/USD:ETH-{excute_date}-{strike}-C'
+
+    ivData = handlerCalculateIv(symbol=symbol, current_price=price, bid=token_amount, ask=token_amount)
+
+    return jsonify({"status": True, "data": {"order_price": order_price, "token_amount": token_amount, "ivData": ivData}})
+    
+    # handlerCalculateIv(symbol='ETH/USD:ETH-241108-2650-C', current_price=price, bid=option_price, ask=option_price)
+
+
+# inferCurrentPrice
+@app.route('/api/infer_current_price')
+async def infer_current_price():   
+    # buy_price, strike_price, iv, r, day_left, option_type=
+    buy_price = float(request.args.get('buy_price'))
+    strike_price = float(request.args.get('strike'))
+    iv = float(request.args.get('iv'))
+    r = 0.045
+    day_left = float(request.args.get('day_left'))
+    option_type= str(request.args.get('option_type')).lower()
+    current_price = inferCurrentPrice(buy_price=buy_price, strike_price=strike_price, iv=iv, r=r, day_left=day_left, option_type=option_type)
+    return jsonify({"status": True, "data": current_price})
 
 
 

@@ -39,6 +39,7 @@ class EResultOptionChain:
 class EResultIvData:
     symbol: str
     current_price: float
+    infer_price: float
     bid_price: float
     bid_usd: float
     ask_price: float

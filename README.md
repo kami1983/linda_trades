@@ -1,4 +1,4 @@
-## Summary
+# Development manual
 * Server use aws ec2
 
 ## Install conda on ubuntu
@@ -57,3 +57,8 @@ python --version
 
 ## OKEx 调试开发的时候如何切换到模拟盘
 * https://www.okx.com/zh-hans/demo-trading-explorer/v5/zh
+
+# To Do List
+
+## 交易模拟机器
+* 如何推断出某个期权合理的标记价格

@@ -265,10 +265,16 @@ function PostionList() {
           const _optionChainList = res.data;
           const _optionChainListFiltered = [];
           for(let i=0; i<_optionChainList.length; i++){
-            if(_optionChainList[i][1] && Math.abs(_optionChainList[i][1].delta) > 0.3 && Math.abs(_optionChainList[i][1].delta) < 0.7){
+            if(_optionChainList[i][1] && Math.abs(_optionChainList[i][1].delta) > 0.4 && Math.abs(_optionChainList[i][1].delta) < 0.6){
               _optionChainListFiltered.push(_optionChainList[i]);
             }
           }
+
+          // 按照 day_left 排序
+          _optionChainListFiltered.sort((a, b) => {
+            return a[1].day_left - b[1].day_left;
+          });
+
           setOptionChainList(_optionChainListFiltered);
           if(symbol === 'BTC'){
             setButtonGetBtcOptionSign('🟩');
@@ -520,6 +526,16 @@ function PostionList() {
       });
     }
 
+    const handleShowInferInfo = (data) => {
+      // console.log('handleShowInferInfo: ', data);
+      const current_price = extractPrice(GetCoinSign(data.symbol));
+      const infer_diff = (parseFloat(data.infer_price) - current_price ).toFixed(2)
+      const infer_sign = infer_diff<0 ? '🔴':'🟢'
+      // 计算与当前价格的差值比率
+      const infer_diff_rate = (infer_diff/current_price*100).toFixed(2);
+      return `${infer_sign} ${infer_diff}[${infer_diff_rate}%]`;
+    }
+
     return (
       <div>
         <h1> 
@@ -545,8 +561,12 @@ function PostionList() {
           <tr>
             <th>symbol</th>
             <th>delta</th>
+            <th>infer_price</th>
+            <th>leftDays</th>
             <th>ask_price</th>
+            <th>S IV</th>
             <th>bid_price</th>
+            <th>B IV</th>
             <th>intrinsic_value</th>
             <th>time_value</th>
             <th>Yield rate</th>
@@ -561,11 +581,24 @@ function PostionList() {
                 style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
                 title="Click to copy"
                 >{option[0] ? option[0].symbol : 'N/A'}</td>
-                <td>{option[1] ? option[1].delta : 'N/A'}</td>
+                <td>{option[1] ? parseFloat(option[1].delta).toFixed(2) : 'N/A'}</td>
+                <td>
+                  {option[1] ? parseFloat(option[1].infer_price).toFixed(2) : 'N/A'}
+                  {option[1] ? <>
+                    [
+                    {handleShowInferInfo(option[1])}
+                    ]
+                  </>: ''}
+                </td>
+                <td>
+                  {option[1] ? parseFloat(option[1].day_left).toFixed(2) : 'N/A'}
+                </td>
                 <td><span style={{color: 'RED'}}>{option[1] ? option[1].ask_price : 'N/A'}</span> [{option[1] ? option[1].ask_usd.toFixed(2): 'N/A'}$]</td>
+                <td>{option[1] ? parseFloat(option[1].s_iv).toFixed(2) : 'N/A'}</td>
                 <td><span style={{color: 'BLUE'}}>{option[1] ? option[1].bid_price : 'N/A'}</span> [{option[1] ? option[1].bid_usd.toFixed(2): 'N/A'}$]</td>
-                <td>{option[1] ? option[1].intrinsic_value : 'N/A'}</td>
-                <td>{option[1] ? option[1].time_value : 'N/A'}</td>
+                <td>{option[1] ? parseFloat(option[1].b_iv).toFixed(2) : 'N/A'}</td>
+                <td>{option[1] ? parseFloat(option[1].intrinsic_value).toFixed(4) : 'N/A'}</td>
+                <td>{option[1] ? parseFloat(option[1].time_value).toFixed(4) : 'N/A'}</td>
                 <td>{option[1] ? parseFloat(option[1].time_value/extractPrice(GetCoinSign(option[0].symbol))/parseFloat(option[1].day_left)*365*100).toFixed(2) : 'N/A'} %</td>
               </tr>
             </React.Fragment>
@@ -573,14 +606,15 @@ function PostionList() {
         </tbody>
       </table>
       
-      <button onClick={()=>refreshOptionTable('BTC')}>
+      {coinPrices && coinPrices[0] && coinPrices[0].status? <>
+        <button onClick={()=>refreshOptionTable('BTC')}>
         Refresh BTC Option Table {buttonGetBtcOptionSign}
-      </button>
-      <button onClick={()=>refreshOptionTable('ETH')}>
-        Refresh ETH Option Table {buttonGetEthOptionSign}
-      </button>
-      
-
+        </button>
+        <button onClick={()=>refreshOptionTable('ETH')}>
+          Refresh ETH Option Table {buttonGetEthOptionSign}
+        </button>
+      </>:"Waiting for prices..."}
+    
     <h1>Create Postion</h1>
     <table border={1}>
       <thead>
@@ -591,6 +625,7 @@ function PostionList() {
           <th>price</th>
           <th>type</th>
           <th>Refresh IV Data</th>
+          <th>infer_price</th>
           <th>delta</th>
           <th>ask_price</th>
           <th>S IV</th>
@@ -631,6 +666,14 @@ function PostionList() {
           </td>
           <td>
             <button onClick={()=>refreshCreateIvData(toCreateSymbol)}>{buttonCreateSign} &nbsp; Refresh {extractPrice(GetCoinSign(toCreateSymbol))}</button>
+          </td>
+          <td>
+            {toCreateIvData ? parseFloat(toCreateIvData.infer_price).toFixed(2) : 'N/A'}
+            {toCreateIvData ? <>
+              [
+              {handleShowInferInfo(toCreateIvData)}
+              ]
+            </>: ''}
           </td>
           <td>
             {toCreateIvData ? parseFloat(toCreateIvData.delta).toFixed(4) : 'N/A'}
@@ -674,12 +717,13 @@ function PostionList() {
             <th>entryPrice</th>
             <th>markPrice</th>
             <th>Refresh IV</th>
+            <th>delta</th>
+            <th>infer_price</th>
             <th>dayLeft</th>
             <th>ask_price</th>
             <th>S IV</th>
             <th>bid_price</th>
             <th>B IV</th>
-            <th>delta</th>
             <th>gamma</th>
             <th>theta</th>
             <th>Intr Val</th>
@@ -703,12 +747,21 @@ function PostionList() {
               <td>{postion.entryPrice}</td>
               <td>{parseFloat(postion.markPrice).toFixed(4)}</td>
               <td><button onClick={() => refreshPostionIvData(postion.symbol, idx)}>{buttonPostionSign} &nbsp; {extractPrice(GetCoinSign(postion.symbol))}</button></td>
+              <td style={{ "color": "red" }}>{postion.ivData ? parseFloat(postion.ivData.delta).toFixed(4) : 'N/A'}</td>
+              <td>
+                {postion.ivData ? parseFloat(postion.ivData.infer_price).toFixed(2) : 'N/A'}
+                {postion.ivData ? <>
+                  [
+                  {handleShowInferInfo(postion.ivData)}
+                  ]
+                </>: ''}
+              </td>
               <td>{postion.ivData ? parseFloat(postion.ivData.day_left).toFixed(2) : 'N/A'}</td>
               <td>{postion.ivData ? parseFloat(postion.ivData.ask_price).toFixed(4) : 'N/A'}</td>
               <td>{postion.ivData ? parseFloat(postion.ivData.b_iv).toFixed(2) : 'N/A'}</td>
               <td>{postion.ivData ? parseFloat(postion.ivData.bid_price).toFixed(4) : 'N/A'}</td>
               <td>{postion.ivData ? parseFloat(postion.ivData.s_iv).toFixed(2) : 'N/A'}</td>
-              <td style={{ "color": "red" }}>{postion.ivData ? parseFloat(postion.ivData.delta).toFixed(4) : 'N/A'}</td>
+              
               <td>{postion.ivData ? parseFloat(postion.ivData.gamma).toFixed(8) : 'N/A'}</td>
               <td>{postion.ivData ? parseFloat(postion.ivData.theta).toFixed(4) : 'N/A'}</td>
               <td sytle={{color: 'green'}}>[{postion.ivData ? parseFloat(postion.ivData.intrinsic_value).toFixed(2) : 'N/A'}]</td>
@@ -725,12 +778,21 @@ function PostionList() {
                     padding: '8px', // 根据需要调整
                   }} onChange={(e) => updateAimOption(e, idx)} />
                 </td>
+                <td style={{ "color": "red" }}>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].delta).toFixed(4): 'N/A' }</td>
+                <td>
+                  {aimOptioinIvDataList[idx] ? parseFloat(aimOptioinIvDataList[idx].infer_price).toFixed(2) : 'N/A'}
+                  {aimOptioinIvDataList[idx] ? <>
+                    [
+                    {handleShowInferInfo(aimOptioinIvDataList[idx])}
+                    ]
+                  </>: ''}
+                </td>
                 <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].day_left).toFixed(2): 'N/A' }</td>
                 <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].ask_price).toFixed(4): 'N/A' }</td>
                 <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].b_iv).toFixed(2): 'N/A' }</td>
                 <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].bid_price).toFixed(4): 'N/A' }</td>
                 <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].s_iv).toFixed(2): 'N/A' }</td>
-                <td style={{ "color": "red" }}>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].delta).toFixed(4): 'N/A' }</td>
+                
                 <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].gamma).toFixed(8): 'N/A' }</td>
                 <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].theta).toFixed(4): 'N/A' }</td>
                 <td sytle={{color: 'green'}}>[{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].intrinsic_value).toFixed(2): 'N/A'}]</td>

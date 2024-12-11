@@ -3,7 +3,7 @@ import numpy as np
 from db_struct import EResultIvData, EResultOptionChain
 from option_greeks import delta, gamma, theta
 from scipy.stats import norm
-from scipy.optimize import brentq
+from scipy.optimize import brentq, fsolve
 # from implied_volatility import BlackScholes
 
 # from py_vollib.black_scholes import black_scholes
@@ -107,6 +107,9 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     b_iv = implied_volatility(P, S, K, T, r, flag)
     # print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
 
+    # # 期权的市场价格，反推隐含波动率
+    # cacluateBSM(current_price=current_price, strike_price=strike_price, iv=iv, r=r, day_left=day_left)
+
     # # 计算 Delta
     # d1 = (math.log(S / K) + (r + 0.5 * s_iv ** 2) * T) / (s_iv * math.sqrt(T))
     # if flag == 'c':  # Call Option
@@ -144,10 +147,27 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
         intrinsic_value = max(K - S, 0)
         time_value = bid_usd - intrinsic_value
 
+    # 计算 infer price
+    _tmp_buy_price = bid_usd
+    _tmp_iv = b_iv
+    if flag == 'p':
+        _tmp_buy_price = ask_usd
+        _tmp_iv = s_iv
+
+    infer_price = inferCurrentPrice(
+        buy_price=_tmp_buy_price,
+        strike_price=K,
+        iv=_tmp_iv,
+        r=r,
+        day_left=day_left,
+        option_type=flag
+    )
+
 
     return EResultIvData(
         symbol=symbol,
         current_price=current_price,
+        infer_price=infer_price,
         bid_price=bid_price,
         bid_usd=bid_usd,
         ask_price=ask_price,
@@ -169,3 +189,68 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
         intrinsic_value=intrinsic_value,
         time_value=time_value
     )
+
+
+def _WillDelCacluateBSM(current_price,  strike_price, iv, r, day_left):
+    '''运用布莱克-斯科尔斯-莫顿定价模型计算期权在授予日的公允价值
+    S：股票在授予日的市价；
+    K：股票期权的行权价；
+    sigma：股票收益率的年化波动率；
+    r：连续复利的无风险年收益率；
+    T：股票期权的剩余到期时间（按年算）'''
+    # import numpy as np
+    # import scipy
+    # from scipy.stats import norm
+    r1 = float(r)
+    r=np.log(1+r1)
+    # print("无风险年收益率转化为连续复利的无风险年收益率为：",r)
+    S = float(current_price)
+    K = float(strike_price)
+    sigma = float(iv)
+    T = float(day_left/365)
+    d1=(np.log(S/K)+(r+pow(sigma,2)/2)*T)/(sigma*np.sqrt(T))
+    d2=d1-sigma*np.sqrt(T)
+    res = S*norm.cdf(d1)-K*np.exp(-r*T)*norm.cdf(d2)
+    # print("欧式看涨期权的价格为：",S*norm.cdf(d1)-K*np.exp(-r*T)*norm.cdf(d2))
+    return res
+
+def bsmOptionPrice(current_price, strike_price, iv, r, day_left, option_type="c"):
+    """
+    根据布莱克-斯科尔斯模型计算期权价格
+    @param current_price: 标的资产的价格
+    @param strike_price: 行权价格
+    @param iv: 隐含波动率
+    @param r: 无风险利率（连续复利）
+    @param day_left: 距到期时间（单位：天）
+    @param option_type: 期权类型 ("c" = 看涨期权, "p" = 看跌期权)
+    @return: 期权价格
+    """
+    T = day_left / 365  # 转化为年
+    d1 = (np.log(current_price / strike_price) + (r + 0.5 * iv ** 2) * T) / (iv * np.sqrt(T))
+    d2 = d1 - iv * np.sqrt(T)
+
+    if str(option_type).lower() == "c":  # 看涨期权
+        return current_price * norm.cdf(d1) - strike_price * np.exp(-r * T) * norm.cdf(d2)
+    elif str(option_type).lower() == "p":  # 看跌期权
+        return strike_price * np.exp(-r * T) * norm.cdf(-d2) - current_price * norm.cdf(-d1)
+    else:
+        raise ValueError("Invalid option_type. Must be 'c' (call) or 'p' (put).")
+
+def inferCurrentPrice(buy_price, strike_price, iv, r, day_left, option_type="c"):
+    """
+    根据期权价格反推出当前资产价格
+    @param buy_price: 期权市场价格
+    @param strike_price: 行权价格
+    @param iv: 隐含波动率
+    @param r: 无风险利率（连续复利）
+    @param day_left: 距到期时间（单位：天）
+    @param option_type: 期权类型 ("c" = 看涨期权, "p" = 看跌期权)
+    @return: 当前资产价格
+    """
+    # 定义误差函数
+    def objective_function(current_price):
+        return bsmOptionPrice(current_price, strike_price, iv, r, day_left, option_type) - buy_price
+
+    # 使用 Brent 方法进行数值求解，假设当前价格在合理范围内
+    result = brentq(objective_function, 0.01, strike_price * 2)
+    return result

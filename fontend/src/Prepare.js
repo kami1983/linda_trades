@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 
 function Prepare() {
-    const [basePrice, setBasePrice] = useState('');
+    const [basePrice, setBasePrice] = useState(100000);
+    const [baseAmount, setBaseAmount] = useState(0.1);
     const [returnChange, setReturnChange] = useState('');
+    const [postionDelta, setPostionDelta] = useState(0.5);
+    const [leftDays, setLeftDays] = useState(10);
     const [eventChange, setEventChange] = useState('');
     const [evaluationData, setEvaluationData] = useState([]);
+
+    const [postionData, setPostionData] = useState([]);
+    const [closePostionData, setClosePostionData] = useState([]);
 
     const handleAddRow = () => {
         const newRow = {
@@ -24,8 +30,19 @@ function Prepare() {
         setEvaluationData(updatedData);
     };
 
+    const createPostion = () => {
+        const newPostion = {
+            basePrice: basePrice,
+            baseAmount: baseAmount,
+            postionDelta: postionDelta,
+            leftDays: leftDays
+        };
+        
+    }
+
+
     return (
-        <div style={{ color: 'red', fontSize: '18px' }}>
+        <div style={{ color: 'black', fontSize: '18px' }}>
             <div>
                 <label>基础资产价格</label>
                 <input 
@@ -34,20 +51,30 @@ function Prepare() {
                     onChange={(e) => setBasePrice(e.target.value)} 
                     style={{ margin: '10px' }}
                 />
-                <label>收益变化</label>
+                <label>基础资产数量</label>
                 <input 
                     type="text" 
-                    value={returnChange} 
-                    onChange={(e) => setReturnChange(e.target.value)} 
+                    value={baseAmount} 
+                    onChange={(e) => setBaseAmount(e.target.value)} 
                     style={{ margin: '10px' }}
                 />
-                <label>时间变化</label>
+                <label>开仓Delta</label>
                 <input 
                     type="text" 
-                    value={eventChange} 
-                    onChange={(e) => setEventChange(e.target.value)} 
+                    value={postionDelta} 
+                    onChange={(e) => setPostionDelta(e.target.value)} 
                     style={{ margin: '10px' }}
                 />
+                <label>到期日</label>
+                <input 
+                    type="text" 
+                    value={leftDays} 
+                    onChange={(e) => setLeftDays(e.target.value)} 
+                    style={{ margin: '10px' }}
+                />
+            </div>
+            <div>
+              <button onClick={()=>createPostion()}>(开/换)仓</button>
             </div>
             <div style={{ marginTop: '20px' }}>
                 <h3>资产评估表格：</h3>
