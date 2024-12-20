@@ -7,6 +7,7 @@ const GetPostionSize = (symbol) => {
   const keyArr = keys.toString().split(',');
   const valueArr = values.toString().split(',');
   const idx = keyArr.indexOf(symbol.toString().toUpperCase());
+  console.log(`symbol: ${symbol} idx: ${idx} keys: ${keys} values: ${values}`);
   if(idx === -1){
     return 0.01;
   }

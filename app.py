@@ -521,7 +521,7 @@ async def cacluate_options_price():
     # 转换成 241108 这种格式
     excute_date = datetime.fromtimestamp(execute_time).strftime('%y%m%d')
     # print('excute_date:', excute_date)
-    symbol = f'ETH/USD:ETH-{excute_date}-{strike}-C'
+    symbol = f'KAMI/USD:KAMI-{excute_date}-{strike}-{option_type.upper()}'
 
     ivData = handlerCalculateIv(symbol=symbol, current_price=price, bid=token_amount, ask=token_amount)
 

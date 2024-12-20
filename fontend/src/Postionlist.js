@@ -105,7 +105,7 @@ function PostionList() {
               id: item.id,
               symbol: item.symbol,
               contracts: item.contracts,
-              amount: item.contracts*GetPostionSize(GetCoinSign(item.symbol)),
+              amount: (item.contracts*GetPostionSize(GetCoinSign(item.symbol))).toFixed(2),
               side: item.side,
               contractSize: item.contractSize,
               realizedPnl: item.realizedPnl,
@@ -504,6 +504,35 @@ function PostionList() {
       });
 
     }
+
+    const closePostion = (closePostion = {
+      closePostionSymbol: '', 
+      closeSide: 'buy', 
+      closeAmount: 0,
+      closePrice: 0, 
+      closeType: 'buy',
+      closeId: ''
+    }, backCall = ()=>{alert('Close postion done!')}) => {
+      // eslint-disable-next-line no-restricted-globals
+      const beSure = confirm(`Are you sure to close the "${closePostion.closePostionSymbol}"?`);
+      if(!beSure){
+        return;
+      }
+
+      console.log('Close postion call params: ', {closePostion});
+
+      handlerToCreatePosition(
+        closePostion.closePostionSymbol, 
+        closePostion.closeAmount,
+        closePostion.closePrice,
+        closePostion.closeType,
+        closePostion.closeSide
+      ).then((res) => {
+        console.log('handlerToCreatePosition: ', res);
+        backCall();
+      });
+
+    }
     
     const createNewPostion = (callBack) => {
       setButtonSubmitCreateSign('🔥');
@@ -767,7 +796,11 @@ function PostionList() {
               <td sytle={{color: 'green'}}>[{postion.ivData ? parseFloat(postion.ivData.intrinsic_value).toFixed(2) : 'N/A'}]</td>
               <td style={{color: 'blue'}}>{postion.ivData ? parseFloat(postion.ivData.time_value).toFixed(2) : 'N/A'}</td>
               <td>{postion.ivData ? parseFloat(postion.ivData.time_value/extractPrice(GetCoinSign(postion.symbol))/parseFloat(postion.ivData.day_left)*365*100).toFixed(2) : 'N/A'} %</td>
-              <td></td>
+              <td
+                  onClick={() => closePostion({
+                    closePostionSymbol: postion.symbol, closeSide: postion.side == 'short' ? 'buy': 'sell', closeAmount: postion.contracts, closePrice: postion.side == 'short' ? postion.ivData.ask_price : postion.ivData.bid_price, closeType: 'limit', closeId: postion.id,
+                  }, ()=>{refreshAllData(); alert('Close postion done!!!')})}
+                >{postion.ivData?<button>Open `{postion.side == 'short' ? 'buy': 'sell'}` to close .</button>:'Close need to refresh'}</td>
             </tr>
             <tr key={`${idx}b`}>
                 <td colSpan={8}>
@@ -803,7 +836,7 @@ function PostionList() {
                     closePostionSymbol: postion.symbol, closeSide: 'buy', closeAmount: postion.contracts, closePrice: postion.ivData.ask_price, closeType: 'limit', closeId: postion.id,
                     createPostionSymbol: aimOptionList[idx], createSide: 'sell', createAmount: postion.contracts, createPrice: aimOptioinIvDataList[idx].bid_price , createType: 'limit',
                   }, ()=>{refreshAllData(); alert('Move postion done!!!')})}
-                >{aimOptioinIvDataList[idx]?<button>Move to this postion.</button>:'Need refresh'}</td>
+                >{aimOptioinIvDataList[idx] && postion.side == 'short'?<button>Move to this postion.</button>:'Move need to refresh'}</td>
               </tr></>
           ))}
         </tbody>
