@@ -16,8 +16,11 @@ function PostionList() {
     const [toCreateType, setToCreateType] = useState('limit');
     const [toCreateSide, setToCreateSide] = useState('sell');
 
+    const [countList, setCountList] = useState([]);
+
     const [aimOptionList, setAimOptionList] = useState([]);
     const [aimOptioinIvDataList, setAimOptioinIvDataList] = useState([]);
+    const [countProfitValue, setCountProfitValue] = useState(0);
     const [moveToCreateResult, setMoveToCreateResult] = useState({'status': false, 'data': null});
     const [moveToCloseResult, setMoveToCloseResult] = useState({'status': false, 'data': null});
     const [buttonPostionSign, setButtonPostionSign] = useState('🟩');
@@ -565,6 +568,76 @@ function PostionList() {
       return `${infer_sign} ${infer_diff}[${infer_diff_rate}%]`;
     }
 
+    const modifyCountList = (postion, idx) => {
+
+      if(postion.ivData == null){
+        alert('Need to refresh IV data first!');
+        return;
+      }
+
+      console.log('modifyCountList: ', postion, idx); 
+
+      const side = postion.side;
+      const entryPrice = postion.entryPrice;
+      const closePrice = postion.side === 'short' ? postion.ivData.ask_price : postion.ivData.bid_price;
+      const contracts = postion.contracts;
+      const symbol = postion.symbol;
+
+      let _countList = [...countList];
+      if(_countList[idx] && _countList[idx].status){
+        _countList[idx].status = false;
+        _countList[idx].data = null;
+      }else{
+        _countList[idx] = {'status': true, 'data': {
+          side,
+          entryPrice,
+          closePrice,
+          symbol,
+          contracts
+        }};
+      }
+
+      console.log('will set _countList', _countList);
+      setCountList(_countList);
+      countSumNumber(_countList);
+    }
+
+    const extractValidCountList = (paramCountList) => {
+      const _countList = [];
+      for(let i=0; i<paramCountList.length; i++){
+        if(paramCountList[i] && paramCountList[i].status){
+          _countList.push(paramCountList[i]);
+        }
+      }
+      return _countList;
+    }
+
+    const countSumNumber = (paramCountList) => {
+      const _countList = extractValidCountList(paramCountList);
+      let sum = 0;
+      for(let i=0; i<_countList.length; i++){
+        const _currentPrice = extractPrice(GetCoinSign(_countList[i].data.symbol));
+        const _positionSize = GetPostionSize(GetCoinSign(_countList[i].data.symbol));
+        const _closePrice = _countList[i].data.closePrice;
+        const _entryPrice = _countList[i].data.entryPrice;
+        const _contracts = _countList[i].data.contracts;
+        console.log('debug infos: ', {
+          _currentPrice,
+          _positionSize,
+          _closePrice,
+          _entryPrice,
+          _contracts
+        });
+        let _profit = (_closePrice - _entryPrice) * _currentPrice * _contracts * _positionSize;
+        console.log('_profit =', _profit)
+        if(_countList[i].data.side === 'short'){
+          _profit = -_profit;
+        }
+        sum += _profit;
+      }
+      setCountProfitValue(sum);
+    }
+
     return (
       <div>
         <h1> 
@@ -735,6 +808,20 @@ function PostionList() {
 
 
       <h1>Postion List</h1>
+      <table>
+        <tr>
+          <td>
+          <h3>profit: {parseFloat(countProfitValue).toFixed(4)} $</h3>
+          </td>
+          <td>
+            <button onClick={()=>{
+              setCountList([]);
+              setCountProfitValue(0);
+            }}>Clean count</button>
+          </td>
+        </tr>
+      </table>
+      
       <table border={1}>
         <thead>
           <tr>
@@ -775,7 +862,10 @@ function PostionList() {
               <td>{parseFloat(postion.percentage).toFixed(2)}%</td>
               <td>{postion.entryPrice}</td>
               <td>{parseFloat(postion.markPrice).toFixed(4)}</td>
-              <td><button onClick={() => refreshPostionIvData(postion.symbol, idx)}>{buttonPostionSign} &nbsp; {extractPrice(GetCoinSign(postion.symbol))}</button></td>
+              <td>
+                <button onClick={() => refreshPostionIvData(postion.symbol, idx)}>{buttonPostionSign} &nbsp; {extractPrice(GetCoinSign(postion.symbol))}</button>
+                <button onClick={()=>modifyCountList(postion, idx)}>Count[{countList[idx] && countList[idx].status?'Yes':'No'}]</button>
+              </td>
               <td style={{ "color": "red" }}>{postion.ivData ? parseFloat(postion.ivData.delta).toFixed(4) : 'N/A'}</td>
               <td>
                 {postion.ivData ? parseFloat(postion.ivData.infer_price).toFixed(2) : 'N/A'}
