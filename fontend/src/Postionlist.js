@@ -9,26 +9,37 @@ function PostionList() {
     
     const [postionList, setPostionList] = useState([]);
     const [openOrders, setOpenOrders] = useState([]);
-    const [toCreateIvData, setToCreateIvData] = useState(null);
-    const [toCreateSymbol, setToCreateSymbol] = useState('');
-    const [toCreateAmount, setToCreateAmount] = useState(1);
-    const [toCreatePrice, setToCreatePrice] = useState(0);
-    const [toCreateType, setToCreateType] = useState('limit');
-    const [toCreateSide, setToCreateSide] = useState('sell');
+    const [toCreateIvData, setToCreateIvData] = useState([null]);
+    
+    const [toCreateSymbol, setToCreateSymbol] = useState(['']);
+    const [toCreateAmount, setToCreateAmount] = useState([1]);
+    const [toCreatePrice, setToCreatePrice] = useState([0]);
+    const [toCreateType, setToCreateType] = useState(['limit']);
+    const [toCreateSide, setToCreateSide] = useState(['sell']);
+    const [toCreateSlots, setToCreateSlots] = useState([true]);
+    
+    const [optionChainRange, setOptionChainRange] = useState([0.4, 0.6]);
 
     const [countList, setCountList] = useState([]);
 
     const [aimOptionList, setAimOptionList] = useState([]);
     const [aimOptioinIvDataList, setAimOptioinIvDataList] = useState([]);
     const [countProfitValue, setCountProfitValue] = useState(0);
+    const [countCostValue, setCountCostValue] = useState(0);
     const [moveToCreateResult, setMoveToCreateResult] = useState({'status': false, 'data': null});
     const [moveToCloseResult, setMoveToCloseResult] = useState({'status': false, 'data': null});
     const [buttonPostionSign, setButtonPostionSign] = useState('🟩');
     const [buttonOrderSign, setButtonOrderSign] = useState('🟩');
-    const [buttonCreateSign, setButtonCreateSign] = useState('🟩');
+    const [buttonCreateSign, setButtonCreateSign] = useState(['🟩']);
     const [buttonGetBtcOptionSign, setButtonGetBtcOptionSign] = useState('🟩');
     const [buttonGetEthOptionSign, setButtonGetEthOptionSign] = useState('🟩');
-    const [buttonSubmitCreateSign, setButtonSubmitCreateSign] = useState('⚡️');
+    const [buttonSubmitCreateSign, setButtonSubmitCreateSign] = useState(['⚡️']);
+
+    const [postionCheckList, setPostionCheckList] = useState([]);
+
+    const [clipboardText, setClipboardText] = useState('');
+
+    const [createFormLength, setCreateFormLength] = useState(1);
 
     const [optionChainList, setOptionChainList] = useState([]);
 
@@ -236,7 +247,7 @@ function PostionList() {
       });
     }
 
-    const refreshCreateIvData = (symbol) => {
+    const refreshCreateIvData = (symbol, idx) => {
       const current_price = extractPrice(GetCoinSign(symbol));
       console.log('symbol: ', symbol);
       console.log('current_price: ', current_price);
@@ -244,14 +255,34 @@ function PostionList() {
         alert('current_price is null');
         return;
       }
-      setButtonCreateSign('🔻')
+      handlerSetButtonCreateSign(idx, '🔻')
       extractIVData(symbol, current_price).then((res) => {
         console.log('extract create IVData: ', res);
         if(res.status){
-          setToCreateIvData(res.data);
-          setButtonCreateSign('🟩');
+          const newIvData = toCreateIvData;
+          newIvData[idx] = res.data;
+          setToCreateIvData(newIvData);
+
+          // 查找当前对应的 toCreateSide 如果是 sell 则使用 res.data.bid_price  则使用 res.data.ask_price
+          const _toCreateSide = toCreateSide[idx];
+          const _toCreatePrice = _toCreateSide === 'sell' ? res.data.bid_price : res.data.ask_price;
+
+          const _toCreatePriceList = toCreatePrice;
+          _toCreatePriceList[idx] = _toCreatePrice;
+          setToCreatePrice(_toCreatePriceList);
+
+          handlerSetButtonCreateSign(idx, '🟩');
         }
       });
+    }
+
+    const refreshAllCreateIvData = () => {
+      for(let i=0; i<toCreateSlots.length; i++){
+        if(toCreateSymbol[i]){
+          refreshCreateIvData(toCreateSymbol[i], i);
+          setCountCostValue(0);
+        }
+      }
     }
 
     const refreshOptionTable = (symbol) => {
@@ -268,7 +299,7 @@ function PostionList() {
           const _optionChainList = res.data;
           const _optionChainListFiltered = [];
           for(let i=0; i<_optionChainList.length; i++){
-            if(_optionChainList[i][1] && Math.abs(_optionChainList[i][1].delta) > 0.4 && Math.abs(_optionChainList[i][1].delta) < 0.6){
+            if(_optionChainList[i][1] && Math.abs(_optionChainList[i][1].delta) > optionChainRange[0] && Math.abs(_optionChainList[i][1].delta) < optionChainRange[1]){
               _optionChainListFiltered.push(_optionChainList[i]);
             }
           }
@@ -298,7 +329,7 @@ function PostionList() {
     // 取消订单
     const operToCancel = (orderid, symbol, backCall) => {
       // eslint-disable-next-line no-restricted-globals
-      const beSure = confirm('Are you sure to cancel?');
+      const beSure = confirm(`Are you sure to cancel? ${symbol} ${orderid}`);
       if (beSure) {
         // 调用 /api/cancel_order，返回一个 Promise
         return new Promise((resolve, reject) => {
@@ -431,14 +462,13 @@ function PostionList() {
       if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text)
               .then(() => {
-                  alert("Text copied to clipboard successfully!");
+                  setClipboardText(text);
               })
               .catch(err => {
-                  console.error("Failed to copy text to clipboard:", err);
+                  setClipboardText(`Failed to copy text to clipboard: [${text}]`);
               });
       } else {
-          console.warn("Clipboard API is not supported or unavailable.");
-          alert("Your browser does not support clipboard functionality.");
+          setClipboardText(`Clipboard API is not supported or unavailable: [${text}]`);
       }
     }
   
@@ -532,31 +562,97 @@ function PostionList() {
         closePostion.closeSide
       ).then((res) => {
         console.log('handlerToCreatePosition: ', res);
-        backCall();
+        if(res.status){
+          backCall();
+        }else{
+          alert(`Close postion failed! ${res.message}`);
+        }
       });
+    }
+
+    const closeAllPostions = (backCall = ()=>{alert('Close all postions done!')}) => {
+      // eslint-disable-next-line no-restricted-globals
+      const beSure = confirm(`Are you sure to close all postions?`);
+      if(!beSure){
+        return;
+      }
+
+      const _closeAwaitList = [];
+      for(let i=0; i<postionCheckList.length; i++){
+        // console.log('handlerCountProfitValue: ', i, postionCheckList[i]);
+        // 获取当前的 postionList[i] 的数据
+        if(postionCheckList[i] && postionList[i].ivData){
+          const _closeParam = {
+            closePostionSymbol: postionList[i].symbol,
+            closeAmount: postionList[i].contracts,
+            closePrice: postionList[i].side === 'short' ? postionList[i].ivData.ask_price : postionList[i].ivData.bid_price,
+            closeType: 'limit',
+            closeSide: postionList[i].side === 'short' ? 'buy' : 'sell'
+          };
+
+          console.log('_closeParam - ', _closeParam)
+          _closeAwaitList.push(closePostion(_closeParam, ()=>{}));
+        }
+      }
+
+      if(_closeAwaitList.length > 0){
+        Promise.all(_closeAwaitList).then((res) => {
+          console.log('closeAllPostions: ', res);
+          backCall();
+        });
+      }
 
     }
+
+    const handlerSetButtonSubmitCreateSign = (idx, sign) => {
+      const _buttonSubmitCreateSign = [...buttonSubmitCreateSign];
+      _buttonSubmitCreateSign[idx] = sign;
+      setButtonSubmitCreateSign(_buttonSubmitCreateSign);
+    }
     
-    const createNewPostion = (callBack) => {
-      setButtonSubmitCreateSign('🔥');
+    const createNewPostion = (idx, callBack) => {
+      console.log('DEBUG::', toCreateIvData[idx], idx);
+      if(toCreateIvData[idx] == null){
+        alert('Need to set postion first!');
+        return;
+      }
+
+      const _toCreateSymbol = toCreateSymbol[idx];
+      const _toCreateAmount = toCreateAmount[idx]??1;
+      const _toCreatePrice = toCreatePrice[idx];
+      const _toCreateType = toCreateType[idx];
+      const _toCreateSide = toCreateSide[idx];
+      
+
+      handlerSetButtonSubmitCreateSign(idx, '🔥');
+      
       console.log({
-        toCreateSymbol,
-        toCreateAmount,
-        toCreatePrice,
-        toCreateType,
-        toCreateSide
+        _toCreateSymbol,
+        _toCreateAmount,
+        _toCreatePrice,
+        _toCreateType,
+        _toCreateSide
       })
-      handlerToCreatePosition(toCreateSymbol, toCreateAmount, toCreatePrice, toCreateType, toCreateSide).then((res) => {
+      handlerToCreatePosition(_toCreateSymbol, _toCreateAmount, _toCreatePrice, _toCreateType, _toCreateSide).then((res) => {
         console.log('handlerToCreatePosition: ', res);
         if(res.status){
-          alert('Create postion success!');
+          alert(`${_toCreateSymbol}, Create postion success!`);
         }else{
-          alert('Create postion failed!');
+          alert(`${_toCreateSymbol}, Create postion failed! ${res.message}`);
         }
-        setButtonSubmitCreateSign('⚡️');
+        handlerSetButtonSubmitCreateSign(idx, '⚡️');
         callBack();
       });
     }
+
+    const createAllNewPostion = (callBack) => {
+      for(let i=0; i<toCreateSlots.length; i++){
+        if(toCreateSymbol[i] && toCreateIvData[i]){
+          createNewPostion(i, callBack);
+        }
+      }
+    }
+
 
     const handleShowInferInfo = (data) => {
       // console.log('handleShowInferInfo: ', data);
@@ -568,39 +664,79 @@ function PostionList() {
       return `${infer_sign} ${infer_diff}[${infer_diff_rate}%]`;
     }
 
-    const modifyCountList = (postion, idx) => {
-
+    const extractCountItem = (postion) => {
+      console.log('extractCountItem: ', postion);
       if(postion.ivData == null){
-        alert('Need to refresh IV data first!');
-        return;
+        return null;
       }
-
-      console.log('modifyCountList: ', postion, idx); 
 
       const side = postion.side;
       const entryPrice = postion.entryPrice;
       const closePrice = postion.side === 'short' ? postion.ivData.ask_price : postion.ivData.bid_price;
       const contracts = postion.contracts;
       const symbol = postion.symbol;
+      const profit = side === 'short' ? (entryPrice - closePrice) * contracts : (closePrice - entryPrice) * contracts;
+      const volume = profit * GetPostionSize(GetCoinSign(postion.symbol)) * extractPrice(GetCoinSign(postion.symbol));
+
+      return {
+        side,
+        entryPrice,
+        closePrice,
+        symbol,
+        contracts,
+        profit,
+        volume
+      };
+    }
+
+    const modifyCountList = (postion, idx) => {
+
+      const _currentItem = extractCountItem(postion);
+      if(_currentItem == null){
+        alert('Need to refresh IV data first!');
+        return;
+      }
 
       let _countList = [...countList];
       if(_countList[idx] && _countList[idx].status){
         _countList[idx].status = false;
         _countList[idx].data = null;
       }else{
-        _countList[idx] = {'status': true, 'data': {
-          side,
-          entryPrice,
-          closePrice,
-          symbol,
-          contracts
-        }};
+        _countList[idx] = {'status': true, 'data': _currentItem};
       }
+      // console.log('will set _countList', _countList);
 
-      console.log('will set _countList', _countList);
       setCountList(_countList);
       countSumNumber(_countList);
     }
+
+    const handlerFetchAllIv = () => {
+      for(let i=0; i<postionCheckList.length; i++){
+        if(postionCheckList[i]){
+          console.log('handlerFetchAllIv: ', i, postionList[i]);
+          refreshPostionIvData(postionList[i].symbol, i);
+        }
+      }
+    }
+
+
+    const handlerCountProfitValue = () => {
+      const _tmpList = [];
+      for(let i=0; i<postionCheckList.length; i++){
+        // console.log('handlerCountProfitValue: ', i, postionCheckList[i]);
+        // 获取当前的 postionList[i] 的数据
+        if(postionCheckList[i]){
+          const _tmpItem = extractCountItem(postionList[i]);
+          _tmpList.push({'status': true, 'data': _tmpItem});
+        }
+      }
+
+      console.log('handlerCountProfitValue _tmpList: ', _tmpList);
+
+      setCountList(_tmpList);
+      countSumNumber(_tmpList);
+    }
+
 
     const extractValidCountList = (paramCountList) => {
       const _countList = [];
@@ -616,6 +752,7 @@ function PostionList() {
       const _countList = extractValidCountList(paramCountList);
       let sum = 0;
       for(let i=0; i<_countList.length; i++){
+        if(_countList[i].data == null) continue;
         const _currentPrice = extractPrice(GetCoinSign(_countList[i].data.symbol));
         const _positionSize = GetPostionSize(GetCoinSign(_countList[i].data.symbol));
         const _closePrice = _countList[i].data.closePrice;
@@ -638,6 +775,155 @@ function PostionList() {
       setCountProfitValue(sum);
     }
 
+    const handleSetToCreateSymbol = (idx, symbol) => {
+      const _toCreateSymbol = [...toCreateSymbol];
+      _toCreateSymbol[idx] = symbol;
+      setToCreateSymbol(_toCreateSymbol);
+    }
+
+    const handleSetToCreateAmount = (idx, amount) => {
+      const _toCreateAmount = [...toCreateAmount];
+      _toCreateAmount[idx] = amount;
+      setToCreateAmount(_toCreateAmount);
+    }
+
+    const handleSetToCreatePrice = (idx, price) => {
+      const _toCreatePrice = [...toCreatePrice];
+      _toCreatePrice[idx] = price;
+      setToCreatePrice(_toCreatePrice);
+    }
+
+    const handleSetToCreateType = (idx, type) => {
+      const _toCreateType = [...toCreateType];
+      _toCreateType[idx] = type;
+      setToCreateType(_toCreateType);
+    }
+
+    const handleSetToCreateSide = (idx, side) => {
+      const _toCreateSide = [...toCreateSide];
+      _toCreateSide[idx] = side;
+      setToCreateSide(_toCreateSide);
+    }
+
+    const handleSetToCreateSlots = (is_add) => {
+      const _toCreateSlots = toCreateSlots;
+      if(is_add){
+        _toCreateSlots.push(true);
+        setToCreateSlots(_toCreateSlots);
+        setCreateFormLength(_toCreateSlots.length);
+
+        const _toCreateSymbol = [...toCreateSymbol];
+        _toCreateSymbol.push('');
+        setToCreateSymbol(_toCreateSymbol);
+
+        const _toCreateAmount = [...toCreateAmount];
+        _toCreateAmount.push(1);
+        setToCreateAmount(_toCreateAmount);
+
+        const _toCreatePrice = [...toCreatePrice];
+        _toCreatePrice.push(0);
+        setToCreatePrice(_toCreatePrice);
+
+        const _toCreateType = [...toCreateType];
+        _toCreateType.push('limit');
+        setToCreateType(_toCreateType);
+
+        const _toCreateSide = [...toCreateSide];
+        _toCreateSide.push('sell');
+        setToCreateSide(_toCreateSide);
+
+        const _toCreateIvData = [...toCreateIvData];
+        _toCreateIvData.push(null);
+        setToCreateIvData(_toCreateIvData);
+        
+      }else{
+        _toCreateSlots.pop();
+        setToCreateSlots(_toCreateSlots);
+        setCreateFormLength(_toCreateSlots.length);
+
+        const _toCreateSymbol = [...toCreateSymbol];
+        _toCreateSymbol.pop();
+        setToCreateSymbol(_toCreateSymbol);
+
+        const _toCreateAmount = [...toCreateAmount];
+        _toCreateAmount.pop();
+        setToCreateAmount(_toCreateAmount);
+
+        const _toCreatePrice = [...toCreatePrice];
+        _toCreatePrice.pop();
+        setToCreatePrice(_toCreatePrice);
+
+        const _toCreateType = [...toCreateType];
+        _toCreateType.pop();
+        setToCreateType(_toCreateType);
+
+        const _toCreateSide = [...toCreateSide];
+        _toCreateSide.pop();
+        setToCreateSide(_toCreateSide);
+
+        const _toCreateIvData = [...toCreateIvData];
+        _toCreateIvData.pop();
+        setToCreateIvData(_toCreateIvData);
+      }
+    }
+
+    const getButtonCreateSign = (idx) => {
+      if(buttonCreateSign[idx]){
+        return buttonCreateSign[idx];
+      }
+      return '🟩';
+    }
+
+    const handlerSetButtonCreateSign = (idx, sign) => {
+      const _buttonCreateSign = [...buttonCreateSign];
+      _buttonCreateSign[idx] = sign;
+      setButtonCreateSign(_buttonCreateSign);
+    }
+
+    const createPostionAllReady = () => {
+      for(let i=0; i<toCreateSlots.length; i++){
+        if(toCreateSymbol[i] && toCreateIvData[i]){
+          continue;
+        }
+        return false;
+      }
+      return true;
+    }
+
+    const accountCostValue = () => {
+      let sum = 0;
+      for(let i=0; i<toCreateSlots.length; i++){
+        const _toCreatePrice = toCreatePrice[i];
+        const _toCreateAmount = toCreateAmount[i]??1;
+        const _toCreateSymbol = toCreateSymbol[i];
+        const _toCreateSide = toCreateSide[i];
+        const _currentPrice = extractPrice(GetCoinSign(_toCreateSymbol));
+
+        console.log('accountCostValue: ', {
+          _toCreatePrice,
+          _toCreateAmount,
+          _toCreateSymbol,
+          _toCreateSide,
+          _currentPrice
+        });
+
+        const _const = (_toCreatePrice * _toCreateAmount * GetPostionSize(GetCoinSign(_toCreateSymbol)) * _currentPrice) * (_toCreateSide === 'sell' ? 1 : -1);
+        sum += _const;
+        console.log('sum = ', sum, _const);
+      }
+      setCountCostValue(sum);
+    }
+
+    const updatePostionListCheck = (idx, e) => {
+      // console.log('updatePostionListCheck: ', idx, e.target.checked);
+
+      const _postionCheckList = [...postionCheckList];
+      _postionCheckList[idx] = e.target.checked;
+
+      // console.log('updatePostionListCheck: ', _postionCheckList);
+      setPostionCheckList(_postionCheckList);
+    }
+
     return (
       <div>
         <h1> 
@@ -657,7 +943,22 @@ function PostionList() {
           </div>
       ))}
 
+      <h1>Clipboard Text</h1>
+      <div>
+        <a href="https://www.binance.com/zh-CN/square/fear-and-greed-index" target="_blank" rel="noreferrer">Coin Fear and Greed Index</a>
+        <a href="https://edition.cnn.com/markets/fear-and-greed?utm_source=hp" target="_blank" rel="noreferrer">CNN Fear and Greed Index</a>
+
+      </div>
+      <div>
+        {clipboardText}
+      </div>
+
       <h1>Option tables</h1>
+      <div>
+        <label>Option Chain Range:</label>
+        <input type="number" step={0.1} placeholder="0.4" value={optionChainRange[0]} onChange={(e)=>setOptionChainRange([parseFloat(e.target.value), optionChainRange[1]])} />
+        <input type="number" step={0.1} placeholder="0.6" value={optionChainRange[1]} onChange={(e)=>setOptionChainRange([optionChainRange[0], parseFloat(e.target.value)])} />
+      </div>
       <table border={1}>
         <thead>
           <tr>
@@ -709,15 +1010,32 @@ function PostionList() {
       </table>
       
       {coinPrices && coinPrices[0] && coinPrices[0].status? <>
+        <div>
         <button onClick={()=>refreshOptionTable('BTC')}>
         Refresh BTC Option Table {buttonGetBtcOptionSign}
         </button>
+        </div>
+        <div>
         <button onClick={()=>refreshOptionTable('ETH')}>
           Refresh ETH Option Table {buttonGetEthOptionSign}
         </button>
+        </div>
       </>:"Waiting for prices..."}
     
     <h1>Create Postion</h1>
+    <table>
+      <tr>
+        [{createFormLength}]<td><button onClick={()=>handleSetToCreateSlots(true)}>+</button></td>
+        <td><button onClick={()=>handleSetToCreateSlots(false)}>-</button></td>
+        <td><button onClick={()=>refreshAllCreateIvData()}>Fetch All IvData</button></td>
+        <td>
+        {createPostionAllReady() ? <button onClick={()=>createAllNewPostion(refreshAllData)}>⚡️ Create all new postions ⚡️</button> : 'Need to set all postions first!'}
+        </td>
+        <td>
+        <button onClick={()=>accountCostValue()}>All Cost:</button> {countCostValue}
+        </td>
+      </tr>
+    </table>
     <table border={1}>
       <thead>
         <tr>
@@ -739,73 +1057,80 @@ function PostionList() {
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td>
-            <input type="text" placeholder="BTC/USD:BTC-241213-98000-C" style={{
-                    width: '300px',
-                    boxSizing: 'border-box',
-                    textAlign: 'right',
-                    padding: '8px', // 根据需要调整
-                  }} onChange={(e)=>setToCreateSymbol(e.target.value)} />
-          </td>
-          <td>
-            <select onChange={(e)=>setToCreateSide(e.target.value)}>
-              <option value="sell" >sell</option>
-              <option value="buy">buy</option>
-            </select>
-          </td>
-          <td>
-            <input type="number" placeholder="1" value={toCreateAmount} onChange={(e)=>setToCreateAmount(e.target.value)} />
-          </td>
-          <td>
-            <input type="number" placeholder="0" value={toCreatePrice} onChange={(e)=>setToCreatePrice(e.target.value)} />
-          </td>
-          <td>
-            <select onClick={(e)=>setToCreateType(e.target.value)}>
-              <option value="limit">limit</option>
-              <option value="market">market</option>
-            </select>
-          </td>
-          <td>
-            <button onClick={()=>refreshCreateIvData(toCreateSymbol)}>{buttonCreateSign} &nbsp; Refresh {extractPrice(GetCoinSign(toCreateSymbol))}</button>
-          </td>
-          <td>
-            {toCreateIvData ? parseFloat(toCreateIvData.infer_price).toFixed(2) : 'N/A'}
-            {toCreateIvData ? <>
-              [
-              {handleShowInferInfo(toCreateIvData)}
-              ]
-            </>: ''}
-          </td>
-          <td>
-            {toCreateIvData ? parseFloat(toCreateIvData.delta).toFixed(4) : 'N/A'}
-          </td>
-          <td>
-            {toCreateIvData ? parseFloat(toCreateIvData.ask_price).toFixed(4) : 'N/A'}
-          </td>
-          <td>
-            {toCreateIvData ? parseFloat(toCreateIvData.s_iv).toFixed(2) : 'N/A'}
-          </td>
-          <td>
-            {toCreateIvData ? parseFloat(toCreateIvData.bid_price).toFixed(4) : 'N/A'}
-          </td>
-          <td>
-            {toCreateIvData ? parseFloat(toCreateIvData.b_iv).toFixed(2) : 'N/A'}
-          </td>
-          <td>
-            {toCreateIvData ? parseFloat(toCreateIvData.intrinsic_value).toFixed(2) : 'N/A'}
-          </td>
-          <td>
-            {toCreateIvData ? parseFloat(toCreateIvData.time_value).toFixed(2) : 'N/A'}
-          </td>
-          <td>
-          <button onClick={()=>createNewPostion(refreshAllData)} >{buttonSubmitCreateSign} Submit : [{toCreateSymbol}]</button>
-          </td>
-        </tr>
+        {toCreateSlots.map((_item, idx) => (
+          <React.Fragment key={idx}>
+            <tr>
+              <td>
+                <input type="text" placeholder="BTC/USD:BTC-241213-98000-C" style={{
+                        width: '300px',
+                        boxSizing: 'border-box',
+                        textAlign: 'right',
+                        padding: '8px', // 根据需要调整
+                      }} onChange={(e)=>handleSetToCreateSymbol(idx, e.target.value)} />
+              </td>
+              <td>
+                <select onChange={(e)=>handleSetToCreateSide(idx, e.target.value)}>
+                  <option value="sell" >sell</option>
+                  <option value="buy">buy</option>
+                </select>
+              </td>
+              <td>
+                <input type="number" placeholder="1" value={toCreateAmount[idx]??1} onChange={(e)=>handleSetToCreateAmount(idx, e.target.value)} />
+              </td>
+              <td>
+                <input type="number" placeholder="0" value={toCreatePrice[idx]} onChange={(e)=>handleSetToCreatePrice(idx, e.target.value)} />
+              </td>
+              <td>
+                <select onClick={(e)=>handleSetToCreateType(idx, e.target.value)}>
+                  <option value="limit" >limit</option>
+                  <option value="market" >market</option>
+                </select>
+              </td>
+              <td>
+                <button onClick={()=>refreshCreateIvData(toCreateSymbol[idx], idx)}>{getButtonCreateSign(idx)} &nbsp; Refresh {toCreateSymbol[idx]??extractPrice(GetCoinSign(toCreateSymbol[idx]))}</button>
+              </td>
+              <td>
+                {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].infer_price).toFixed(2) : 'N/A'}
+                {toCreateIvData[idx] ? <>
+                  [
+                  {handleShowInferInfo(toCreateIvData[idx])}
+                  ]
+                </>: ''}
+              </td>
+              <td>
+                {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].delta).toFixed(4) : 'N/A'}
+              </td>
+              <td>
+                {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].ask_price).toFixed(4) : 'N/A'}
+              </td>
+              <td>
+                {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].s_iv).toFixed(2) : 'N/A'}
+              </td>
+              <td>
+                {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].bid_price).toFixed(4) : 'N/A'}
+              </td>
+              <td>
+                {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].b_iv).toFixed(2) : 'N/A'}
+              </td>
+              <td>
+                {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].intrinsic_value).toFixed(2) : 'N/A'}
+              </td>
+              <td>
+                {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].time_value).toFixed(2) : 'N/A'}
+              </td>
+              <td>
+              <button onClick={()=>createNewPostion(idx, refreshAllData)} >{buttonSubmitCreateSign[idx]??'⚡️'} Submit : [{toCreateSymbol[idx]}]</button>
+              </td>
+            </tr>
+          </React.Fragment>
+        ))}
       </tbody>
     </table>
+    {/* <div>
+      
+      <button onClick={()=>createAllNewPostion(refreshAllData)}>Create all new postions</button>
+    </div> */}
    
-
 
       <h1>Postion List</h1>
       <table>
@@ -813,11 +1138,53 @@ function PostionList() {
           <td>
           <h3>profit: {parseFloat(countProfitValue).toFixed(4)} $</h3>
           </td>
-          <td>
+          {/* <td>
             <button onClick={()=>{
               setCountList([]);
               setCountProfitValue(0);
             }}>Clean count</button>
+          </td> */}
+        </tr>
+      </table>
+      <div>
+        <table border={1}>
+          <tr>
+            <td>symbol</td>
+            <td>side</td>
+            <td>entryPrice</td>
+            <td>closePrice</td>
+            <td>contracts</td>
+            <td>profit</td>
+            <td>volume</td>
+          </tr>
+          {countList.map((count, idx) => (
+            <tr key={idx}>
+              <td>{count.data?count.data.symbol:'Error'}</td>
+              <td>{count.data?count.data.side:'Error'}</td>
+              <td>{count.data?count.data.entryPrice:'Error'}</td>
+              <td>{count.data?count.data.closePrice:'Error'}</td>
+              <td>{count.data?count.data.contracts:'Error'}</td>
+              <td>{count.data?parseFloat(count.data.profit).toFixed(4):'Error'} $</td>
+              <td>{count.data?parseFloat(count.data.volume).toFixed(2):'Error'} $</td>
+            </tr>
+          ))}
+          <tr>
+            <td colSpan={6} style={{textAlign: 'right'}}>Total: </td>
+            <td>{parseFloat(countProfitValue).toFixed(4)} $</td>
+          </tr>
+          <tr>
+            <td colSpan={6} style={{textAlign: 'right'}}>Action: </td>
+            <td><button onClick={()=>closeAllPostions()}>Close all postions</button></td>
+          </tr>
+        </table>
+      </div>
+      <table>
+      <tr>
+        <td>
+          <button onClick={()=>handlerFetchAllIv()}>Fetch All Iv</button>
+          </td>
+          <td>
+          <button onClick={()=>handlerCountProfitValue()}>Count profit</button>
           </td>
         </tr>
       </table>
@@ -825,6 +1192,7 @@ function PostionList() {
       <table border={1}>
         <thead>
           <tr>
+            <th>id</th>
             <th>symbol</th>
             <th>side</th>
             <th>contracts</th>
@@ -851,6 +1219,9 @@ function PostionList() {
         <tbody>
           {postionList.map((postion, idx) => (
             <><tr key={`${idx}a`}>
+              <td>
+                <input type="checkbox" value={idx} onChange={(e)=>updatePostionListCheck(idx, e)} />
+              </td>
               <td
               onClick={() => handleCopyToClipboard(postion.symbol)}
               style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
@@ -864,7 +1235,7 @@ function PostionList() {
               <td>{parseFloat(postion.markPrice).toFixed(4)}</td>
               <td>
                 <button onClick={() => refreshPostionIvData(postion.symbol, idx)}>{buttonPostionSign} &nbsp; {extractPrice(GetCoinSign(postion.symbol))}</button>
-                <button onClick={()=>modifyCountList(postion, idx)}>Count[{countList[idx] && countList[idx].status?'Yes':'No'}]</button>
+                {/* <button onClick={()=>modifyCountList(postion, idx)}>Count[{countList[idx] && countList[idx].status?'Yes':'No'}]</button> */}
               </td>
               <td style={{ "color": "red" }}>{postion.ivData ? parseFloat(postion.ivData.delta).toFixed(4) : 'N/A'}</td>
               <td>
@@ -898,7 +1269,7 @@ function PostionList() {
                     width: '100%',
                     boxSizing: 'border-box',
                     textAlign: 'right',
-                    padding: '8px', // 根据需要调整
+                    padding: '8px', 
                   }} onChange={(e) => updateAimOption(e, idx)} />
                 </td>
                 <td style={{ "color": "red" }}>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].delta).toFixed(4): 'N/A' }</td>

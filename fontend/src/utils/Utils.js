@@ -16,8 +16,11 @@ const GetPostionSize = (symbol) => {
 
 // "BTC/USD:BTC-241129-100000-C"
 const GetCoinSign = (symbol) => {
-  const symbolArr = symbol.split('/');
-  return symbolArr[0].toUpperCase();
+  if(symbol){
+    const symbolArr = symbol.split('/');
+    return symbolArr[0].toUpperCase();
+  }
+  return ''
 }
 
 export { GetPostionSize, GetCoinSign };
