@@ -58,6 +58,25 @@ python --version
 ## OKEx 调试开发的时候如何切换到模拟盘
 * https://www.okx.com/zh-hans/demo-trading-explorer/v5/zh
 
+
+## 通过 WebSockets 获取实时数据
+* https://www.okx.com/docs-v5/en/#overview-production-trading-services
+* The Production Trading URL:
+```
+REST: https://www.okx.com
+Public WebSocket: wss://ws.okx.com:8443/ws/v5/public
+Private WebSocket: wss://ws.okx.com:8443/ws/v5/private
+Business WebSocket: wss://ws.okx.com:8443/ws/v5/business
+```
+
+* Demo Trading Services
+```
+REST: https://www.okx.com
+Public WebSocket: wss://wspap.okx.com:8443/ws/v5/public
+Private WebSocket: wss://wspap.okx.com:8443/ws/v5/private
+Business WebSocket: wss://wspap.okx.com:8443/ws/v5/business
+```
+
 # To Do List
 
 ## 交易模拟机器

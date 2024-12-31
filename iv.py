@@ -69,8 +69,7 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     # 卖方折价率
     ask_premium = 0 if ask_price == 0 else ask_bid_diff / ask_price
 
-    # print("symbol AA - ", symbol)
-    # print("symbol.split('-') BB :", symbol.split('-'))
+    print('Calculate IV Data:', symbol, current_price, bid_price, ask_price, bid_usd, ask_usd)
 
     # print('买方美元价值：', bid_price, '卖方美元价值：', ask_price, '买卖差值：', ask_bid_diff, '买方溢价率：', bid_premium, '卖方折价率：', ask_premium)
     # 将期权的 symbol = ETH/USD:ETH-241108-2650-C 转换成时间戳。
@@ -92,7 +91,8 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     current_time =int(time.time())
     # 计算剩余天数
     day_left = (timestamp-current_time)/(3600*24)
-    # print("Current time", current_time , "Timestamp:", timestamp, '剩余时间：（天）', day_left)
+
+    print("Current time", current_time , "Timestamp:", timestamp, '剩余时间：（天）', day_left)
 
     S = current_price  # 当前标的资产的价格 (BTC/USD)
     P = bid_usd  # 期权的市场价格 (BTC)
@@ -101,37 +101,16 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     r = 0.045  # 无风险利率
     flag = execute_flag   # 看涨期权 (c = call, p = put)
     s_iv = implied_volatility(P, S, K, T, r, flag)
-    # print(f"卖方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+    print(f"卖方，隐含波动率: {iv * 100:.2f}%， P: {P}")
 
     P = ask_usd
     b_iv = implied_volatility(P, S, K, T, r, flag)
-    # print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+    print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
 
-    # # 期权的市场价格，反推隐含波动率
-    # cacluateBSM(current_price=current_price, strike_price=strike_price, iv=iv, r=r, day_left=day_left)
-
-    # # 计算 Delta
-    # d1 = (math.log(S / K) + (r + 0.5 * s_iv ** 2) * T) / (s_iv * math.sqrt(T))
-    # if flag == 'c':  # Call Option
-    #     delta = norm.cdf(d1)
-    # else:  # Put Option
-    #     delta = norm.cdf(d1) - 1
 
     # 打印参数
     print(f"标的资产价格: {S}, 行权价格: {K}, 到期时间: {T}, 无风险利率: {r}, 期权类型: {flag}, 卖方隐含波动率: {s_iv}, 买方隐含波动率: {b_iv}")
 
-    # # 使用平均波动率来计算 Delta
-    # # avg_iv = (s_iv + b_iv) / 2  # 使用买卖波动率的平均值
-    # avg_iv = s_iv # 使用卖方波动率，因为卖方波动率更接近实际波动率
-    # d1 = (math.log(S / K) + (r + 0.5 * avg_iv ** 2) * T) / (avg_iv * math.sqrt(T))
-
-    # if flag == 'c':  # Call Option
-    #     delta = norm.cdf(d1)
-    # else:  # Put Option
-    #     delta = norm.cdf(d1) - 1
-
-    # delta = calculate_delta(S, K, T, r, s_iv, flag)
-    # delta = delta(s=S,k=K,r=r,T,sigma,n)
     _delta = delta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
     _gamma = gamma(s=S,k=K,r=r,T=T,sigma=s_iv)
     _theta = theta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)

@@ -3,7 +3,7 @@ import os
 
 # 插入或更新数据库中的 swap price 数据
 from typing import List, Optional
-from db_struct import EResultOptionChain, EResultSwapPrice
+from db_struct import EResultOKXOrder, EResultOptionChain, EResultSwapPrice
 from log import recordLog
 from unitls import timeToStr
 import aiomysql
@@ -259,3 +259,92 @@ async def getOptionChainByExpirationDate(expiration_date: str, code: str) -> Lis
             ) for item in result
         ]
     
+'''
+inst_type: str
+    inst_id: str
+    tgt_ccy: str
+    ccy: str
+    ord_id: str
+    cl_ord_id: str
+    algo_cl_ord_id: str
+    algo_id: str
+    tag: str
+    px: float
+    sz: float
+    notional_usd: float
+    ord_type: str
+    side: str
+    pos_side: str
+    td_mode: str
+    acc_fill_sz: float
+    fill_notional_usd: float
+    avg_px: float
+    state: str
+    lever: float
+    pnl: float
+    fee_ccy: str
+    fee: float
+    rebate_ccy: str
+    rebate: float
+    category: str
+    u_time: int
+    c_time: int
+    source: str
+    reduce_only: str
+    cancel_source: str
+    quick_mgn_type: str
+    stp_id: str
+    stp_mode: str
+    attach_algo_cl_ord_id: str
+    last_px: float
+    is_tp_limit: str
+    sl_trigger_px: float
+    sl_trigger_px_type: str
+    tp_ord_px: float
+    tp_trigger_px: float
+    tp_trigger_px_type: str
+    sl_ord_px: float
+    fill_px: float
+    trade_id: str
+    fill_sz: float
+    fill_time: int
+    fill_pnl: float
+    fill_fee: float
+    fill_fee_ccy: str
+    exec_type: str
+    fill_px_vol: float
+    fill_px_usd: float
+    fill_mark_vol: float
+    fill_fwd_px: float
+    fill_mark_px: float
+    amend_source: str
+    req_id: str
+    amend_result: str
+    code: str
+    msg: str
+    px_type: str
+    px_usd: float
+    px_vol: float
+    linked_algo_ord_algo_id: str
+    attach_algo_ords: str
+'''
+async def updateDbOKXOrder(data: EResultOKXOrder):
+    """
+    更新数据库中的 OKX 订单数据
+    @param data: EResultOKXOrder
+    """
+    connection = await getDbConn()
+    async with connection.cursor() as cursor:
+        insert_query = """
+        INSERT INTO okx_order (
+            inst_type, inst_id, tgt_ccy, ccy, ord_id, cl_ord_id, algo_cl_ord_id, algo_id, tag, px, sz, notional_usd, ord_type, side, pos_side, td_mode, acc_fill_sz, fill_notional_usd, avg_px, state, lever, pnl, fee_ccy, fee, rebate_ccy, rebate, category, u_time, c_time, source, reduce_only, cancel_source, quick_mgn_type, stp_id, stp_mode, attach_algo_cl_ord_id, last_px, is_tp_limit, sl_trigger_px, sl_trigger_px_type, tp_ord_px, tp_trigger_px, tp_trigger_px_type, sl_ord_px, fill_px, trade_id, fill_sz, fill_time, fill_pnl, fill_fee, fill_fee_ccy, exec_type, fill_px_vol, fill_px_usd, fill_mark_vol, fill_fwd_px, fill_mark_px, amend_source, req_id, amend_result, code, msg, px_type, px_usd, px_vol, linked_algo_ord_algo_id, attach_algo_ords
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        )
+        """
+        await cursor.execute(insert_query, (
+            data.inst_type, data.inst_id, data.tgt_ccy, data.ccy, data.ord_id, data.cl_ord_id, data.algo_cl_ord_id, data.algo_id, data.tag, data.px, data.sz, data.notional_usd, data.ord_type, data.side, data.pos_side, data.td_mode, data.acc_fill_sz, data.fill_notional_usd, data.avg_px, data.state, data.lever, data.pnl, data.fee_ccy, data.fee, data.rebate_ccy, data.rebate, data.category, data.u_time, data.c_time, data.source, data.reduce_only, data.cancel_source, data.quick_mgn_type, data.stp_id, data.stp_mode, data.attach_algo_cl_ord_id, data.last_px, data.is_tp_limit, data.sl_trigger_px, data.sl_trigger_px_type, data.tp_ord_px, data.tp_trigger_px, data.tp_trigger_px_type, data.sl_ord_px, data.fill_px, data.trade_id, data.fill_sz, data.fill_time, data.fill_pnl, data.fill_fee, data.fill_fee_ccy, data.exec_type, data.fill_px_vol, data.fill_px_usd, data.fill_mark_vol, data.fill_fwd_px, data.fill_mark_px, data.amend_source, data.req_id, data.amend_result, data.code, data.msg, data.px_type, data.px_usd, data.px_vol, data.linked_algo_ord_algo_id, data.attach_algo_ords
+        ))
+        await connection.commit()
+    connection.close()
+
