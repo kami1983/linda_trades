@@ -118,15 +118,19 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
         print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
     except:
         b_iv = None
-        
+
 
 
     # 打印参数
     print(f"标的资产价格: {S}, 行权价格: {K}, 到期时间: {T}, 无风险利率: {r}, 期权类型: {flag}, 卖方隐含波动率: {s_iv}, 买方隐含波动率: {b_iv}")
 
-    _delta = delta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
-    _gamma = gamma(s=S,k=K,r=r,T=T,sigma=s_iv)
-    _theta = theta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
+    _delta = None
+    _gamma = None
+    _theta = None
+    if s_iv != None or b_iv != None:
+        _delta = delta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
+        _gamma = gamma(s=S,k=K,r=r,T=T,sigma=s_iv)
+        _theta = theta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
 
     # 计算内在价值和时间价值,需要区分看涨和看跌期权
     # 这里的 intrinsic_value 指的是看涨期权的内在价值
