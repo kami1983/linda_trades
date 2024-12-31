@@ -69,6 +69,11 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     # 卖方折价率
     ask_premium = 0 if ask_price == 0 else ask_bid_diff / ask_price
 
+    # strike_price = 100000
+    # current_price = 92393.0
+    # intrinsic value = 100000 - 92393.0 = 7607.0
+    # bid_usd = 7437.63
+    # ask_usd = 8537.63
     print('Calculate IV Data:', symbol, current_price, bid_price, ask_price, bid_usd, ask_usd)
 
     # print('买方美元价值：', bid_price, '卖方美元价值：', ask_price, '买卖差值：', ask_bid_diff, '买方溢价率：', bid_premium, '卖方折价率：', ask_premium)
@@ -100,12 +105,20 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     T = (day_left/365)  # 距离到期时间 (年)
     r = 0.045  # 无风险利率
     flag = execute_flag   # 看涨期权 (c = call, p = put)
-    s_iv = implied_volatility(P, S, K, T, r, flag)
-    print(f"卖方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+    try:
+        s_iv = implied_volatility(P, S, K, T, r, flag)
+        print(f"卖方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+    except:
+        s_iv = None
+    
 
     P = ask_usd
-    b_iv = implied_volatility(P, S, K, T, r, flag)
-    print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+    try:
+        b_iv = implied_volatility(P, S, K, T, r, flag)
+        print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+    except:
+        b_iv = None
+        
 
 
     # 打印参数
