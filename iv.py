@@ -108,7 +108,7 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     s_iv = None
     try:
         s_iv = implied_volatility(P, S, K, T, r, flag)
-        print(f"卖方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+        print(f"卖方，隐含波动率: {s_iv * 100:.2f}%， P: {P}")
     except Exception as e:
         print('计算隐含波动率失败', e)
     
@@ -117,7 +117,7 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     b_iv = None
     try:
         b_iv = implied_volatility(P, S, K, T, r, flag)
-        print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
+        print(f"买方，隐含波动率: {b_iv * 100:.2f}%， P: {P}")
     except:
         print('计算隐含波动率失败', e)
 
