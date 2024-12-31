@@ -105,19 +105,21 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     T = (day_left/365)  # 距离到期时间 (年)
     r = 0.045  # 无风险利率
     flag = execute_flag   # 看涨期权 (c = call, p = put)
+    s_iv = None
     try:
         s_iv = implied_volatility(P, S, K, T, r, flag)
         print(f"卖方，隐含波动率: {iv * 100:.2f}%， P: {P}")
-    except:
-        s_iv = None
+    except Exception as e:
+        print('计算隐含波动率失败', e)
     
 
     P = ask_usd
+    b_iv = None
     try:
         b_iv = implied_volatility(P, S, K, T, r, flag)
         print(f"买方，隐含波动率: {iv * 100:.2f}%， P: {P}")
     except:
-        b_iv = None
+        print('计算隐含波动率失败', e)
 
 
 
