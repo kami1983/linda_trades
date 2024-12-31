@@ -127,7 +127,8 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     _delta = None
     _gamma = None
     _theta = None
-    if s_iv != None or b_iv != None:
+    if s_iv != None and b_iv != None:
+        print('计算 option greeks')
         _delta = delta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
         _gamma = gamma(s=S,k=K,r=r,T=T,sigma=s_iv)
         _theta = theta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
