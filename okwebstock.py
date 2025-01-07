@@ -26,10 +26,6 @@ API_SECRET = secret
 PASSPHRASE = password
 OK_WEB_SOCKET_URL = ok_web_socket_url
 
-# OKX WebSocket 地址
-# URL = "wss://ws.okx.com:8443/ws/v5/private"
-# URL = "wss://wspap.okx.com:8443/ws/v5/private"
-
 # 创建签名方法
 def create_okx_signature(api_key, api_secret, passphrase):
     timestamp = str(time.time())
@@ -40,7 +36,7 @@ def create_okx_signature(api_key, api_secret, passphrase):
 
 # 监听订单状态
 async def listen_orders():
-    async with websockets.connect(URL) as websocket:
+    async with websockets.connect(OK_WEB_SOCKET_URL) as websocket:
         # 创建签名
         timestamp, signature = create_okx_signature(API_KEY, API_SECRET, PASSPHRASE)
 
