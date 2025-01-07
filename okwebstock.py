@@ -16,6 +16,7 @@ key = os.getenv('OKEX_API_KEY')
 secret = os.getenv('OKEX_API_SECRET')
 password = os.getenv('OKEX_API_PASSWORD')
 is_sandbox = os.getenv('OKEX_IS_SANDBOX')
+ok_web_socket_url = os.getenv('OK_WEB_SOCKET_URL')
 
 print(key, is_sandbox)
 
@@ -23,10 +24,11 @@ print(key, is_sandbox)
 API_KEY = key
 API_SECRET = secret
 PASSPHRASE = password
+OK_WEB_SOCKET_URL = ok_web_socket_url
 
 # OKX WebSocket 地址
 # URL = "wss://ws.okx.com:8443/ws/v5/private"
-URL = "wss://wspap.okx.com:8443/ws/v5/private"
+# URL = "wss://wspap.okx.com:8443/ws/v5/private"
 
 # 创建签名方法
 def create_okx_signature(api_key, api_secret, passphrase):
