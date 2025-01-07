@@ -150,94 +150,30 @@ class EResultOpenOrder:
     average: Optional[float] = None
     clientOrderId: Optional[str] = None
 
-
-'''
-okx_orders
-
-`id` BIGINT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY COMMENT '主键 ID',
-    `inst_type` VARCHAR(50) NOT NULL COMMENT '产品类型',
-    `inst_id` VARCHAR(100) NOT NULL COMMENT '产品 ID',
-    `tgt_ccy` VARCHAR(50) DEFAULT '' COMMENT '目标币种',
-    `ccy` VARCHAR(50) DEFAULT '' COMMENT '币种',
-    `ord_id` VARCHAR(100) NOT NULL COMMENT '订单 ID',
-    `cl_ord_id` VARCHAR(100) NOT NULL COMMENT '客户端订单 ID',
-    `algo_cl_ord_id` VARCHAR(100) DEFAULT '' COMMENT '算法订单客户端 ID',
-    `algo_id` VARCHAR(100) DEFAULT '' COMMENT '算法订单 ID',
-    `tag` VARCHAR(100) NOT NULL COMMENT '标签',
-    `px` DECIMAL(20, 8) NOT NULL COMMENT '价格',
-    `sz` DECIMAL(20, 8) NOT NULL COMMENT '数量',
-    `notional_usd` DECIMAL(20, 8) NOT NULL COMMENT '名义价值（USD）',
-    `ord_type` VARCHAR(50) NOT NULL COMMENT '订单类型',
-    `side` VARCHAR(50) NOT NULL COMMENT '方向',
-    `pos_side` VARCHAR(50) NOT NULL COMMENT '持仓方向',
-    `td_mode` VARCHAR(50) NOT NULL COMMENT '交易模式',
-    `acc_fill_sz` DECIMAL(20, 8) NOT NULL COMMENT '累计成交数量',
-    `fill_notional_usd` DECIMAL(20, 8) DEFAULT NULL COMMENT '成交名义价值（USD）',
-    `avg_px` DECIMAL(20, 8) NOT NULL COMMENT '平均成交价格',
-    `state` VARCHAR(50) NOT NULL COMMENT '订单状态',
-    `lever` DECIMAL(20, 8) NOT NULL COMMENT '杠杆',
-    `pnl` DECIMAL(20, 8) NOT NULL COMMENT '盈亏',
-    `fee_ccy` VARCHAR(50) NOT NULL COMMENT '手续费币种',
-    `fee` DECIMAL(20, 8) NOT NULL COMMENT '手续费',
-    `rebate_ccy` VARCHAR(50) NOT NULL COMMENT '返佣币种',
-    `rebate` DECIMAL(20, 8) NOT NULL COMMENT '返佣金额',
-    `category` VARCHAR(50) NOT NULL COMMENT '分类',
-    `u_time` BIGINT NOT NULL COMMENT '更新时间',
-    `c_time` BIGINT NOT NULL COMMENT '创建时间',
-    `source` VARCHAR(100) DEFAULT '' COMMENT '来源',
-    `reduce_only` VARCHAR(10) NOT NULL COMMENT '仅减仓',
-    `cancel_source` VARCHAR(100) DEFAULT '' COMMENT '取消来源',
-    `quick_mgn_type` VARCHAR(100) DEFAULT '' COMMENT '快速保证金类型',
-    `stp_id` VARCHAR(100) DEFAULT '' COMMENT 'STP ID',
-    `stp_mode` VARCHAR(50) NOT NULL COMMENT 'STP 模式',
-    `attach_algo_cl_ord_id` VARCHAR(100) DEFAULT '' COMMENT '附加算法订单客户端 ID',
-    `last_px` DECIMAL(20, 8) NOT NULL COMMENT '最新价格',
-    `is_tp_limit` VARCHAR(10) NOT NULL COMMENT '是否为止盈限价单',
-    `sl_trigger_px` DECIMAL(20, 8) DEFAULT NULL COMMENT '止损触发价格',
-    `sl_trigger_px_type` VARCHAR(50) DEFAULT '' COMMENT '止损触发价格类型',
-    `tp_ord_px` DECIMAL(20, 8) DEFAULT NULL COMMENT '止盈订单价格',
-    `tp_trigger_px` DECIMAL(20, 8) DEFAULT NULL COMMENT '止盈触发价格',
-    `tp_trigger_px_type` VARCHAR(50) DEFAULT '' COMMENT '止盈触发价格类型',
-    `sl_ord_px` DECIMAL(20, 8) DEFAULT NULL COMMENT '止损订单价格',
-    `fill_px` DECIMAL(20, 8) DEFAULT NULL COMMENT '成交价格',
-    `trade_id` VARCHAR(100) DEFAULT '' COMMENT '成交 ID',
-    `fill_sz` DECIMAL(20, 8) NOT NULL COMMENT '成交数量',
-    `fill_time` BIGINT DEFAULT NULL COMMENT '成交时间',
-    `fill_pnl` DECIMAL(20, 8) NOT NULL COMMENT '成交盈亏',
-    `fill_fee` DECIMAL(20, 8) NOT NULL COMMENT '成交手续费',
-    `fill_fee_ccy` VARCHAR(50) DEFAULT '' COMMENT '成交手续费币种',
-    `exec_type` VARCHAR(50) DEFAULT '' COMMENT '执行类型',
-    `fill_px_vol` DECIMAL(20, 8) DEFAULT NULL COMMENT '成交价格波动',
-    `fill_px_usd` DECIMAL(20, 8) DEFAULT NULL COMMENT '成交价格（USD）',
-    `fill_mark_vol` DECIMAL(20, 8) DEFAULT NULL COMMENT '成交标记波动',
-    `fill_fwd_px` DECIMAL(20, 8) DEFAULT NULL COMMENT '成交远期价格',
-    `fill_mark_px` DECIMAL(20, 8) DEFAULT NULL COMMENT '成交标记价格',
-    `amend_source` VARCHAR(100) DEFAULT '' COMMENT '修改来源',
-    `req_id` VARCHAR(100) DEFAULT '' COMMENT '请求 ID',
-    `amend_result` VARCHAR(100) DEFAULT '' COMMENT '修改结果',
-    `code` VARCHAR(50) NOT NULL COMMENT '状态码',
-    `msg` VARCHAR(255) DEFAULT '' COMMENT '消息',
-    `px_type` VARCHAR(50) NOT NULL COMMENT '价格类型',
-    `px_usd` DECIMAL(20, 8) NOT NULL COMMENT '价格（USD）',
-    `px_vol` DECIMAL(20, 8) NOT NULL COMMENT '价格波动',
-    `linked_algo_ord_algo_id` VARCHAR(100) DEFAULT '' COMMENT '关联算法订单 ID',
-    `attach_algo_ords` TEXT DEFAULT NULL COMMENT '附加算法订单列表',
-    INDEX `idx_ord_id` (`ord_id`),
-    INDEX `idx_cl_ord_id` (`cl_ord_id`),
-    INDEX `idx_inst_id` (`inst_id`),
-    INDEX `idx_state` (`state`),
-    INDEX `idx_c_time` (`c_time`),
-    INDEX `idx_u_time` (`u_time`),
-    INDEX `idx_px` (`px`),
-    INDEX `idx_sz` (`sz`),
-    INDEX `idx_notional_usd` (`notional_usd`),
-    INDEX `idx_avg_px` (`avg_px`),
-    INDEX `idx_pnl` (`pnl`),
-    INDEX `idx_px_usd` (`px_usd`),
-    INDEX `idx_px_vol` (`px_vol`)
-'''
+# acc_fill_sz	0.0	2.0	累计成交数量从 0.0 变为 2.0。
+# fill_notional_usd	0.0	1957.66	成交名义价值从 0.0 变为 1957.66。
+# avg_px	0.0	0.0245	平均成交价格从 0.0 变为 0.0245。
+# state	'live'	'filled'	订单状态从 live 变为 filled。
+# pnl	0.0	-2e-05	盈亏从 0.0 变为 -2e-05。
+# fee	0.0	-6e-06	手续费从 0.0 变为 -6e-06。
+# fill_px	0.0	0.0245	成交价格从 0.0 变为 0.0245。
+# trade_id	''	'3'	成交 ID 从空值变为 '3'。
+# fill_sz	0.0	2.0	成交数量从 0.0 变为 2.0。
+# fill_time	0	1735965493919	成交时间从 0 变为 1735965493919。
+# fill_pnl	0.0	-2e-05	成交盈亏从 0.0 变为 -2e-05。
+# fill_fee	0.0	-6e-06	成交手续费从 0.0 变为 -6e-06。
+# fill_fee_ccy	''	'BTC'	成交手续费币种从空值变为 'BTC'。
+# exec_type	''	'T'	执行类型从空值变为 'T'。
+# fill_px_vol	0.0	0.454110654296875	成交价格波动从 0.0 变为 0.454110654296875。
+# fill_px_usd	0.0	2398.1335	成交价格（USD）从 0.0 变为 2398.1335。
+# fill_mark_vol	0.0	0.4406829467773438	成交标记波动从 0.0 变为 0.4406829467773438。
+# fill_fwd_px	0.0	98768.25	成交远期价格从 0.0 变为 98768.25。
+# fill_mark_px	0.0	0.024165055314007245	成交标记价格从 0.0 变为 0.024165055314007245。
+# u_time	1735965493918	1735965493919	更新时间从 1735965493918 变为 1735965493919。
+# last_px	0.0235	0.0245	最新价格从 0.0235 变为 0.0245。
 @dataclass
 class EResultOKXOrder:
+    api_key: str
     inst_type: str
     inst_id: str
     tgt_ccy: str
@@ -307,8 +243,17 @@ class EResultOKXOrder:
     attach_algo_ords: str
 
 
-def CreateOrderResult(order ):
+def CreateOrderResult(record_key, order):
+    def safe_float(value, default=0.0):
+        """安全地将字符串转换为浮点数，如果为空字符串则返回默认值"""
+        return float(value) if value != "" else default
+
+    def safe_int(value, default=0):
+        """安全地将字符串转换为整数，如果为空字符串则返回默认值"""
+        return int(value) if value != "" else default
+
     return EResultOKXOrder(
+        api_key=record_key,
         inst_type=order.get("instType", ""),
         inst_id=order.get("instId", ""),
         tgt_ccy=order.get("tgtCcy", ""),
@@ -318,26 +263,26 @@ def CreateOrderResult(order ):
         algo_cl_ord_id=order.get("algoClOrdId", ""),
         algo_id=order.get("algoId", ""),
         tag=order.get("tag", ""),
-        px=float(order.get("px", 0)),
-        sz=float(order.get("sz", 0)),
-        notional_usd=float(order.get("notionalUsd", 0)),
+        px=safe_float(order.get("px", "0")),
+        sz=safe_float(order.get("sz", "0")),
+        notional_usd=safe_float(order.get("notionalUsd", "0")),
         ord_type=order.get("ordType", ""),
         side=order.get("side", ""),
         pos_side=order.get("posSide", ""),
         td_mode=order.get("tdMode", ""),
-        acc_fill_sz=float(order.get("accFillSz", 0)),
-        fill_notional_usd=float(order.get("fillNotionalUsd", 0)),
-        avg_px=float(order.get("avgPx", 0)),
+        acc_fill_sz=safe_float(order.get("accFillSz", "0")),
+        fill_notional_usd=safe_float(order.get("fillNotionalUsd", "0")),
+        avg_px=safe_float(order.get("avgPx", "0")),
         state=order.get("state", ""),
-        lever=float(order.get("lever", 0)),
-        pnl=float(order.get("pnl", 0)),
+        lever=safe_float(order.get("lever", "0")),
+        pnl=safe_float(order.get("pnl", "0")),
         fee_ccy=order.get("feeCcy", ""),
-        fee=float(order.get("fee", 0)),
+        fee=safe_float(order.get("fee", "0")),
         rebate_ccy=order.get("rebateCcy", ""),
-        rebate=float(order.get("rebate", 0)),
+        rebate=safe_float(order.get("rebate", "0")),
         category=order.get("category", ""),
-        u_time=int(order.get("uTime", 0)),
-        c_time=int(order.get("cTime", 0)),
+        u_time=safe_int(order.get("uTime", "0")),
+        c_time=safe_int(order.get("cTime", "0")),
         source=order.get("source", ""),
         reduce_only=order.get("reduceOnly", ""),
         cancel_source=order.get("cancelSource", ""),
@@ -345,35 +290,35 @@ def CreateOrderResult(order ):
         stp_id=order.get("stpId", ""),
         stp_mode=order.get("stpMode", ""),
         attach_algo_cl_ord_id=order.get("attachAlgoClOrdId", ""),
-        last_px=float(order.get("lastPx", 0)),
+        last_px=safe_float(order.get("lastPx", "0")),
         is_tp_limit=order.get("isTpLimit", ""),
-        sl_trigger_px=float(order.get("slTriggerPx", 0)),
+        sl_trigger_px=safe_float(order.get("slTriggerPx", "0")),
         sl_trigger_px_type=order.get("slTriggerPxType", ""),
-        tp_ord_px=float(order.get("tpOrdPx", 0)),
-        tp_trigger_px=float(order.get("tpTriggerPx", 0)),
+        tp_ord_px=safe_float(order.get("tpOrdPx", "0")),
+        tp_trigger_px=safe_float(order.get("tpTriggerPx", "0")),
         tp_trigger_px_type=order.get("tpTriggerPxType", ""),
-        sl_ord_px=float(order.get("slOrdPx", 0)),
-        fill_px=float(order.get("fillPx", 0)),
+        sl_ord_px=safe_float(order.get("slOrdPx", "0")),
+        fill_px=safe_float(order.get("fillPx", "0")),
         trade_id=order.get("tradeId", ""),
-        fill_sz=float(order.get("fillSz", 0)),
-        fill_time=int(order.get("fillTime", 0)),
-        fill_pnl=float(order.get("fillPnl", 0)),
-        fill_fee=float(order.get("fillFee", 0)),
+        fill_sz=safe_float(order.get("fillSz", "0")),
+        fill_time=safe_int(order.get("fillTime", "0")),
+        fill_pnl=safe_float(order.get("fillPnl", "0")),
+        fill_fee=safe_float(order.get("fillFee", "0")),
         fill_fee_ccy=order.get("fillFeeCcy", ""),
         exec_type=order.get("execType", ""),
-        fill_px_vol=float(order.get("fillPxVol", 0)),
-        fill_px_usd=float(order.get("fillPxUsd", 0)),
-        fill_mark_vol=float(order.get("fillMarkVol", 0)),
-        fill_fwd_px=float(order.get("fillFwdPx", 0)),
-        fill_mark_px=float(order.get("fillMarkPx", 0)),
+        fill_px_vol=safe_float(order.get("fillPxVol", "0")),
+        fill_px_usd=safe_float(order.get("fillPxUsd", "0")),
+        fill_mark_vol=safe_float(order.get("fillMarkVol", "0")),
+        fill_fwd_px=safe_float(order.get("fillFwdPx", "0")),
+        fill_mark_px=safe_float(order.get("fillMarkPx", "0")),
         amend_source=order.get("amendSource", ""),
         req_id=order.get("reqId", ""),
         amend_result=order.get("amendResult", ""),
         code=order.get("code", ""),
         msg=order.get("msg", ""),
         px_type=order.get("pxType", ""),
-        px_usd=float(order.get("pxUsd", 0)),
-        px_vol=float(order.get("pxVol", 0)),
+        px_usd=safe_float(order.get("pxUsd", "0")),
+        px_vol=safe_float(order.get("pxVol", "0")),
         linked_algo_ord_algo_id=order.get("linkedAlgoOrd", {}).get("algoId", ""),
         attach_algo_ords=str(order.get("attachAlgoOrds", []))
     )

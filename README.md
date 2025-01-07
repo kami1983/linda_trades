@@ -77,7 +77,13 @@ Private WebSocket: wss://wspap.okx.com:8443/ws/v5/private
 Business WebSocket: wss://wspap.okx.com:8443/ws/v5/business
 ```
 
+## How to start 
+* python app.py 启动API服务
+* python websocket.py 启动websocket服务，用于记录订单数据
+* cd frontend && yarn start 启动前端服务
+
 # To Do List
 
 ## 交易模拟机器
 * 如何推断出某个期权合理的标记价格
+

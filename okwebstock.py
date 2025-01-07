@@ -1,7 +1,8 @@
 import os
 
 import asyncio
-from db_struct import CreateOrderResult, EResultOKXOrder
+from db_operation import OrderResultToDb
+from db_struct import CreateOrderResult
 import websockets
 import json
 import hmac
@@ -83,21 +84,23 @@ async def listen_orders():
                         state = order.get("state")
                         if state == "live":
                             print("==============================")
-                            print("Order Created:", order)
+                            # print("Order Created:", order)
                             # 将 order 字典中的数据映射到 EResultOKXOrder 实例
-                            data =CreateOrderResult(order)
+                            data =CreateOrderResult(API_KEY, order)
                             print("DbStruct:", data)
-
+                            await OrderResultToDb(data)
                         elif state == "canceled":
                             print("==============================")
-                            print("Order Canceled:", order)
-                            data =CreateOrderResult(order)
+                            # print("Order Canceled:", order)
+                            data =CreateOrderResult(API_KEY, order)
                             print("DbStruct:", data)
+                            await OrderResultToDb(data)
                         elif state == "filled":
                             print("==============================")
-                            print("Order Filled:", order)
-                            data =CreateOrderResult(order)
+                            # print("Order Filled:", order)
+                            data =CreateOrderResult(API_KEY, order)
                             print("DbStruct:", data)
+                            await OrderResultToDb(data)
             except Exception as e:
                 print("Error:", e)
                 break
