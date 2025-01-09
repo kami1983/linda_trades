@@ -1,5 +1,4 @@
 import os
-
 import asyncio
 from db_operation import OrderResultToDb
 from db_struct import CreateOrderResult
@@ -36,72 +35,77 @@ def create_okx_signature(api_key, api_secret, passphrase):
 
 # 监听订单状态
 async def listen_orders():
-    async with websockets.connect(OK_WEB_SOCKET_URL) as websocket:
-        # 创建签名
-        timestamp, signature = create_okx_signature(API_KEY, API_SECRET, PASSPHRASE)
+    while True:
+        try:
+            async with websockets.connect(OK_WEB_SOCKET_URL) as websocket:
+                # 创建签名
+                timestamp, signature = create_okx_signature(API_KEY, API_SECRET, PASSPHRASE)
 
-        # 登录消息
-        login_msg = {
-            "op": "login",
-            "args": [
-                {
-                    "apiKey": API_KEY,
-                    "passphrase": PASSPHRASE,
-                    "timestamp": timestamp,
-                    "sign": signature,
+                # 登录消息
+                login_msg = {
+                    "op": "login",
+                    "args": [
+                        {
+                            "apiKey": API_KEY,
+                            "passphrase": PASSPHRASE,
+                            "timestamp": timestamp,
+                            "sign": signature,
+                        }
+                    ],
                 }
-            ],
-        }
-        await websocket.send(json.dumps(login_msg))
-        login_response = await websocket.recv()
-        print("Login Response:", login_response)
+                await websocket.send(json.dumps(login_msg))
+                login_response = await websocket.recv()
+                print("Login Response:", login_response)
 
-        # 订阅订单通道
-        subscribe_msg = {
-            "op": "subscribe",
-            "args": [
-                {
-                    "channel": "orders",
-                    "instType": "OPTION",  # 可选值：SPOT（现货）、SWAP（永续）、FUTURES（期货）、OPTION（期权）
+                # 订阅订单通道
+                subscribe_msg = {
+                    "op": "subscribe",
+                    "args": [
+                        {
+                            "channel": "orders",
+                            "instType": "OPTION",  # 可选值：SPOT（现货）、SWAP（永续）、FUTURES（期货）、OPTION（期权）
+                        }
+                    ],
                 }
-            ],
-        }
-        await websocket.send(json.dumps(subscribe_msg))
-        subscribe_response = await websocket.recv()
-        print("Subscribe Response:", subscribe_response)
+                await websocket.send(json.dumps(subscribe_msg))
+                subscribe_response = await websocket.recv()
+                print("Subscribe Response:", subscribe_response)
 
-        # 实时监听订单状态
-        while True:
-            try:
-                message = await websocket.recv()
-                data = json.loads(message)
+                # 实时监听订单状态
+                while True:
+                    try:
+                        message = await websocket.recv()
+                        data = json.loads(message)
 
-                # 根据订单状态处理
-                if "data" in data:
-                    for order in data["data"]:
-                        state = order.get("state")
-                        if state == "live":
-                            print("==============================")
-                            # print("Order Created:", order)
-                            # 将 order 字典中的数据映射到 EResultOKXOrder 实例
-                            data =CreateOrderResult(API_KEY, order)
-                            print("DbStruct:", data)
-                            await OrderResultToDb(data)
-                        elif state == "canceled":
-                            print("==============================")
-                            # print("Order Canceled:", order)
-                            data =CreateOrderResult(API_KEY, order)
-                            print("DbStruct:", data)
-                            await OrderResultToDb(data)
-                        elif state == "filled":
-                            print("==============================")
-                            # print("Order Filled:", order)
-                            data =CreateOrderResult(API_KEY, order)
-                            print("DbStruct:", data)
-                            await OrderResultToDb(data)
-            except Exception as e:
-                print("Error:", e)
-                break
+                        # 根据订单状态处理
+                        if "data" in data:
+                            for order in data["data"]:
+                                state = order.get("state")
+                                if state == "live":
+                                    print("==============================")
+                                    data = CreateOrderResult(API_KEY, order)
+                                    print("DbStruct:", data)
+                                    await OrderResultToDb(data)
+                                elif state == "canceled":
+                                    print("==============================")
+                                    data = CreateOrderResult(API_KEY, order)
+                                    print("DbStruct:", data)
+                                    await OrderResultToDb(data)
+                                elif state == "filled":
+                                    print("==============================")
+                                    data = CreateOrderResult(API_KEY, order)
+                                    print("DbStruct:", data)
+                                    await OrderResultToDb(data)
+                    except websockets.ConnectionClosed:
+                        print("WebSocket connection closed. Reconnecting...")
+                        break
+                    except Exception as e:
+                        print("Error:", e)
+                        break
+        except Exception as e:
+            print("Connection error:", e)
+            print("Reconnecting in 5 seconds...")
+            await asyncio.sleep(5)
 
 # 运行 WebSocket 监听
 asyncio.run(listen_orders())

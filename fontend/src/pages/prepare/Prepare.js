@@ -231,6 +231,7 @@ function Prepare() {
             </Header>
             <Content style={{ padding: '24px' }}>
                 <Row gutter={[16, 16]}>
+                    
                     <Col span={12}>
                         <Card title="基础信息">
                             <Form layout="vertical">
