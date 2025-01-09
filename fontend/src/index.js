@@ -7,12 +7,13 @@ import reportWebVitals from './reportWebVitals';
 import IVHistory from './Ivhistroy';
 import AtmIV from './Atmiv';
 import AtmPrice from './Atmprice';
-import OptionList from './Optionlist';
+import OptionList from './pages/optionlist/Optionlist';
 import OptionExec from './Optionexec';
 import PostionList from './Postionlist';
-import Prepare from './Prepare';
+import Prepare from './pages/prepare/Prepare';
 import {LoginStatusProvider} from './context/LoginStautsContext';
 import { PriceProvider } from './context/PriceContext';
+import AccountInfo from './AccountInfo';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -28,6 +29,7 @@ root.render(
             <Route path='/optionexec' element={<OptionExec />} />
             <Route path="/postionlist" element={<PostionList />} />
             <Route path='/prepare' element={<Prepare />} />
+            <Route path='/account' element={<AccountInfo />} />
           </Routes>
       </Router>
     </PriceProvider>

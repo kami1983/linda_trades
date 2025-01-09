@@ -1,61 +1,92 @@
-import logo from './logo.svg';
 import './App.css';
-import LineChart from './components/LineChart';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Link } from 'react-router-dom';
 import { usePrices } from './context/PriceContext';
-import { useLoginStatus } from './context/LoginStautsContext';
 import Login from './components/Login';
+import React from 'react';
+import { Layout, Menu, Card, Typography, Row, Col } from 'antd';
 
-// src/App.js
-import React, { useEffect, useState } from 'react';
-
+const { Header, Content, Footer } = Layout;
+const { Title, Text } = Typography;
 
 function App() {
-
     const coinPrices = usePrices();
     
     return (
-      <>
-      <div>
-        <h1>Login user</h1>
-        <Login/>
-      </div>
-      <div>
-            <h1>Prices</h1>
-            {coinPrices.map((coinPrice, idx) => (
-                <div key={idx}>
-                    {coinPrice.status ? (
-                        <h3>
-                            {coinPrice.data.symbol}:{' '}
-                            <a
-                                href={`/atmiv?symbol=${coinPrice.data.symbol}&price=${coinPrice.data.price}&rate=0`}
-                            >
-                                {coinPrice.data.price}
-                            </a>
-                        </h3>
-                    ) : null}
-                </div>
-            ))}
-        </div>
-      <div>
-        <h2>IV History</h2>
-        <h3><a href='/ivhistory?symbol=eth&flag=c&offset=2'>IV History | symbol=eth&flag=c&offset=2</a></h3>
-        <h3><a href='/ivhistory?symbol=eth&flag=p&offset=2'>IV History | symbol=eth&flag=p&offset=2</a></h3>
-        <h3><a href='/ivhistory?symbol=eth&flag=c&offset=14'>IV History | symbol=eth&flag=c&offset=14</a></h3>
-        <h3><a href='/ivhistory?symbol=eth&flag=p&offset=14'>IV History | symbol=eth&flag=p&offset=14</a></h3>
-      </div>
-      {/* <div>
-        <h2>Atm IV</h2>
-        <h3><a href='/atmPrice'>Atm Price</a></h3>
-        <h3><a href='/atmiv'>Atm IV</a></h3>
-      </div> */}
-      <div>
-        <h2>Options execute</h2>
-        <h3><a href='/postionlist'>Postion List</a></h3>
-        <h3><a href='/prepare'>Prepare</a></h3>
-      </div>
-
-      </>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Header>
+          <div className="logo" />
+          <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['1']}>
+            <Menu.Item key="1">Login</Menu.Item>
+            <Menu.Item key="2">Prices</Menu.Item>
+            <Menu.Item key="3">IV History</Menu.Item>
+            <Menu.Item key="4">Options</Menu.Item>
+          </Menu>
+        </Header>
+        
+        <Content style={{ padding: '24px' }}>
+          <Row gutter={[16, 16]}>
+            <Col span={24}>
+              <Card title="Login">
+                <Login />
+              </Card>
+            </Col>
+            
+            <Col span={24}>
+              <Card title="Prices">
+                {coinPrices.map((coinPrice, idx) => (
+                  coinPrice.status && (
+                    <Text key={idx} style={{ display: 'block', margin: '8px 0' }}>
+                      {coinPrice.data.symbol}:{' '}
+                      <Link to={`/atmiv?symbol=${coinPrice.data.symbol}&price=${coinPrice.data.price}&rate=0`}>
+                        {coinPrice.data.price}
+                      </Link>
+                    </Text>
+                  )
+                ))}
+              </Card>
+            </Col>
+            
+            <Col span={24}>
+              <Card title="IV History">
+                <Row gutter={[16, 16]}>
+                  <Col>
+                    <Link to='/ivhistory?symbol=eth&flag=c&offset=2'>ETH Call 2D</Link>
+                  </Col>
+                  <Col>
+                    <Link to='/ivhistory?symbol=eth&flag=p&offset=2'>ETH Put 2D</Link>
+                  </Col>
+                  <Col>
+                    <Link to='/ivhistory?symbol=eth&flag=c&offset=14'>ETH Call 14D</Link>
+                  </Col>
+                  <Col>
+                    <Link to='/ivhistory?symbol=eth&flag=p&offset=14'>ETH Put 14D</Link>
+                  </Col>
+                </Row>
+              </Card>
+            </Col>
+            
+            <Col span={24}>
+              <Card title="Options Execute">
+                <Row gutter={[16, 16]}>
+                  <Col>
+                    <Link to='/postionlist'>Position List</Link>
+                  </Col>
+                  <Col>
+                    <Link to='/prepare'>Prepare</Link>
+                  </Col>
+                  <Col>
+                    <Link to='/account'>Account Info</Link>
+                  </Col>
+                </Row>
+              </Card>
+            </Col>
+          </Row>
+        </Content>
+        
+        <Footer style={{ textAlign: 'center' }}>
+          Options Trading System ©2023
+        </Footer>
+      </Layout>
     )
 }
 

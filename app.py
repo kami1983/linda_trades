@@ -1,7 +1,7 @@
 import asyncio
 import os
 from urllib import request
-from db_operation import getOptionChainByExpirationDate, getRecentOptionChainByTimestamp
+from db_operation import getOptionChainByExpirationDate, getRecentOptionChainByTimestamp, getRecordedOrderList
 # from flask import Flask, jsonify, request
 from exchange import createExchangeConn
 from fetch_options import fetchOpenOrders, fetchOptionChain, fetchPostions
@@ -543,6 +543,219 @@ async def infer_current_price():
     current_price = inferCurrentPrice(buy_price=buy_price, strike_price=strike_price, iv=iv, r=r, day_left=day_left, option_type=option_type)
     return jsonify({"status": True, "data": current_price})
 
+@app.route('/api/get_recorded_order_list')
+async def get_recorded_order_list():
+    '''
+    Result:
+        {
+        "data": [
+            {
+                "acc_fill_sz": "1.00000000000000000000",
+                "avg_px": "0.03650000000000000000",
+                "exec_type": "T",
+                "fee": "-0.00000300000000000000",
+                "fill_fee": "-0.00000300000000000000",
+                "fill_fee_ccy": "BTC",
+                "fill_fwd_px": "101461.96000000000000000000",
+                "fill_mark_px": "0.03974776224326395000",
+                "fill_mark_vol": "0.49500412719726560000",
+                "fill_notional_usd": "1006.53100000000010000000",
+                "fill_pnl": "0E-20",
+                "fill_px": "0.03650000000000000000",
+                "fill_px_usd": "3673.83815000000000000000",
+                "fill_px_vol": "0.44373469848632810000",
+                "fill_sz": "1.00000000000000000000",
+                "fill_time": 1736257195926,
+                "inst_id": "BTC-USD-250117-100000-C",
+                "last_px": "0.03650000000000000000",
+                "ord_id": "2139255964565905408",
+                "pnl": "0E-20",
+                "state": "filled",
+                "trade_id": "14",
+                "u_time": 1736257195928
+            },
+            {
+                "acc_fill_sz": "1.00000000000000000000",
+                "avg_px": "0.02700000000000000000",
+                "exec_type": "T",
+                "fee": "-0.00000300000000000000",
+                "fill_fee": "-0.00000300000000000000",
+                "fill_fee_ccy": "BTC",
+                "fill_fwd_px": "101461.96000000000000000000",
+                "fill_mark_px": "0.02534538841552121000",
+                "fill_mark_vol": "0.49500412719726560000",
+                "fill_notional_usd": "1006.53100000000010000000",
+                "fill_pnl": "0E-20",
+                "fill_px": "0.02700000000000000000",
+                "fill_px_usd": "2717.63370000000000000000",
+                "fill_px_vol": "0.52063884155273430000",
+                "fill_sz": "1.00000000000000000000",
+                "fill_time": 1736257196039,
+                "inst_id": "BTC-USD-250117-100000-P",
+                "last_px": "0.02700000000000000000",
+                "ord_id": "2139255968357556224",
+                "pnl": "0E-20",
+                "state": "filled",
+                "trade_id": "4",
+                "u_time": 1736257196040
+            },
+            {
+                "acc_fill_sz": "1.00000000000000000000",
+                "avg_px": "0.02650000000000000000",
+                "exec_type": "T",
+                "fee": "-0.00000300000000000000",
+                "fill_fee": "-0.00000300000000000000",
+                "fill_fee_ccy": "BTC",
+                "fill_fwd_px": "101533.71000000000000000000",
+                "fill_mark_px": "0.02502548646817879400",
+                "fill_mark_vol": "0.49500412719726560000",
+                "fill_notional_usd": "1007.27000000000000000000",
+                "fill_pnl": "-0.00000500000000000000",
+                "fill_px": "0.02650000000000000000",
+                "fill_px_usd": "2669.26550000000000000000",
+                "fill_px_vol": "0.51819744018554690000",
+                "fill_sz": "1.00000000000000000000",
+                "fill_time": 1736257921685,
+                "inst_id": "BTC-USD-250117-100000-P",
+                "last_px": "0.02650000000000000000",
+                "ord_id": "2139280316996919296",
+                "pnl": "-0.00000500000000000000",
+                "state": "filled",
+                "trade_id": "5",
+                "u_time": 1736257921686
+            },
+            {
+                "acc_fill_sz": "1.00000000000000000000",
+                "avg_px": "0.03800000000000000000",
+                "exec_type": "T",
+                "fee": "-0.00000300000000000000",
+                "fill_fee": "-0.00000300000000000000",
+                "fill_fee_ccy": "BTC",
+                "fill_fwd_px": "101533.62000000000000000000",
+                "fill_mark_px": "0.04012676523917927500",
+                "fill_mark_vol": "0.49500412719726560000",
+                "fill_notional_usd": "1007.27000000000000000000",
+                "fill_pnl": "-0.00001500000000000000",
+                "fill_px": "0.03800000000000000000",
+                "fill_px_usd": "3827.62600000000000000000",
+                "fill_px_vol": "0.46143485839843750000",
+                "fill_sz": "1.00000000000000000000",
+                "fill_time": 1736257922875,
+                "inst_id": "BTC-USD-250117-100000-C",
+                "last_px": "0.03800000000000000000",
+                "ord_id": "2139280356893138944",
+                "pnl": "-0.00001500000000000000",
+                "state": "filled",
+                "trade_id": "15",
+                "u_time": 1736257922876
+            },
+            {
+                "acc_fill_sz": "1.00000000000000000000",
+                "avg_px": "0.01350000000000000000",
+                "exec_type": "T",
+                "fee": "-0.00000300000000000000",
+                "fill_fee": "-0.00000300000000000000",
+                "fill_fee_ccy": "BTC",
+                "fill_fwd_px": "96142.64000000000000000000",
+                "fill_mark_px": "0.01305851265027827900",
+                "fill_mark_vol": "0.41382753173828130000",
+                "fill_notional_usd": "955.48500000000000000000",
+                "fill_pnl": "0E-20",
+                "fill_px": "0.01350000000000000000",
+                "fill_px_usd": "1289.90475000000000000000",
+                "fill_px_vol": "0.42847593994140630000",
+                "fill_sz": "1.00000000000000000000",
+                "fill_time": 1736320604605,
+                "inst_id": "BTC-USD-250110-96000-C",
+                "last_px": "0.01350000000000000000",
+                "ord_id": "2141383606740058112",
+                "pnl": "0E-20",
+                "state": "filled",
+                "trade_id": "13",
+                "u_time": 1736320604605
+            }
+        ],
+        "status": true
+    }
+    '''
+    try:
+        result = await getRecordedOrderList()
+        return jsonify({"status": True, "data": result})
+    except Exception as e:
+        return jsonify({"status": False, "message": e.args[0]})
+
+@app.route('/api/account_balance')
+async def account_balance():
+    '''
+    Result:
+        {
+        "data": {
+            "free": {
+                "ADA": 3000.0,
+                "BTC": 2.987497209392031,
+                "ETH": 14.983602450252652,
+                "JFI": 300.0,
+                "LTC": 30.0,
+                "OKB": 300.0,
+                "PAX": 9000.0,
+                "SUSHI": 998.435273292,
+                "TRX": 30000.0,
+                "TUSD": 9000.0,
+                "UNI": 1500.0,
+                "USDC": 9000.0,
+                "USDK": 9000.0,
+                "USDT": 9961.290478299716
+            },
+            "timestamp": 1736307197322,
+            "total": {
+                "ADA": 3000.0,
+                "BTC": 2.9975888729442217,
+                "ETH": 14.983602450252652,
+                "JFI": 300.0,
+                "LTC": 30.0,
+                "OKB": 300.0,
+                "PAX": 9000.0,
+                "SUSHI": 998.435273292,
+                "TRX": 30000.0,
+                "TUSD": 9000.0,
+                "UNI": 1500.0,
+                "USDC": 9000.0,
+                "USDK": 9000.0,
+                "USDT": 9961.290478299716
+            },
+            "used": {
+                "ADA": 0.0,
+                "BTC": 0.0100916635521907,
+                "ETH": 0.0,
+                "JFI": 0.0,
+                "LTC": 0.0,
+                "OKB": 0.0,
+                "PAX": 0.0,
+                "SUSHI": 0.0,
+                "TRX": 0.0,
+                "TUSD": 0.0,
+                "UNI": 0.0,
+                "USDC": 0.0,
+                "USDK": 0.0,
+                "USDT": 0.0
+            }
+        },
+        "status": true
+    }
+    '''
+    try:
+        exchange = createExchangeConn()
+        balance = await exchange.fetch_balance()
+        return jsonify({"status": True, "data": {
+            "total": balance['total'],
+            "free": balance['free'],
+            "used": balance['used'],
+            "timestamp": balance['timestamp']
+        }})
+    except Exception as e:
+        return jsonify({"status": False, "message": e.args[0]})
+    finally:
+        await exchange.close()
 
 
 if __name__ == "__main__":

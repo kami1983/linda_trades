@@ -259,6 +259,69 @@ async def getOptionChainByExpirationDate(expiration_date: str, code: str) -> Lis
             ) for item in result
         ]
     
+
+async def getRecordedOrderList() -> List[dict]:
+    """
+    查询订单信息
+    acc_fill_sz	0.0	2.0	累计成交数量从 0.0 变为 2.0。
+    fill_notional_usd	0.0	1957.66	成交名义价值从 0.0 变为 1957.66。
+    avg_px	0.0	0.0245	平均成交价格从 0.0 变为 0.0245。
+    state	'live'	'filled'	订单状态从 live 变为 filled。
+    pnl	0.0	-2e-05	盈亏从 0.0 变为 -2e-05。
+    fee	0.0	-6e-06	手续费从 0.0 变为 -6e-06。
+    fill_px	0.0	0.0245	成交价格从 0.0 变为 0.0245。
+    trade_id	''	'3'	成交 ID 从空值变为 '3'。
+    fill_sz	0.0	2.0	成交数量从 0.0 变为 2.0。
+    fill_time	0	1735965493919	成交时间从 0 变为 1735965493919。
+    fill_pnl	0.0	-2e-05	成交盈亏从 0.0 变为 -2e-05。
+    fill_fee	0.0	-6e-06	成交手续费从 0.0 变为 -6e-06。
+    fill_fee_ccy	''	'BTC'	成交手续费币种从空值变为 'BTC'。
+    exec_type	''	'T'	执行类型从空值变为 'T'。
+    fill_px_vol	0.0	0.454110654296875	成交价格波动从 0.0 变为 0.454110654296875。
+    fill_px_usd	0.0	2398.1335	成交价格（USD）从 0.0 变为 2398.1335。
+    fill_mark_vol	0.0	0.4406829467773438	成交标记波动从 0.0 变为 0.4406829467773438。
+    fill_fwd_px	0.0	98768.25	成交远期价格从 0.0 变为 98768.25。
+    fill_mark_px	0.0	0.024165055314007245	成交标记价格从 0.0 变为 0.024165055314007245。
+    u_time	1735965493918	1735965493919	更新时间从 1735965493918 变为 1735965493919。
+    last_px	0.0235	0.0245	最新价格从 0.0235 变为 0.0245。
+    @return: 订单信息列表
+    """
+    
+    connection = await getDbConn()
+    try:
+        async with connection.cursor() as cursor:
+            await cursor.execute(
+                "SELECT acc_fill_sz, fill_notional_usd, avg_px, state, pnl, fee, fill_px, trade_id, fill_sz, fill_time, fill_pnl, fill_fee, fill_fee_ccy, exec_type, fill_px_vol, fill_px_usd, fill_mark_vol, fill_fwd_px, fill_mark_px, u_time, last_px, inst_id, ord_id FROM okx_orders"
+            )
+            result = await cursor.fetchall()
+            return [{
+                'acc_fill_sz': row[0],
+                'fill_notional_usd': row[1],
+                'avg_px': row[2],
+                'state': row[3],
+                'pnl': row[4],
+                'fee': row[5],
+                'fill_px': row[6],
+                'trade_id': row[7],
+                'fill_sz': row[8],
+                'fill_time': row[9],
+                'fill_pnl': row[10],
+                'fill_fee': row[11],
+                'fill_fee_ccy': row[12],
+                'exec_type': row[13],
+                'fill_px_vol': row[14],
+                'fill_px_usd': row[15],
+                'fill_mark_vol': row[16],
+                'fill_fwd_px': row[17],
+                'fill_mark_px': row[18],
+                'u_time': row[19],
+                'last_px': row[20],
+                'inst_id': row[21],
+                'ord_id': row[22]
+            } for row in result]
+    finally:
+        connection.close()
+
 async def OrderResultToDb(data: EResultOKXOrder):
     '''
     更新时候会变化的字段：

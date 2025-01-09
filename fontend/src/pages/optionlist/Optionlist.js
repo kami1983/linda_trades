@@ -1,6 +1,6 @@
 
 import { Colors } from 'chart.js';
-import LineChart from './components/LineChart';
+import LineChart from '../../components/LineChart';
 import './Optionlist.css';
 // src/App.js
 import React, { useEffect, useState } from 'react';

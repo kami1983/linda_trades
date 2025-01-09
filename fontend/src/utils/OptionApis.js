@@ -168,4 +168,48 @@ const callOpenOrders = () => {
   });
 }
 
-export { getTOptionChain, extractIVData, handlerToCreatePosition, callPostionList, operToCancel, handlerEditOrder, callOpenOrders};
+const getRecordedOrderList = () => {
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/get_recorded_order_list`, {
+      method: "GET",
+      credentials: "include"
+    })
+      .then(response => response.json())
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      });
+  });
+}
+
+const getAccountBalance = () => {
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/account_balance`, {
+      method: "GET", 
+      credentials: "include"
+    })
+      .then(response => response.json())
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      });
+  });
+}
+
+export { 
+  getTOptionChain, 
+  extractIVData, 
+  handlerToCreatePosition, 
+  callPostionList, 
+  operToCancel, 
+  handlerEditOrder, 
+  callOpenOrders,
+  getRecordedOrderList,
+  getAccountBalance
+};
