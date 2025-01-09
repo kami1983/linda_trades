@@ -16,10 +16,8 @@ function App() {
         <Header>
           <div className="logo" />
           <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['1']}>
-            <Menu.Item key="1">Login</Menu.Item>
-            <Menu.Item key="2">Prices</Menu.Item>
-            <Menu.Item key="3">IV History</Menu.Item>
-            <Menu.Item key="4">Options</Menu.Item>
+            <Menu.Item key="1">HOME</Menu.Item>
+            <Menu.Item key="2">Option calculator</Menu.Item>
           </Menu>
         </Header>
         

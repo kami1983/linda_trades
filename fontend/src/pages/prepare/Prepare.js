@@ -285,6 +285,41 @@ function Prepare() {
                         </Card>
                     </Col>
                 </Row>
+
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                    <Col span={24}>
+                        <Card title="到期日 建议">
+                            <Space>
+                                {[10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100].map(price => (
+                                    <Button
+                                        key={price}
+                                        type={leftDays === price ? 'primary' : 'default'}
+                                        onClick={() => setLeftDays(price)}
+                                    >
+                                        {price}
+                                    </Button>
+                                ))}
+                            </Space>
+                        </Card>
+                    </Col>
+                </Row>
+                <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+                    <Col span={24}>
+                        <Card title="资产价格 建议">
+                            <Space>
+                                {[80000, 82500, 85000, 87500, 90000, 92500, 95000, 97500, 100000, 102500, 105000].map(price => (
+                                    <Button
+                                        key={price}
+                                        type={basePrice === price ? 'primary' : 'default'}
+                                        onClick={() => setBasePrice(price)}
+                                    >
+                                        {price}
+                                    </Button>
+                                ))}
+                            </Space>
+                        </Card>
+                    </Col>
+                </Row>
                 <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                     <Col span={24}>
                         <Card title="Strike Price 建议">
@@ -343,8 +378,8 @@ function Prepare() {
                 <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
                     <Col span={24}>
                         <Space>
-                            <Button type="primary" onClick={()=>fetchOptionInfos()}>获取期权信息</Button>
-                            {canToOpenPostion && <Button type="primary" onClick={()=>openPosition()}>开仓</Button>}
+                            <Button type="primary" onClick={()=>fetchOptionInfos()}>①获取期权信息</Button>
+                            {canToOpenPostion && <Button type="primary" onClick={()=>openPosition()}>②插入观察点</Button>}
                         </Space>
                     </Col>
                 </Row>
