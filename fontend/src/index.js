@@ -45,7 +45,7 @@ root.render(
                 Linda's Trading System ©2024
               </Footer>
       </Router>
-</Layout>
+  </Layout>
     </PriceProvider>
   </LoginStatusProvider>
   

@@ -21,24 +21,25 @@ const Header = () => {
   }, [location]);
 
   return (
-    <Menu 
-      theme="dark" 
-      mode="horizontal" 
-      selectedKeys={selectedKeys}
-      onSelect={({ key }) => setSelectedKeys([key])}
-    >
-      <Menu.Item key="1"><a href="/">HOME</a></Menu.Item>
-      <Menu.Item key="2"><a href="/prepare">Option calculator</a></Menu.Item>
-      {isLoggedIn ? (
-        <Menu.Item key="3" style={{ float: 'right' }}>
-          <a href="/login">Welcome, {currentUsername}</a>
+    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <Menu 
+        theme="dark" 
+        mode="horizontal" 
+        selectedKeys={selectedKeys}
+        onSelect={({ key }) => setSelectedKeys([key])}
+        style={{ display: 'flex', justifyContent: 'center' }}
+      >
+        <Menu.Item key="1"><a href="/">HOME</a></Menu.Item>
+        <Menu.Item key="2"><a href="/prepare">Option calculator</a></Menu.Item>
+        <Menu.Item key="3" style={{ marginLeft: 'auto' }}>
+          {isLoggedIn ? (
+            <span>Welcome, {currentUsername}</span>
+          ) : (
+            <a href="/login">Login</a>
+          )}
         </Menu.Item>
-      ) : (
-        <Menu.Item key="3" style={{ float: 'right' }}>
-          <a href="/login">Login</a>
-        </Menu.Item>
-      )}
-    </Menu>
+      </Menu>
+    </div>
   );
 };
 
