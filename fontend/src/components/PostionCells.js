@@ -439,7 +439,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                         >{postion.ivData?<button>Open `{postion.side == 'short' ? 'buy': 'sell'}` to close .</button>:'Close need to refresh'}</td>
                     </tr>
                     <tr key={`${idx}b`}>
-                        <td colSpan={8}>
+                        <td colSpan={9}>
                           <input type="text" placeholder="BTC/USD:BTC-241206-100000-C"  style={{
                             width: '100%',
                             boxSizing: 'border-box',
