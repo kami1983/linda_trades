@@ -25,8 +25,9 @@ root.render(
   <LoginStatusProvider>
     <PriceProvider>
     <Layout style={{ minHeight: '100vh' }}>
-    <Header />
+    
       <Router> 
+        <Header />
         <Routes>
           
             <Route path="*" element={<App />} />
@@ -40,11 +41,10 @@ root.render(
             <Route path='/account' element={<AccountInfo />} />
             <Route path='/login' element={<Login />} />
           </Routes>
-      </Router>
-      
-      <Footer style={{ textAlign: 'center' }}>
+          <Footer style={{ textAlign: 'center' }}>
                 Linda's Trading System ©2024
               </Footer>
+      </Router>
 </Layout>
     </PriceProvider>
   </LoginStatusProvider>
