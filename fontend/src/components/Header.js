@@ -21,7 +21,6 @@ const Header = () => {
   }, [location]);
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
       <Menu 
         theme="dark" 
         mode="horizontal" 
@@ -39,7 +38,6 @@ const Header = () => {
           )}
         </Menu.Item>
       </Menu>
-    </div>
   );
 };
 
