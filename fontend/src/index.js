@@ -12,10 +12,12 @@ import OptionExec from './Optionexec';
 import PostionList from './Postionlist';
 import Prepare from './pages/prepare/Prepare';
 import {LoginStatusProvider} from './context/LoginStautsContext';
+import Login from './components/Login';
 import { PriceProvider } from './context/PriceContext';
 import AccountInfo from './AccountInfo';
-import { Layout, Menu, Card, Typography, Row, Col } from 'antd';
-const { Header, Content, Footer } = Layout;
+import { Layout, Card, Typography, Row, Col } from 'antd';
+import Header from './components/Header';
+const { Content, Footer } = Layout;
 const { Title, Text } = Typography;
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
@@ -23,13 +25,7 @@ root.render(
   <LoginStatusProvider>
     <PriceProvider>
     <Layout style={{ minHeight: '100vh' }}>
-    <Header>
-              <div className="logo" />
-              <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['1']}>
-                <Menu.Item key="1"><a href="/">HOME</a></Menu.Item>
-                <Menu.Item key="2"><a href="/prepare">Option calculator</a></Menu.Item>
-              </Menu>
-            </Header>
+    <Header />
       <Router> 
         <Routes>
           
@@ -42,6 +38,7 @@ root.render(
             <Route path="/postionlist" element={<PostionList />} />
             <Route path='/prepare' element={<Prepare />} />
             <Route path='/account' element={<AccountInfo />} />
+            <Route path='/login' element={<Login />} />
           </Routes>
       </Router>
       
