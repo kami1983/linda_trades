@@ -1,74 +1,104 @@
 import React, { useState, useEffect } from "react";
 import { useLoginStatus } from "../context/LoginStautsContext";
+import { Form, Input, Button, Card, message } from "antd";
+import { UserOutlined, LockOutlined } from '@ant-design/icons';
 
 function Login() {
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-
+    const [form] = Form.useForm();
+    const [loading, setLoading] = useState(false);
+    
     const apiHost = process.env.REACT_APP_API_HOSTS;
     const {updateLoginStatus, isLoggedIn, currentUsername} = useLoginStatus();
 
-    // 检查用户是否已登录
-    useEffect(() => {
-    }, []);
+    const handleLogin = async (values) => {
+        setLoading(true);
+        try {
+            const response = await fetch(`${apiHost}/login`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(values),
+                credentials: "include"
+            });
 
-    const handleLogin = async () => {
-        const response = await fetch(`${apiHost}/login`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ username, password }),
-            credentials: "include" // 确保登录信息存储到 cookies
-        });
-
-        if (response.ok) {
-            updateLoginStatus();
-        } else {
-            alert("Invalid credentials");
+            if (response.ok) {
+                updateLoginStatus();
+                message.success('登录成功');
+            } else {
+                message.error('用户名或密码错误');
+            }
+        } catch (error) {
+            message.error('登录失败，请重试');
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleProtected = async () => {
-        const response = await fetch(`${apiHost}/protected`, {
-            method: "GET",
-            credentials: "include" // 确保携带 cookies
-        });
-
-        const data = await response.json();
-        alert(data.message || data.error);
-    };
-
     const handleLogout = async () => {
-        await fetch(`${apiHost}/logout`, {
-            method: "POST",
-            credentials: "include"
-        });
-        updateLoginStatus();
+        try {
+            await fetch(`${apiHost}/logout`, {
+                method: "POST",
+                credentials: "include"
+            });
+            updateLoginStatus();
+            message.success('登出成功');
+        } catch (error) {
+            message.error('登出失败');
+        }
     };
 
     return (
-        <div>
+        <div style={{ maxWidth: 400, margin: '0 auto', paddingTop: 100 }}>
             {isLoggedIn ? (
-                <div>
-                    <button onClick={handleLogout}>Logout [{currentUsername}]</button>
-                </div>
+                <Card title={`欢迎回来，${currentUsername}`}>
+                    <Button 
+                        type="primary" 
+                        block
+                        onClick={handleLogout}
+                    >
+                        登出
+                    </Button>
+                </Card>
             ) : (
-                <div>
-                    <input
-                        type="text"
-                        placeholder="Username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                    />
-                    <button onClick={handleLogin}>Login</button>
-                </div>
+                <Card title="用户登录">
+                    <Form
+                        form={form}
+                        onFinish={handleLogin}
+                        initialValues={{ remember: true }}
+                    >
+                        <Form.Item
+                            name="username"
+                            rules={[{ required: true, message: '请输入用户名' }]}
+                        >
+                            <Input 
+                                prefix={<UserOutlined />}
+                                placeholder="用户名"
+                            />
+                        </Form.Item>
+
+                        <Form.Item
+                            name="password"
+                            rules={[{ required: true, message: '请输入密码' }]}
+                        >
+                            <Input.Password
+                                prefix={<LockOutlined />}
+                                placeholder="密码"
+                            />
+                        </Form.Item>
+
+                        <Form.Item>
+                            <Button 
+                                type="primary" 
+                                htmlType="submit" 
+                                block
+                                loading={loading}
+                            >
+                                登录
+                            </Button>
+                        </Form.Item>
+                    </Form>
+                </Card>
             )}
         </div>
     );

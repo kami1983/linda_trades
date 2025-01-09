@@ -12,14 +12,6 @@ function App() {
     const coinPrices = usePrices();
     
     return (
-      <Layout style={{ minHeight: '100vh' }}>
-        <Header>
-          <div className="logo" />
-          <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['1']}>
-            <Menu.Item key="1">HOME</Menu.Item>
-            <Menu.Item key="2">Option calculator</Menu.Item>
-          </Menu>
-        </Header>
         
         <Content style={{ padding: '24px' }}>
           <Row gutter={[16, 16]}>
@@ -81,10 +73,7 @@ function App() {
           </Row>
         </Content>
         
-        <Footer style={{ textAlign: 'center' }}>
-          Options Trading System ©2023
-        </Footer>
-      </Layout>
+      
     )
 }
 
