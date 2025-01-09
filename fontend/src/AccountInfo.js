@@ -83,12 +83,6 @@ const AccountInfo = () => {
       render: (price) => parseFloat(price).toFixed(6)
     },
     {
-      title: 'Filled Price Volume',
-      dataIndex: 'fill_px_vol',
-      key: 'fill_px_vol',
-      render: (price) => parseFloat(price).toFixed(6)
-    },
-    {
       title: 'Filled Price USD',
       dataIndex: 'fill_px_usd',
       key: 'fill_px_usd',
@@ -99,57 +93,16 @@ const AccountInfo = () => {
       dataIndex: 'state',
       key: 'state',
     },
-    // {
-    //   title: 'Update Time',
-    //   dataIndex: 'update_time',
-    //   key: 'update_time',
-    //   render: (time) => new Date(time).toLocaleString()
-    // },
-    {
-      title: 'Fill price',
-      dataIndex: 'fill_px',
-      key: 'fill_px',
-      render: (price) => parseFloat(price).toFixed(6)
-    },
     {
       title: 'Size',
       dataIndex: 'fill_sz',
       key: 'fill_sz',
       render: (size) => parseInt(size)
     },
-    // fill_px_vol
-    {
-      title: 'Fill Price Volume',
-      dataIndex: 'fill_px_vol',
-      key: 'fill_px_vol',
-      render: (price) => parseFloat(price).toFixed(6)
-    },
-    // fill_px_usd
-    {
-      title: 'Fill Price USD',
-      dataIndex: 'fill_px_usd',
-      key: 'fill_px_usd',
-      // 1.00000000000000000000	 格式化显示小数点 6 位
-      render: (price) => parseFloat(price).toFixed(6)
-    },
-    // state
-    {
-      title: 'State',
-      dataIndex: 'state',
-      key: 'state',
-    },
-
     {
       title: 'Fill Time',
       dataIndex: 'fill_time',
       key: 'fill_time',
-      render: (time) => new Date(time).toLocaleString()
-    },
-    
-    {
-      title: 'Update Time',
-      dataIndex: 'u_time',
-      key: 'u_time',
       render: (time) => new Date(time).toLocaleString()
     }
   ];
