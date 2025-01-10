@@ -44,11 +44,6 @@ function PostionList() {
 
     return (
       <div>
-        {/* <h1> 
-          【{isLoggedIn ? "✅️" : "❌"}】
-          Login {isSandBox ? 'Sandbox' : 'Real'} Account
-        </h1>
-        <Login/> */}
       <h1>Prices</h1>
       {coinPrices.map((coinPrice, idx) => (
           <div key={idx}>

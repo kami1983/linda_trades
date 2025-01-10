@@ -15,8 +15,10 @@ const Header = () => {
       setSelectedKeys(['1']);
     } else if (path === '/prepare') {
       setSelectedKeys(['2']);
-    } else if (path === '/login') {
+    } else if (path === '/postionlist') {
       setSelectedKeys(['3']);
+    } else if (path === '/login') {
+      setSelectedKeys(['4']);
     }
   }, [location]);
 
@@ -30,7 +32,8 @@ const Header = () => {
       >
         <Menu.Item key="1"><a href="/">HOME</a></Menu.Item>
         <Menu.Item key="2"><a href="/prepare">Option calculator</a></Menu.Item>
-        <Menu.Item key="3" style={{ marginLeft: 'auto' }}>
+        <Menu.Item key="3"><a href="/postionlist">Position List</a></Menu.Item>
+        <Menu.Item key="4" style={{ marginLeft: 'auto' }}>
           {isLoggedIn ? (
             <span>Welcome, {currentUsername}</span>
           ) : (
