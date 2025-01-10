@@ -19,6 +19,9 @@ def createExchangeConn():
         # 'verbose': True 
     })
 
+    
+    # exchange.private_get_trade_orders_history()
+
     if is_sandbox == '1':
         exchange.set_sandbox_mode(True)
     return exchange

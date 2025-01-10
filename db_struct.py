@@ -243,7 +243,7 @@ class EResultOKXOrder:
     attach_algo_ords: str
 
 
-def CreateOrderResult(record_key, order):
+def CreateOrderResult(record_key, order) -> EResultOKXOrder:
     def safe_float(value, default=0.0):
         """安全地将字符串转换为浮点数，如果为空字符串则返回默认值"""
         return float(value) if value != "" else default

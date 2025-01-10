@@ -55,10 +55,6 @@ python --version
 ## OKEx API 模拟交易
 * https://www.okx.com/zh-hans/demo-trading-explorer/v5/zh
 
-## OKEx 调试开发的时候如何切换到模拟盘
-* https://www.okx.com/zh-hans/demo-trading-explorer/v5/zh
-
-
 ## 通过 WebSockets 获取实时数据
 * https://www.okx.com/docs-v5/en/#overview-production-trading-services
 * The Production Trading URL:

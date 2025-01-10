@@ -1,7 +1,7 @@
 import asyncio
 from typing import List, Optional
 from db_operation import updateDbBatchOptionChain
-from db_struct import EResultOpenOrder, EResultOptionChain, EResultOptionPosition
+from db_struct import CreateOrderResult, EResultOKXOrder, EResultOpenOrder, EResultOptionChain, EResultOptionPosition
 from log import recordLog
 
 # '''
@@ -250,3 +250,20 @@ async def fetchPostions (exchange) -> List[EResultOpenOrder]:
         raise Exception('Error: fetchPostions data not match with original data') 
     
     return res
+
+
+# Call async def fetch_my_trades(self, symbol: Str = None, since: Int = None, limit: Int = None, params={})
+async def fetchTradeOrdersHistory(exchange) -> List[EResultOKXOrder]:
+    '''
+    获取我的交易记录
+    @param exchange: 交易所对象
+    @param symbol: 交易对
+    @return: List[EResultOpenOrder]
+    '''
+    trades = await exchange.private_get_trade_orders_history(params={'instType': 'OPTION', 'state': 'filled'})
+
+    res = []
+    for trade in trades['data']:
+        res.append(CreateOrderResult(exchange.apiKey, trade))
+    return res
+    

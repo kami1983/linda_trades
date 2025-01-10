@@ -1,39 +1,65 @@
 import React, { useEffect, useState } from 'react';
-import { getRecordedOrderList, getAccountBalance } from './utils/OptionApis';
-import { Table, Card, Spin, Alert } from 'antd';
+import { getRecordedOrderList, getAccountBalance, refillOrders } from './utils/OptionApis';
+import { Table, Card, Spin, Alert, Button, Modal } from 'antd';
+import { ReloadOutlined } from '@ant-design/icons';
+import { useLoginStatus } from './context/LoginStautsContext';
+import Login from './components/Login';
 
 const AccountInfo = () => {
   const [balance, setBalance] = useState(null);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refillLoading, setRefillLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [loginModalVisible, setLoginModalVisible] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+
+  const { isLoggedIn } = useLoginStatus();
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // 并行获取账户余额和订单列表
-        const [balanceRes, ordersRes] = await Promise.all([
-          getAccountBalance(),
-          getRecordedOrderList()
-        ]);
-
-        if (balanceRes.status && ordersRes.status) {
-          setBalance(balanceRes.data);
-          setOrders(ordersRes.data);
-        } else {
-          throw new Error('Failed to fetch data');
-        }
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // 并行获取账户余额和订单列表
+      const [balanceRes, ordersRes] = await Promise.all([
+        getAccountBalance(),
+        getRecordedOrderList()
+      ]);
+
+      if (balanceRes.status && ordersRes.status) {
+        setBalance(balanceRes.data);
+        setOrders(ordersRes.data);
+      } else {
+        throw new Error('Failed to fetch data');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRefillOrders = async () => {
+    if (!isLoggedIn) {
+      setLoginModalVisible(true);
+      return;
+    }
+
+    try {
+      setRefillLoading(true);
+      await refillOrders();
+      setSuccessModalVisible(true);
+      await fetchData();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setRefillLoading(false);
+    }
+  };
 
   const balanceColumns = [
     {
@@ -131,7 +157,19 @@ const AccountInfo = () => {
         />
       </Card>
 
-      <Card title="Order History">
+      <Card 
+        title="Order History"
+        extra={
+          <Button
+            type="primary"
+            icon={<ReloadOutlined />}
+            loading={refillLoading}
+            onClick={handleRefillOrders}
+          >
+            Refill Orders
+          </Button>
+        }
+      >
         <Table
           dataSource={orders}
           columns={orderColumns}
@@ -139,6 +177,24 @@ const AccountInfo = () => {
           pagination={{ pageSize: 10 }}
         />
       </Card>
+
+      <Modal
+        title="Login Required"
+        open={loginModalVisible}
+        onOk={() => setLoginModalVisible(false)}
+        onCancel={() => setLoginModalVisible(false)}
+      >
+        <Login />
+      </Modal>
+
+      <Modal
+        title="Success"
+        open={successModalVisible}
+        onOk={() => setSuccessModalVisible(false)}
+        onCancel={() => setSuccessModalVisible(false)}
+      >
+        <p>Refill orders successfully!</p>
+      </Modal>
     </div>
   );
 };

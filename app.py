@@ -1,10 +1,10 @@
 import asyncio
 import os
 from urllib import request
-from db_operation import getOptionChainByExpirationDate, getRecentOptionChainByTimestamp, getRecordedOrderList
+from db_operation import OrderResultToDb, getOptionChainByExpirationDate, getRecentOptionChainByTimestamp, getRecordedOrderList
 # from flask import Flask, jsonify, request
 from exchange import createExchangeConn
-from fetch_options import fetchOpenOrders, fetchOptionChain, fetchPostions
+from fetch_options import fetchOpenOrders, fetchOptionChain, fetchPostions, fetchTradeOrdersHistory
 from fetch_ticker import fetchTicker
 from iv import bsmOptionPrice, calculateIvData, extractIvData, handlerCalculateIv, inferCurrentPrice
 from quart import Quart, jsonify, request, make_response
@@ -332,6 +332,23 @@ async def get_extract_iv_data():
     finally:
         await exchange.close()
 
+
+# 获取已经交易的订单，用于恢复webstock丢失的订单数据，调用 fetchMyTrades 方法
+@app.route('/api/get_trade_orders_history')
+async def get_trade_orders_history():
+    '''
+    获取已经交易的订单，用于恢复webstock丢失的订单数据
+    '''
+    try:
+        exchange = createExchangeConn()
+        trades = await fetchTradeOrdersHistory(exchange)
+        return jsonify({"status": True, "data": trades})
+    except Exception as e:
+        return jsonify({"status": False, "message": e.args[0]})
+    finally:
+        await exchange.close()
+
+
 # 获取我的期权订单
 @app.route('/api/postion_orders')
 async def get_postion_orders():
@@ -358,6 +375,26 @@ async def get_open_orders():
         return jsonify({"status": True, "data": open_orders})
     except Exception as e:
         return jsonify({"status": False, "Error message": e.args[0]})
+    finally:
+        await exchange.close()
+
+
+# 订单同步按钮，这个会调用 fetchTradeOrdersHistory 方法，获取已经交易的订单，用于恢复webstock丢失的订单数据
+@app.route('/api/sync_order_to_db')
+@login_required
+async def sync_order_to_db(user_data):
+    '''
+    订单同步按钮，这个会调用 fetchTradeOrdersHistory 方法，获取已经交易的订单，用于恢复webstock丢失的订单数据
+    '''
+    try:
+        exchange = createExchangeConn()
+        trades = await fetchTradeOrdersHistory(exchange)
+        for trade in trades:
+            await OrderResultToDb(trade)
+      
+        return jsonify({"status": True, "data": trades})
+    except Exception as e:
+        return jsonify({"status": False, "message": e.args[0]})
     finally:
         await exchange.close()
 

@@ -202,6 +202,28 @@ const getAccountBalance = () => {
   });
 }
 
+const refillOrders = () => {
+  // // Call /api/get_trade_orders_history to refill orders
+  // const res = await fetch('/api/get_trade_orders_history');
+  // const data = await res.json();
+
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/sync_order_to_db`, {
+      method: "GET",
+      credentials: "include"
+    })
+      .then(response => response.json())
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      });
+  });
+  
+}
+
 export { 
   getTOptionChain, 
   extractIVData, 
@@ -211,5 +233,6 @@ export {
   handlerEditOrder, 
   callOpenOrders,
   getRecordedOrderList,
-  getAccountBalance
+  getAccountBalance,
+  refillOrders
 };
