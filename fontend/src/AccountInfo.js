@@ -91,6 +91,11 @@ const AccountInfo = () => {
       key: 'inst_id',
     },
     {
+      title: 'side',
+      dataIndex: 'side',
+      key: 'side',
+    },
+    {
       title: 'PnL',
       dataIndex: 'pnl',
       key: 'pnl',

@@ -291,7 +291,7 @@ async def getRecordedOrderList() -> List[dict]:
     try:
         async with connection.cursor() as cursor:
             await cursor.execute(
-                "SELECT acc_fill_sz, fill_notional_usd, avg_px, state, pnl, fee, fill_px, trade_id, fill_sz, fill_time, fill_pnl, fill_fee, fill_fee_ccy, exec_type, fill_px_vol, fill_px_usd, fill_mark_vol, fill_fwd_px, fill_mark_px, u_time, last_px, inst_id, ord_id FROM okx_orders"
+                "SELECT acc_fill_sz, fill_notional_usd, avg_px, state, pnl, fee, fill_px, trade_id, fill_sz, fill_time, fill_pnl, fill_fee, fill_fee_ccy, exec_type, fill_px_vol, fill_px_usd, fill_mark_vol, fill_fwd_px, fill_mark_px, u_time, last_px, inst_id, ord_id, side FROM okx_orders"
             )
             result = await cursor.fetchall()
             return [{
@@ -317,7 +317,8 @@ async def getRecordedOrderList() -> List[dict]:
                 'u_time': row[19],
                 'last_px': row[20],
                 'inst_id': row[21],
-                'ord_id': row[22]
+                'ord_id': row[22],
+                'side': row[23]
             } for row in result]
     finally:
         connection.close()
