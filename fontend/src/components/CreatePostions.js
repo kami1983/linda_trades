@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Table, Form, Input, Select, Button, Modal } from "antd";
+import { useNavigate } from "react-router-dom";
 import { extractIVData } from "../utils/OptionApis";
 import { extractPrice, GetCoinSign, handleShowInferInfo, GetPostionSize} from "../utils/Utils";
 import { usePrices } from '../context/PriceContext';
@@ -271,8 +272,8 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
           credentials: "include"
         }).then(response => {
           if (response.status === 401) {
-            // 如果返回401，提示需要登录
-            alert('Please login first');
+            // 如果返回401，显示登录 Modal
+            setLoginModalVisible(true);
             reject('Unauthorized');
             return;
           }
