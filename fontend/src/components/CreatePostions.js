@@ -15,6 +15,10 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
     const [buttonSubmitCreateSign, setButtonSubmitCreateSign] = useState(['⚡️']);
 
     const [loginModalVisible, setLoginModalVisible] = useState(false);
+    const [infoModalVisible, setInfoModalVisible] = useState(false);
+    const [infoModalContent, setInfoModalContent] = useState('');
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [confirmCallback, setConfirmCallback] = useState(() => () => {});
 
 
     const [toCreateIvData, setToCreateIvData] = useState([null]);
@@ -110,7 +114,8 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
         console.log('symbol: ', symbol);
         console.log('current_price: ', current_price);
         if(null == current_price){
-          alert('current_price is null');
+          setInfoModalContent('Current price is null');
+          setInfoModalVisible(true);
           return;
         }
         handlerSetButtonCreateSign(idx, '🔻')
@@ -140,23 +145,27 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
       setButtonCreateSign(_buttonCreateSign);
     }
 
-    const createAllNewPostion = (callBack) => {
-        // eslint-disable-next-line no-restricted-globals
-        if(!confirm('Are you sure to create all new postions?')){
-            return;
+    const handleConfirmCreateAll = (callBack) => {
+      setConfirmModalVisible(true);
+      setConfirmCallback(() => () => {
+        for(let i=0; i<toCreateSlots.length; i++){
+          if(toCreateSymbol[i] && toCreateIvData[i]){
+            createNewPostion(i, callBack);
+          }
         }
+        setConfirmModalVisible(false);
+      });
+    }
 
-      for(let i=0; i<toCreateSlots.length; i++){
-        if(toCreateSymbol[i] && toCreateIvData[i]){
-          createNewPostion(i, callBack);
-        }
-      }
+    const createAllNewPostion = (callBack) => {
+      handleConfirmCreateAll(callBack);
     }
 
     const createNewPostion = (idx, callBack) => {
       console.log('DEBUG::', toCreateIvData[idx], idx);
       if(toCreateIvData[idx] == null){
-        alert('Need to set postion first!');
+        setInfoModalContent('Need to set postion first!');
+        setInfoModalVisible(true);
         return;
       }
   
@@ -179,10 +188,11 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
       handlerToCreatePosition(_toCreateSymbol, _toCreateAmount, _toCreatePrice, _toCreateType, _toCreateSide).then((res) => {
         console.log('handlerToCreatePosition: ', res);
         if(res.status){
-          alert(`${_toCreateSymbol}, Create postion success!`);
+          setInfoModalContent(`${_toCreateSymbol}, Create postion success!`);
         }else{
-          alert(`${_toCreateSymbol}, Create postion failed! ${res.message}`);
+          setInfoModalContent(`${_toCreateSymbol}, Create postion failed! ${res.message}`);
         }
+        setInfoModalVisible(true);
         handlerSetButtonSubmitCreateSign(idx, '⚡️');
         callBack();
       });
@@ -450,6 +460,24 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
         onCancel={() => setLoginModalVisible(false)}
       >
         <Login />
+      </Modal>
+
+      <Modal
+        title="Information"
+        open={infoModalVisible}
+        onOk={() => setInfoModalVisible(false)}
+        onCancel={() => setInfoModalVisible(false)}
+      >
+        {infoModalContent}
+      </Modal>
+
+      <Modal
+        title="Confirm"
+        open={confirmModalVisible}
+        onOk={() => confirmCallback()}
+        onCancel={() => setConfirmModalVisible(false)}
+      >
+        Are you sure to create all new positions?
       </Modal>
       </div>
     );
