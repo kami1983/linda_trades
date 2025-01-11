@@ -2,9 +2,16 @@
 //
 
 import React, { useState, useEffect } from "react";
-import { extractIVData, operToCancel, handlerEditOrder, callOpenOrders } from "../utils/OptionApis";
+import { Table, Button, Space, Tag, Modal } from 'antd';
+import { 
+  extractIVData, 
+  operToCancel, 
+  handlerEditOrder, 
+  callOpenOrders 
+} from "../utils/OptionApis";
 import { extractPrice, GetCoinSign, GetPostionSize } from "../utils/Utils";
 import { usePrices } from '../context/PriceContext';
+import { QuestionCircleOutlined } from '@ant-design/icons';
 
 
 
@@ -96,108 +103,123 @@ function OpenOrders({onSymbolClick, modifyOrderDone, cancelOrderDone, refreshLis
     }
     
 
+    const columns = [
+      {
+        title: 'Symbol',
+        dataIndex: 'symbol',
+        key: 'symbol',
+        render: (text, record) => (
+          <a onClick={() => onSymbolClick(record.symbol)}>
+            {text}
+          </a>
+        )
+      },
+      {
+        title: 'Side',
+        dataIndex: 'side',
+        key: 'side',
+        render: (side) => (
+          <Tag color={side === 'buy' ? 'green' : 'red'}>
+            {side.toUpperCase()}
+          </Tag>
+        )
+      },
+      {
+        title: 'Price',
+        dataIndex: 'price',
+        key: 'price',
+        render: (price) => parseFloat(price).toFixed(2)
+      },
+      {
+        title: 'Amount',
+        dataIndex: 'amount',
+        key: 'amount',
+        render: (amount, record) => (
+          (amount * GetPostionSize(GetCoinSign(record.symbol))).toFixed(2)
+        )
+      },
+      {
+        title: 'Status',
+        dataIndex: 'status',
+        key: 'status'
+      },
+      {
+        title: 'Actions',
+        key: 'actions',
+        render: (_, record, idx) => (
+          <Space>
+            <Button 
+              type="primary" 
+              onClick={() => refreshOrderIvData(record.symbol, idx)}
+              icon={<QuestionCircleOutlined />}
+            >
+              Refresh IV ({extractPrice(GetCoinSign(record.symbol), coinPrices)})
+            </Button>
+            <Button 
+              danger
+              onClick={() => operToCancel(record.id, record.symbol, cancelOrderDone)}
+            >
+              Cancel
+            </Button>
+          </Space>
+        )
+      }
+    ];
+
+    const expandedRowRender = (record, idx) => {
+      if (!record.ivData) return null;
+      
+      return (
+        
+        <div style={{ margin: 0 }}>
+          
+          <div style={{ margin: 0 }}>
+            <p>Day Left: {record.ivData ? parseFloat(record.ivData.day_left).toFixed(2) : 'N/A'}</p>
+            <p>Ask Price: {record.ivData ? `${parseFloat(record.ivData.ask_price).toFixed(4)} [${parseFloat(record.ivData.ask_usd).toFixed(2)}$]` : 'N/A'}</p>
+            <p>S IV: {record.ivData ? parseFloat(record.ivData.s_iv).toFixed(2) : 'N/A'}</p>
+            <p>Bid Price: {record.ivData ? `${parseFloat(record.ivData.bid_price).toFixed(4)} [${parseFloat(record.ivData.bid_usd).toFixed(2)}$]` : 'N/A'}</p>
+            <p>B IV: {record.ivData ? parseFloat(record.ivData.b_iv).toFixed(2) : 'N/A'}</p>
+            <p>Delta: {record.ivData ? parseFloat(record.ivData.delta).toFixed(4) : 'N/A'}</p>
+            <p>Gamma: {record.ivData ? parseFloat(record.ivData.gamma).toFixed(8) : 'N/A'}</p>
+            <p>Theta: {record.ivData ? parseFloat(record.ivData.theta).toFixed(4) : 'N/A'}</p>
+            <p>Intrinsic Value: {record.ivData ? parseFloat(record.ivData.intrinsic_value).toFixed(2) : 'N/A'}</p>
+            <p>Time Value: {record.ivData ? parseFloat(record.ivData.time_value).toFixed(2) : 'N/A'}</p>
+            <p>Yield Rate: {record.ivData ? `${(parseFloat(record.ivData.time_value) / extractPrice(GetCoinSign(record.symbol), coinPrices) / parseFloat(record.ivData.day_left) * 365 * 100).toFixed(2)}%` : 'N/A'}</p>
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <Space>
+              <Button 
+                type="primary"
+                onClick={() => operToModifyPriceToAsk(record.id, record.symbol, record.ivData.ask_price, record.type, record.side, modifyOrderDone)}
+              >
+                Modify to Ask
+              </Button>
+              <Button 
+                type="primary"
+                onClick={() => operToModifyPriceToBid(record.id, record.symbol, record.ivData.bid_price, record.type, record.side, modifyOrderDone)}
+              >
+                Modify to Bid
+              </Button>
+            </Space>
+          </div>
+        </div>
+      );
+    };
+
     return (
-        <>
-        <table border={1}>
-        <thead>
-          <tr>
-            <th>symbol</th>
-            <th>side</th>
-            <th>price</th>
-            <th>amount</th>
-            <th>status</th>
-            <th>Refresh IV</th>
-            <th>dayLeft</th>
-            <th>ask_price</th>
-            <th>S IV</th>
-            <th>bid_price</th>
-            <th>B IV</th>
-            <th>delta</th>
-            <th>gamma</th>
-            <th>theta</th>
-            <th>Intr Val</th>
-            <th>Time Val</th>
-            <th>Yield rate</th>
-            <th>action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {openOrders.map((order, idx) => (
-            <>
-              <tr key={order.id}>
-                <td
-                onClick={() => onSymbolClick(order.symbol)}
-                style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
-                title="Click to copy"
-                >{order.symbol}</td>
-                <td>{order.side}</td>
-                <td>{order.price}</td>
-                <td>{order.amount*GetPostionSize(GetCoinSign(order.symbol))}</td>
-                <td>{order.status}</td>
-                <td>
-                  <button onClick={() => refreshOrderIvData(order.symbol, idx)}>{buttonOrderSign} &nbsp; {extractPrice(GetCoinSign(order.symbol), coinPrices)}</button>
-                </td>
-         
-                <td>
-                  {order.ivData ? parseFloat(order.ivData.day_left).toFixed(2) : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? `${parseFloat(order.ivData.ask_price).toFixed(4)} [${parseFloat(order.ivData.ask_usd).toFixed(2)}$]`  : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? parseFloat(order.ivData.s_iv).toFixed(2) : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? `${parseFloat(order.ivData.bid_price).toFixed(4)} [${parseFloat(order.ivData.bid_usd).toFixed(2)}$]` : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? parseFloat(order.ivData.b_iv).toFixed(2) : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? parseFloat(order.ivData.delta).toFixed(4) : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? parseFloat(order.ivData.gamma).toFixed(8) : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? parseFloat(order.ivData.theta).toFixed(4) : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? parseFloat(order.ivData.intrinsic_value).toFixed(2) : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? parseFloat(order.ivData.time_value).toFixed(2) : 'N/A'}
-                </td>
-                <td>
-                  {order.ivData ? parseFloat(order.ivData.time_value/extractPrice(GetCoinSign(order.symbol), coinPrices)/parseFloat(order.ivData.day_left)*365*100).toFixed(2) : 'N/A'} %
-                </td>
-                <td>
-                  &nbsp;<button onClick={(_e)=>operToCancel(order.id, order.symbol, cancelOrderDone)}>Cancel</button>
-                  &nbsp;
-                </td>
-              </tr>
-              
-              <tr key={idx}>
-                <td colSpan={7}></td>
-                <td>
-                  {order.ivData ? <>
-                    &nbsp;<button onClick={()=>operToModifyPriceToAsk(order.id,  order.symbol, order.ivData.ask_price, order.type, order.side, modifyOrderDone)}>Modify to ask</button>&nbsp;
-                  </>: 'N/A'}
-                
-                </td>
-                <td colSpan={1}></td>
-                <td>
-                  {order.ivData ? <>
-                    &nbsp;<button onClick={()=>operToModifyPriceToBid(order.id,  order.symbol, order.ivData.bid_price, order.type, order.side, modifyOrderDone)}>Modify to bid</button>&nbsp;
-                  </>: 'N/A'}
-                </td>
-                <td colSpan={8}></td>
-              </tr>
-            </>
-          ))}
-        </tbody>
-      </table>
-        </>
+      <Table
+        columns={columns}
+        dataSource={openOrders}
+        rowKey="id"
+        expandable={{
+          expandedRowRender,
+          rowExpandable: record => !!record.ivData
+        }}
+        bordered
+        size="middle"
+        scroll={{ x: 'max-content' }}
+      />
     );
 }
 
