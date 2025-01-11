@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Table, Form, Input, Select, Button, Modal } from "antd";
 import { extractIVData } from "../utils/OptionApis";
 import { extractPrice, GetCoinSign, handleShowInferInfo, GetPostionSize} from "../utils/Utils";
 import { usePrices } from '../context/PriceContext';
@@ -288,25 +289,6 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
       });
     }
 
-    // /**
-    //  * @param symbol 'BTC'
-    //  * @returns 0.01
-    //  * // REACT_APP_POSTION_STEP_KEYS='BTC','ETH'
-    //  * // REACT_APP_POSTION_STEP_VALUES=0.01,0.01
-    //  */
-    // const GetPostionSize = (symbol) => {
-    //   const keys = process.env.REACT_APP_POSTION_STEP_KEYS;
-    //   const values = process.env.REACT_APP_POSTION_STEP_VALUES;
-    //   const keyArr = keys.toString().split(',');
-    //   const valueArr = values.toString().split(',');
-    //   const idx = keyArr.indexOf(symbol.toString().toUpperCase());
-    //   console.log(`symbol: ${symbol} idx: ${idx} keys: ${keys} values: ${values}`);
-    //   if(idx === -1){
-    //     return 0.01;
-    //   }
-    //   return parseFloat(valueArr[idx]);
-    // }
-
     const createPostionAllReady = () => {
       for(let i=0; i<toCreateSlots.length; i++){
         if(toCreateSymbol[i] && toCreateIvData[i]){
@@ -316,116 +298,148 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
       }
       return true;
     }
-  
+
+    const columns = [
+      {
+        title: 'Symbol',
+        dataIndex: 'symbol',
+        render: (_, record, idx) => (
+          <Input
+            placeholder="BTC/USD:BTC-241213-98000-C"
+            value={toCreateSymbol[idx]}
+            onChange={(e) => handleSetToCreateSymbol(idx, e.target.value)}
+          />
+        ),
+      },
+      {
+        title: 'Side',
+        dataIndex: 'side',
+        render: (_, record, idx) => (
+          <Select
+            value={toCreateSide[idx]}
+            onChange={(value) => handleSetToCreateSide(idx, value)}
+            style={{ width: '100%' }}
+          >
+            <Select.Option value="sell">Sell</Select.Option>
+            <Select.Option value="buy">Buy</Select.Option>
+          </Select>
+        ),
+      },
+      {
+        title: 'Amount',
+        dataIndex: 'amount',
+        render: (_, record, idx) => (
+          <Input
+            type="number"
+            value={toCreateAmount[idx] ?? 1}
+            onChange={(e) => handleSetToCreateAmount(idx, e.target.value)}
+          />
+        ),
+      },
+      {
+        title: 'Price',
+        dataIndex: 'price',
+        render: (_, record, idx) => (
+          <Input
+            type="number"
+            value={toCreatePrice[idx]}
+            onChange={(e) => handleSetToCreatePrice(idx, e.target.value)}
+          />
+        ),
+      },
+      {
+        title: 'Type',
+        dataIndex: 'type',
+        render: (_, record, idx) => (
+          <Select
+            value={toCreateType[idx]}
+            onChange={(value) => handleSetToCreateType(idx, value)}
+            style={{ width: '100%' }}
+          >
+            <Select.Option value="limit">Limit</Select.Option>
+            <Select.Option value="market">Market</Select.Option>
+          </Select>
+        ),
+      },
+      {
+        title: 'Actions',
+        dataIndex: 'actions',
+        render: (_, record, idx) => (
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button 
+              type="primary"
+              onClick={() => refreshCreateIvData(toCreateSymbol[idx], idx)}
+            >
+              {getButtonCreateSign(idx)} Refresh
+            </Button>
+            <Button
+              type="primary"
+              danger
+              onClick={() => createNewPostion(idx, createNewPostionCallBack)}
+            >
+              {buttonSubmitCreateSign[idx] ?? '⚡️'} Submit
+            </Button>
+          </div>
+        ),
+      },
+    ];
+
+    const dataSource = toCreateSlots.map((_, idx) => ({
+      key: idx,
+      symbol: toCreateSymbol[idx],
+      side: toCreateSide[idx],
+      amount: toCreateAmount[idx],
+      price: toCreatePrice[idx],
+      type: toCreateType[idx],
+      ivData: toCreateIvData[idx],
+    }));
 
     return (
-        <>
-        <table>
-              <tr>
-                [{createFormLength}]<td><button onClick={()=>handleSetToCreateSlots(true)}>+</button></td>
-                <td><button onClick={()=>handleSetToCreateSlots(false)}>-</button></td>
-                <td><button onClick={()=>refreshAllCreateIvData()}>Fetch All IvData</button></td>
-                <td>
-                {createPostionAllReady() ? <button onClick={()=>createAllNewPostion(createAllNewPostionCallBack)}>⚡️ Create all new postions ⚡️</button> : 'Need to set all postions first!'}
-                </td>
-                <td>
-                <button onClick={()=>accountCostValue()}>All Cost:</button> {countCostValue}
-                </td>
-              </tr>
-            </table>
-            <table border={1}>
-              <thead>
-                <tr>
-                  <th>symbol</th>
-                  <th>side</th>
-                  <th>amount</th>
-                  <th>price</th>
-                  <th>type</th>
-                  <th>Refresh IV Data</th>
-                  <th>infer_price</th>
-                  <th>delta</th>
-                  <th>ask_price</th>
-                  <th>S IV</th>
-                  <th>bid_price</th>
-                  <th>B IV</th>
-                  <th>intrinsic_value</th>
-                  <th>time_value</th>
-                  <th>action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {toCreateSlots.map((_item, idx) => (
-                  <React.Fragment key={idx}>
-                    <tr>
-                      <td>
-                        <input type="text" placeholder="BTC/USD:BTC-241213-98000-C" style={{
-                                width: '300px',
-                                boxSizing: 'border-box',
-                                textAlign: 'right',
-                                padding: '8px', // 根据需要调整
-                              }} onChange={(e)=>handleSetToCreateSymbol(idx, e.target.value)} />
-                      </td>
-                      <td>
-                        <select onChange={(e)=>handleSetToCreateSide(idx, e.target.value)}>
-                          <option value="sell" >sell</option>
-                          <option value="buy">buy</option>
-                        </select>
-                      </td>
-                      <td>
-                        <input type="number" placeholder="1" value={toCreateAmount[idx]??1} onChange={(e)=>handleSetToCreateAmount(idx, e.target.value)} />
-                      </td>
-                      <td>
-                        <input type="number" placeholder="0" value={toCreatePrice[idx]} onChange={(e)=>handleSetToCreatePrice(idx, e.target.value)} />
-                      </td>
-                      <td>
-                        <select onClick={(e)=>handleSetToCreateType(idx, e.target.value)}>
-                          <option value="limit" >limit</option>
-                          <option value="market" >market</option>
-                        </select>
-                      </td>
-                      <td>
-                        <button onClick={()=>refreshCreateIvData(toCreateSymbol[idx], idx)}>{getButtonCreateSign(idx)} &nbsp; Refresh {toCreateSymbol[idx]??extractPrice(GetCoinSign(toCreateSymbol[idx]))}</button>
-                      </td>
-                      <td>
-                        {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].infer_price).toFixed(2) : 'N/A'}
-                        {toCreateIvData[idx] ? <>
-                          [
-                          {handleShowInferInfo(toCreateIvData[idx], coinPrices)}
-                          ]
-                        </>: ''}
-                      </td>
-                      <td>
-                        {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].delta).toFixed(4) : 'N/A'}
-                      </td>
-                      <td>
-                        {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].ask_price).toFixed(4) : 'N/A'}
-                      </td>
-                      <td>
-                        {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].s_iv).toFixed(2) : 'N/A'}
-                      </td>
-                      <td>
-                        {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].bid_price).toFixed(4) : 'N/A'}
-                      </td>
-                      <td>
-                        {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].b_iv).toFixed(2) : 'N/A'}
-                      </td>
-                      <td>
-                        {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].intrinsic_value).toFixed(2) : 'N/A'}
-                      </td>
-                      <td>
-                        {toCreateIvData[idx] ? parseFloat(toCreateIvData[idx].time_value).toFixed(2) : 'N/A'}
-                      </td>
-                      <td>
-                      <button onClick={()=>createNewPostion(idx, createNewPostionCallBack)} >{buttonSubmitCreateSign[idx]??'⚡️'} Submit : [{toCreateSymbol[idx]}]</button>
-                      </td>
-                    </tr>
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
-            <hr/>
-            <hr/>
-        </>
+      <div style={{ padding: 24 }}>
+        <div style={{ marginBottom: 16, display: 'flex', gap: 8 }}>
+          <Button type="primary" onClick={() => handleSetToCreateSlots(true)}>
+            Add Position
+          </Button>
+          <Button danger onClick={() => handleSetToCreateSlots(false)}>
+            Remove Position
+          </Button>
+          <Button onClick={() => refreshAllCreateIvData()}>
+            Refresh All IV Data
+          </Button>
+          {createPostionAllReady() && (
+            <Button 
+              type="primary" 
+              onClick={() => createAllNewPostion(createAllNewPostionCallBack)}
+            >
+              ⚡️ Create All Positions
+            </Button>
+          )}
+          <Button onClick={() => accountCostValue()}>
+            All Cost: {countCostValue}
+          </Button>
+        </div>
+
+        <Table
+          columns={columns}
+          dataSource={dataSource}
+          pagination={false}
+          scroll={{ x: true }}
+          expandable={{
+            expandedRowRender: (record, idx) => (
+              <div style={{ margin: 0 }}>
+                <p>Infer Price: {record.ivData ? parseFloat(record.ivData.infer_price).toFixed(2) : 'N/A'}</p>
+                <p>Delta: {record.ivData ? parseFloat(record.ivData.delta).toFixed(4) : 'N/A'}</p>
+                <p>Ask Price: {record.ivData ? parseFloat(record.ivData.ask_price).toFixed(4) : 'N/A'}</p>
+                <p>S IV: {record.ivData ? parseFloat(record.ivData.s_iv).toFixed(2) : 'N/A'}</p>
+                <p>Bid Price: {record.ivData ? parseFloat(record.ivData.bid_price).toFixed(4) : 'N/A'}</p>
+                <p>B IV: {record.ivData ? parseFloat(record.ivData.b_iv).toFixed(2) : 'N/A'}</p>
+                <p>Intrinsic Value: {record.ivData ? parseFloat(record.ivData.intrinsic_value).toFixed(2) : 'N/A'}</p>
+                <p>Time Value: {record.ivData ? parseFloat(record.ivData.time_value).toFixed(2) : 'N/A'}</p>
+              </div>
+            ),
+          }}
+        />
+      </div>
     );
 }
 
