@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Table, Button, Modal, Input, Checkbox } from "antd";
 import { handlerToCreatePosition, extractIVData, callPostionList } from "../utils/OptionApis";
 import { extractPrice, GetCoinSign, handleShowInferInfo, GetPostionSize } from "../utils/Utils";
 import { usePrices } from '../context/PriceContext';
 
+
+
 function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeAllPostionDone, refreshListKey }) {
+
+
     const [countList, setCountList] = useState([]);
     const [aimOptionList, setAimOptionList] = useState([]);
     const [aimOptioinIvDataList, setAimOptioinIvDataList] = useState([]);
@@ -12,43 +15,40 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
     const [buttonPostionSign, setButtonPostionSign] = useState('🟩');
     const [postionCheckList, setPostionCheckList] = useState([]);
     const [postionList, setPostionList] = useState([]);
-    const [infoModalVisible, setInfoModalVisible] = useState(false);
-    const [infoModalContent, setInfoModalContent] = useState('');
-    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
-    const [confirmCallback, setConfirmCallback] = useState(() => () => {});
 
     const coinPrices = usePrices();
 
-    const closeAllPostions = (backCall = () => {
-      setInfoModalContent('Close all postions done!');
-      setInfoModalVisible(true);
-    }) => {
-      setConfirmModalVisible(true);
-      setConfirmCallback(() => () => {
-        const _closeAwaitList = [];
-        for(let i=0; i<postionCheckList.length; i++){
-          if(postionCheckList[i] && postionList[i].ivData){
-            const _closeParam = {
-              closePostionSymbol: postionList[i].symbol,
-              closeAmount: postionList[i].contracts,
-              closePrice: postionList[i].side === 'short' ? postionList[i].ivData.ask_price : postionList[i].ivData.bid_price,
-              closeType: 'limit',
-              closeSide: postionList[i].side === 'short' ? 'buy' : 'sell'
-            };
-
-            console.log('_closeParam - ', _closeParam)
-            _closeAwaitList.push(closePostion(_closeParam, ()=>{}));
-          }
+  
+    const closeAllPostions = (backCall = ()=>{alert('Close all postions done!')}) => {
+      // eslint-disable-next-line no-restricted-globals
+      const beSure = confirm(`Are you sure to close all postions?`);
+      if(!beSure){
+        return;
+      }
+  
+      const _closeAwaitList = [];
+      for(let i=0; i<postionCheckList.length; i++){
+        if(postionCheckList[i] && postionList[i].ivData){
+          const _closeParam = {
+            closePostionSymbol: postionList[i].symbol,
+            closeAmount: postionList[i].contracts,
+            closePrice: postionList[i].side === 'short' ? postionList[i].ivData.ask_price : postionList[i].ivData.bid_price,
+            closeType: 'limit',
+            closeSide: postionList[i].side === 'short' ? 'buy' : 'sell'
+          };
+  
+          console.log('_closeParam - ', _closeParam)
+          _closeAwaitList.push(closePostion(_closeParam, ()=>{}));
         }
-
-        if(_closeAwaitList.length > 0){
-          Promise.all(_closeAwaitList).then((res) => {
-            console.log('closeAllPostions: ', res);
-            backCall();
-          });
-        }
-      });
-      return;
+      }
+  
+      if(_closeAwaitList.length > 0){
+        Promise.all(_closeAwaitList).then((res) => {
+          console.log('closeAllPostions: ', res);
+          backCall();
+        });
+      }
+  
     }
 
     const closePostion = (closePostion = {
@@ -58,29 +58,29 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
         closePrice: 0, 
         closeType: 'buy',
         closeId: ''
-    }, backCall = ()=>{
-      setInfoModalContent('Close postion done!');
-      setInfoModalVisible(true);
-    }) => {
-      setConfirmModalVisible(true);
-      setConfirmCallback(() => () => {
-        handlerToCreatePosition(
-          closePostion.closePostionSymbol, 
-          closePostion.closeAmount,
-          closePostion.closePrice,
-          closePostion.closeType,
-          closePostion.closeSide
-        ).then((res) => {
-          console.log('handlerToCreatePosition: ', res);
-          if(res.status){
-            backCall();
-          }else{
-            setInfoModalContent(`Close postion failed! ${res.message}`);
-            setInfoModalVisible(true);
-          }
-        });
+    }, backCall = ()=>{alert('Close postion done!')}) => {
+      // eslint-disable-next-line no-restricted-globals
+      const beSure = confirm(`Are you sure to close the "${closePostion.closePostionSymbol}"?`);
+      if(!beSure){
+        return;
+      }
+  
+      console.log('Close postion call params: ', {closePostion});
+  
+      handlerToCreatePosition(
+        closePostion.closePostionSymbol, 
+        closePostion.closeAmount,
+        closePostion.closePrice,
+        closePostion.closeType,
+        closePostion.closeSide
+      ).then((res) => {
+        console.log('handlerToCreatePosition: ', res);
+        if(res.status){
+          backCall();
+        }else{
+          alert(`Close postion failed! ${res.message}`);
+        }
       });
-      return;
     }
 
     const handlerFetchAllIv = () => {
@@ -223,6 +223,18 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
       setAimOptionList(oldDataList);
     }
 
+
+    /**
+     * 
+     * @param {*} closePostionSymbol = 'BTC/USD:BTC-241213-98000-C'
+     * @param {*} order_id = '2026438832795287552'
+     * @param {*} side = 'short'|'long'
+     * @param {*} createPostionSymbol = 'BTC/USD:BTC-241213-100000-C'
+     * @param {*} amount = int(1)
+     * @param {*} type = 'limit'|'market'
+     * @param {*} price = 0
+     * @returns 
+     */
     const moveToPostion = (movePostion = {
       closePostionSymbol: '', 
       closeSide: 'buy', 
@@ -235,39 +247,38 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
       createAmount: 0,
       createPrice: 0,
       createType: 'sell'
-    }, backCall = ()=>{
-      setInfoModalContent('Move postion done!');
-      setInfoModalVisible(true);
-    }) => {
-      setConfirmModalVisible(true);
-      setConfirmCallback(() => () => {
-        const closePostion = handlerToCreatePosition(
-          movePostion.closePostionSymbol, 
-          movePostion.closeAmount,
-          movePostion.closePrice,
-          movePostion.closeType,
-          movePostion.closeSide
-        );
+    }, backCall = ()=>{alert('Move postion done!')}) => {
 
-        const createPostion = handlerToCreatePosition(
-          movePostion.createPostionSymbol,
-          movePostion.createAmount,
-          movePostion.createPrice,
-          movePostion.createType,
-          movePostion.createSide
-        );
+      // eslint-disable-next-line no-restricted-globals
+      const beSure = confirm(`Are you sure move the "${movePostion.closePostionSymbol}" to the "${movePostion.createPostionSymbol}"?`);
+      if(!beSure){
+        return;
+      }
 
-        Promise.all([closePostion, createPostion]).then((res) => {
-          console.log('handlerToCreatePosition: ', res);
-          if(res[0].status && res[1].status){
-            backCall();
-          }else{
-            setInfoModalContent(`Move postion failed! Close status: ${res[0].status}, Create status: ${res[1].status}`);
-            setInfoModalVisible(true);
-          }
-        });
+      console.log('Move to postion call params: ', {movePostion});
+        
+      const closePostion = handlerToCreatePosition(
+        movePostion.closePostionSymbol, 
+        movePostion.closeAmount,
+        movePostion.closePrice,
+        movePostion.closeType,
+        movePostion.closeSide
+      )
+
+      const createPostion = handlerToCreatePosition(
+        movePostion.createPostionSymbol,
+        movePostion.createAmount,
+        movePostion.createPrice,
+        movePostion.createType,
+        movePostion.createSide
+      )
+
+      Promise.all([closePostion, createPostion]).then((res) => {
+        console.log('handlerToCreatePosition: ', res);
+        alert('Close status: ' + res[0].status + ' Create status: ' + res[1].status);
+        backCall();
       });
-      return;
+
     }
 
     const refreshPostionList = () => {
@@ -298,243 +309,177 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
         refreshPostionList();
     }, [refreshListKey]);
 
-    const columns = [
-      {
-        title: 'ID',
-        dataIndex: 'id',
-        key: 'id',
-        render: (text, record, index) => (
-          <Checkbox checked={postionCheckList[index]} onChange={(e) => updatePostionListCheck(index, e)} />
-        ),
-      },
-      {
-        title: 'Symbol',
-        dataIndex: 'symbol',
-        key: 'symbol',
-        render: (text) => (
-          <span
-            onClick={() => onSymbolClick(text)}
-            style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
-            title="Click to copy"
-          >
-            {text}
-          </span>
-        ),
-      },
-      {
-        title: 'Side',
-        dataIndex: 'side',
-        key: 'side',
-      },
-      {
-        title: 'Contracts',
-        dataIndex: 'contracts',
-        key: 'contracts',
-        render: (text, record) => `${text} [${record.amount}]`,
-      },
-      {
-        title: 'Realized PnL',
-        dataIndex: 'realizedPnl',
-        key: 'realizedPnl',
-      },
-      {
-        title: 'Percentage',
-        dataIndex: 'percentage',
-        key: 'percentage',
-        render: (text) => `${parseFloat(text).toFixed(2)}%`,
-      },
-      {
-        title: 'Entry Price',
-        dataIndex: 'entryPrice',
-        key: 'entryPrice',
-      },
-      {
-        title: 'Mark Price',
-        dataIndex: 'markPrice',
-        key: 'markPrice',
-        render: (text) => parseFloat(text).toFixed(4),
-      },
-      {
-        title: 'Refresh IV',
-        key: 'refreshIv',
-        render: (text, record, index) => (
-          <Button onClick={() => refreshPostionIvData(record.symbol, index)}>
-            {buttonPostionSign} &nbsp; {extractPrice(GetCoinSign(record.symbol), coinPrices)}
-          </Button>
-        ),
-      },
-      {
-        title: 'Delta',
-        key: 'delta',
-        render: (text, record) => (
-          <span style={{ color: 'red' }}>
-            {record.ivData ? parseFloat(record.ivData.delta).toFixed(4) : 'N/A'}
-          </span>
-        ),
-      },
-      {
-        title: 'Infer Price',
-        key: 'inferPrice',
-        render: (text, record) => (
-          <>
-            {record.ivData ? parseFloat(record.ivData.infer_price).toFixed(2) : 'N/A'}
-            {record.ivData ? (
-              <>
-                [
-                {handleShowInferInfo(record.ivData, coinPrices)}
-                ]
-              </>
-            ) : ''}
-          </>
-        ),
-      },
-      {
-        title: 'Day Left',
-        key: 'dayLeft',
-        render: (text, record) => (
-          record.ivData ? parseFloat(record.ivData.day_left).toFixed(2) : 'N/A'
-        ),
-      },
-      {
-        title: 'Ask Price',
-        key: 'askPrice',
-        render: (text, record) => (
-          record.ivData ? parseFloat(record.ivData.ask_price).toFixed(4) : 'N/A'
-        ),
-      },
-      {
-        title: 'S IV',
-        key: 'sIv',
-        render: (text, record) => (
-          record.ivData ? parseFloat(record.ivData.s_iv).toFixed(2) : 'N/A'
-        ),
-      },
-      {
-        title: 'Bid Price',
-        key: 'bidPrice',
-        render: (text, record) => (
-          record.ivData ? parseFloat(record.ivData.bid_price).toFixed(4) : 'N/A'
-        ),
-      },
-      {
-        title: 'B IV',
-        key: 'bIv',
-        render: (text, record) => (
-          record.ivData ? parseFloat(record.ivData.b_iv).toFixed(2) : 'N/A'
-        ),
-      },
-      {
-        title: 'Gamma',
-        key: 'gamma',
-        render: (text, record) => (
-          record.ivData ? parseFloat(record.ivData.gamma).toFixed(8) : 'N/A'
-        ),
-      },
-      {
-        title: 'Theta',
-        key: 'theta',
-        render: (text, record) => (
-          record.ivData ? parseFloat(record.ivData.theta).toFixed(4) : 'N/A'
-        ),
-      },
-      {
-        title: 'Intr Val',
-        key: 'intrVal',
-        render: (text, record) => (
-          <span style={{ color: 'green' }}>
-            [{record.ivData ? parseFloat(record.ivData.intrinsic_value).toFixed(2) : 'N/A'}]
-          </span>
-        ),
-      },
-      {
-        title: 'Time Val',
-        key: 'timeVal',
-        render: (text, record) => (
-          <span style={{ color: 'blue' }}>
-            {record.ivData ? parseFloat(record.ivData.time_value).toFixed(2) : 'N/A'}
-          </span>
-        ),
-      },
-      {
-        title: 'Yield Rate',
-        key: 'yieldRate',
-        render: (text, record) => (
-          record.ivData
-            ? parseFloat(
-                record.ivData.time_value /
-                  extractPrice(GetCoinSign(record.symbol), coinPrices) /
-                  parseFloat(record.ivData.day_left) *
-                  365 *
-                  100
-              ).toFixed(2)
-            : 'N/A'
-        ),
-      },
-      {
-        title: 'Action',
-        key: 'action',
-        render: (text, record) => (
-          <Button
-            onClick={() =>
-              closePostion(
-                {
-                  closePostionSymbol: record.symbol,
-                  closeSide: record.side == 'short' ? 'buy' : 'sell',
-                  closeAmount: record.contracts,
-                  closePrice: record.side == 'short' ? record.ivData.ask_price : record.ivData.bid_price,
-                  closeType: 'limit',
-                  closeId: record.id,
-                },
-                () => {
-                  refreshPostionList();
-                  closePostionDone();
-                  alert('Close postion done!!!');
-                }
-              )
-            }
-          >
-            {record.ivData ? `Open ${record.side == 'short' ? 'buy' : 'sell'} to close` : 'Close need to refresh'}
-          </Button>
-        ),
-      },
-    ];
 
     return (
         <>
-        <Modal
-          title="确认"
-          open={confirmModalVisible}
-          onOk={() => {
-            confirmCallback();
-            setConfirmModalVisible(false);
-          }}
-          onCancel={() => setConfirmModalVisible(false)}
-        >
-          <p>确定要执行此操作吗？</p>
-        </Modal>
+        <div class={"changeUi"}>
+        <table>
+                <tr>
+                  <td>
+                  <h3>profit: {parseFloat(countProfitValue).toFixed(4)} $</h3>
+                  </td>
+                </tr>
+              </table>
+              <div>
+                <table border={1}>
+                  <tr>
+                    <td>symbol</td>
+                    <td>side</td>
+                    <td>entryPrice</td>
+                    <td>closePrice</td>
+                    <td>contracts</td>
+                    <td>profit</td>
+                    <td>volume</td>
+                  </tr>
+                  {countList.map((count, idx) => (
+                    <tr key={idx}>
+                      <td>{count.data?count.data.symbol:'Error'}</td>
+                      <td>{count.data?count.data.side:'Error'}</td>
+                      <td>{count.data?count.data.entryPrice:'Error'}</td>
+                      <td>{count.data?count.data.closePrice:'Error'}</td>
+                      <td>{count.data?count.data.contracts:'Error'}</td>
+                      <td>{count.data?parseFloat(count.data.profit).toFixed(4):'Error'} $</td>
+                      <td>{count.data?parseFloat(count.data.volume).toFixed(2):'Error'} $</td>
+                    </tr>
+                  ))}
+                  <tr>
+                    <td colSpan={6} style={{textAlign: 'right'}}>Total: </td>
+                    <td>{parseFloat(countProfitValue).toFixed(4)} $</td>
+                  </tr>
+                  <tr>
+                    <td colSpan={6} style={{textAlign: 'right'}}>Action: </td>
+                    <td><button onClick={()=>closeAllPostions(()=>{
+                        refreshPostionList();closeAllPostionDone();
+                    })}>Close all postions</button></td>
+                  </tr>
+                </table>
+              </div>
+              <table>
+              <tr>
+                <td>
+                  <button onClick={()=>handlerFetchAllIv()}>Fetch All Iv</button>
+                  </td>
+                  <td>
+                  <button onClick={()=>handlerCountProfitValue()}>Count profit</button>
+                  </td>
+                </tr>
+              </table>
+              
+              </div>
 
-        <Modal
-          title="信息"
-          open={infoModalVisible}
-          onOk={() => setInfoModalVisible(false)}
-          onCancel={() => setInfoModalVisible(false)}
-        >
-          <p>{infoModalContent}</p>
-        </Modal>
-
-        <h3>Profit: {parseFloat(countProfitValue).toFixed(4)} $</h3>
-        <Button onClick={() => closeAllPostions(() => { refreshPostionList(); closeAllPostionDone(); })}>
-          Close all positions
-        </Button>
-        <Button onClick={() => handlerFetchAllIv()}>Fetch All Iv</Button>
-        <Button onClick={() => handlerCountProfitValue()}>Count profit</Button>
-
-        <Table
-          dataSource={postionList}
-          columns={columns}
-          rowKey="id"
-          pagination={false}
-        />
+              <table border={1}>
+                <thead>
+                  <tr>
+                    <th>id</th>
+                    <th>symbol</th>
+                    <th>side</th>
+                    <th>contracts</th>
+                    <th>realizedPnl</th>
+                    <th>percentage</th>
+                    <th>entryPrice</th>
+                    <th>markPrice</th>
+                    <th>Refresh IV</th>
+                    <th>delta</th>
+                    <th>infer_price</th>
+                    <th>dayLeft</th>
+                    <th>ask_price</th>
+                    <th>S IV</th>
+                    <th>bid_price</th>
+                    <th>B IV</th>
+                    <th>gamma</th>
+                    <th>theta</th>
+                    <th>Intr Val</th>
+                    <th>Time Val</th>
+                    <th>Yield rate</th>
+                    <th>action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {postionList.map((postion, idx) => (
+                    <><tr key={`${idx}a`}>
+                      <td>
+                        <input type="checkbox" value={idx} onChange={(e)=>updatePostionListCheck(idx, e)} />
+                      </td>
+                      <td
+                      onClick={() => onSymbolClick(postion.symbol)}
+                      style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
+                      title="Click to copy"
+                      >{postion.symbol}</td>
+                      <td>{postion.side}</td>
+                      <td>{postion.contracts} [{postion.amount}]</td>
+                      <td>{postion.realizedPnl}</td>
+                      <td>{parseFloat(postion.percentage).toFixed(2)}%</td>
+                      <td>{postion.entryPrice}</td>
+                      <td>{parseFloat(postion.markPrice).toFixed(4)}</td>
+                      <td>
+                        <button onClick={() => refreshPostionIvData(postion.symbol, idx)}>{buttonPostionSign} &nbsp; {extractPrice(GetCoinSign(postion.symbol), coinPrices)}</button>
+                        {/* <button onClick={()=>modifyCountList(postion, idx)}>Count[{countList[idx] && countList[idx].status?'Yes':'No'}]</button> */}
+                      </td>
+                      <td style={{ "color": "red" }}>{postion.ivData ? parseFloat(postion.ivData.delta).toFixed(4) : 'N/A'}</td>
+                      <td>
+                        {postion.ivData ? parseFloat(postion.ivData.infer_price).toFixed(2) : 'N/A'}
+                        {postion.ivData ? <>
+                          [
+                          {handleShowInferInfo(postion.ivData, coinPrices)}
+                          ]
+                        </>: ''}
+                      </td>
+                      <td>{postion.ivData ? parseFloat(postion.ivData.day_left).toFixed(2) : 'N/A'}</td>
+                      <td>{postion.ivData ? parseFloat(postion.ivData.ask_price).toFixed(4) : 'N/A'}</td>
+                      <td>{postion.ivData ? parseFloat(postion.ivData.b_iv).toFixed(2) : 'N/A'}</td>
+                      <td>{postion.ivData ? parseFloat(postion.ivData.bid_price).toFixed(4) : 'N/A'}</td>
+                      <td>{postion.ivData ? parseFloat(postion.ivData.s_iv).toFixed(2) : 'N/A'}</td>
+                      
+                      <td>{postion.ivData ? parseFloat(postion.ivData.gamma).toFixed(8) : 'N/A'}</td>
+                      <td>{postion.ivData ? parseFloat(postion.ivData.theta).toFixed(4) : 'N/A'}</td>
+                      <td sytle={{color: 'green'}}>[{postion.ivData ? parseFloat(postion.ivData.intrinsic_value).toFixed(2) : 'N/A'}]</td>
+                      <td style={{color: 'blue'}}>{postion.ivData ? parseFloat(postion.ivData.time_value).toFixed(2) : 'N/A'}</td>
+                      <td>{postion.ivData ? parseFloat(postion.ivData.time_value/extractPrice(GetCoinSign(postion.symbol), coinPrices)/parseFloat(postion.ivData.day_left)*365*100).toFixed(2) : 'N/A'} %</td>
+                      <td
+                          onClick={() => closePostion({
+                            closePostionSymbol: postion.symbol, closeSide: postion.side == 'short' ? 'buy': 'sell', closeAmount: postion.contracts, closePrice: postion.side == 'short' ? postion.ivData.ask_price : postion.ivData.bid_price, closeType: 'limit', closeId: postion.id,
+                          }, ()=>{refreshPostionList();closePostionDone(); alert('Close postion done!!!')})}
+                        >{postion.ivData?<button>Open `{postion.side == 'short' ? 'buy': 'sell'}` to close .</button>:'Close need to refresh'}</td>
+                    </tr>
+                    <tr key={`${idx}b`}>
+                        <td colSpan={9}>
+                          <input type="text" placeholder="BTC/USD:BTC-241206-100000-C"  style={{
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            textAlign: 'right',
+                            padding: '8px', 
+                          }} onChange={(e) => updateAimOption(e, idx)} />
+                        </td>
+                        <td style={{ "color": "red" }}>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].delta).toFixed(4): 'N/A' }</td>
+                        <td>
+                          {aimOptioinIvDataList[idx] ? parseFloat(aimOptioinIvDataList[idx].infer_price).toFixed(2) : 'N/A'}
+                          {aimOptioinIvDataList[idx] ? <>
+                            [
+                            {handleShowInferInfo(aimOptioinIvDataList[idx])}
+                            ]
+                          </>: ''}
+                        </td>
+                        <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].day_left).toFixed(2): 'N/A' }</td>
+                        <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].ask_price).toFixed(4): 'N/A' }</td>
+                        <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].b_iv).toFixed(2): 'N/A' }</td>
+                        <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].bid_price).toFixed(4): 'N/A' }</td>
+                        <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].s_iv).toFixed(2): 'N/A' }</td>
+                        
+                        <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].gamma).toFixed(8): 'N/A' }</td>
+                        <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].theta).toFixed(4): 'N/A' }</td>
+                        <td sytle={{color: 'green'}}>[{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].intrinsic_value).toFixed(2): 'N/A'}]</td>
+                        <td style={{color: 'blue'}}>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].time_value).toFixed(2): 'N/A'}</td>
+                        <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].time_value/extractPrice(GetCoinSign(postion.symbol), coinPrices)/parseFloat(aimOptioinIvDataList[idx].day_left)*365*100).toFixed(2): 'N/A'} %</td>
+                        <td
+                          onClick={() => moveToPostion({
+                            closePostionSymbol: postion.symbol, closeSide: 'buy', closeAmount: postion.contracts, closePrice: postion.ivData.ask_price, closeType: 'limit', closeId: postion.id,
+                            createPostionSymbol: aimOptionList[idx], createSide: 'sell', createAmount: postion.contracts, createPrice: aimOptioinIvDataList[idx].bid_price , createType: 'limit',
+                          }, ()=>{refreshPostionList();movePostionDone(); alert('Move postion done!!!')})}
+                        >{aimOptioinIvDataList[idx] && postion.side == 'short'?<button>Move to this postion.</button>:'Move need to refresh'}</td>
+                      </tr></>
+                  ))}
+                </tbody>
+              </table>
         </>
     );
 }
