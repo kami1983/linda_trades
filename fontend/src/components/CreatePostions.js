@@ -312,26 +312,32 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
       return true;
     }
 
+    const [loading, setLoading] = useState(false);
+
     const columns = [
       {
         title: 'Symbol',
         dataIndex: 'symbol',
+        width: 200,
         render: (_, record, idx) => (
           <Input
             placeholder="BTC/USD:BTC-241213-98000-C"
             value={toCreateSymbol[idx]}
             onChange={(e) => handleSetToCreateSymbol(idx, e.target.value)}
+            disabled={loading}
           />
         ),
       },
       {
         title: 'Side',
         dataIndex: 'side',
+        width: 120,
         render: (_, record, idx) => (
           <Select
             value={toCreateSide[idx]}
             onChange={(value) => handleSetToCreateSide(idx, value)}
             style={{ width: '100%' }}
+            disabled={loading}
           >
             <Select.Option value="sell">Sell</Select.Option>
             <Select.Option value="buy">Buy</Select.Option>
@@ -341,33 +347,42 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
       {
         title: 'Amount',
         dataIndex: 'amount',
+        width: 120,
         render: (_, record, idx) => (
           <Input
             type="number"
+            min={1}
             value={toCreateAmount[idx] ?? 1}
             onChange={(e) => handleSetToCreateAmount(idx, e.target.value)}
+            disabled={loading}
           />
         ),
       },
       {
         title: 'Price',
         dataIndex: 'price',
+        width: 120,
         render: (_, record, idx) => (
           <Input
             type="number"
+            min={0}
+            step={0.01}
             value={toCreatePrice[idx]}
             onChange={(e) => handleSetToCreatePrice(idx, e.target.value)}
+            disabled={loading}
           />
         ),
       },
       {
         title: 'Type',
         dataIndex: 'type',
+        width: 120,
         render: (_, record, idx) => (
           <Select
             value={toCreateType[idx]}
             onChange={(value) => handleSetToCreateType(idx, value)}
             style={{ width: '100%' }}
+            disabled={loading}
           >
             <Select.Option value="limit">Limit</Select.Option>
             <Select.Option value="market">Market</Select.Option>
@@ -377,11 +392,15 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
       {
         title: 'Actions',
         dataIndex: 'actions',
+        width: 200,
+        fixed: 'right',
         render: (_, record, idx) => (
           <div style={{ display: 'flex', gap: 8 }}>
             <Button 
               type="primary"
               onClick={() => refreshCreateIvData(toCreateSymbol[idx], idx)}
+              loading={loading}
+              disabled={!toCreateSymbol[idx]}
             >
               {getButtonCreateSign(idx)} Refresh
             </Button>
@@ -389,6 +408,8 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
               type="primary"
               danger
               onClick={() => createNewPostion(idx, createNewPostionCallBack)}
+              loading={loading}
+              disabled={!toCreateSymbol[idx] || !toCreateIvData[idx]}
             >
               {buttonSubmitCreateSign[idx] ?? '⚡️'} Submit
             </Button>

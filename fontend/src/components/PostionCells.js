@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Table, Button, Modal } from "antd";
 import { handlerToCreatePosition, extractIVData, callPostionList } from "../utils/OptionApis";
 import { extractPrice, GetCoinSign, handleShowInferInfo, GetPostionSize } from "../utils/Utils";
 import { usePrices } from '../context/PriceContext';
@@ -15,40 +16,44 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
     const [buttonPostionSign, setButtonPostionSign] = useState('🟩');
     const [postionCheckList, setPostionCheckList] = useState([]);
     const [postionList, setPostionList] = useState([]);
+    const [infoModalVisible, setInfoModalVisible] = useState(false);
+    const [infoModalContent, setInfoModalContent] = useState('');
+    const [confirmModalVisible, setConfirmModalVisible] = useState(false);
+    const [confirmCallback, setConfirmCallback] = useState(() => () => {});
 
     const coinPrices = usePrices();
 
   
-    const closeAllPostions = (backCall = ()=>{alert('Close all postions done!')}) => {
-      // eslint-disable-next-line no-restricted-globals
-      const beSure = confirm(`Are you sure to close all postions?`);
-      if(!beSure){
-        return;
-      }
-  
-      const _closeAwaitList = [];
-      for(let i=0; i<postionCheckList.length; i++){
-        if(postionCheckList[i] && postionList[i].ivData){
-          const _closeParam = {
-            closePostionSymbol: postionList[i].symbol,
-            closeAmount: postionList[i].contracts,
-            closePrice: postionList[i].side === 'short' ? postionList[i].ivData.ask_price : postionList[i].ivData.bid_price,
-            closeType: 'limit',
-            closeSide: postionList[i].side === 'short' ? 'buy' : 'sell'
-          };
-  
-          console.log('_closeParam - ', _closeParam)
-          _closeAwaitList.push(closePostion(_closeParam, ()=>{}));
+    const closeAllPostions = (backCall = () => {
+      setInfoModalContent('Close all postions done!');
+      setInfoModalVisible(true);
+    }) => {
+      setConfirmModalVisible(true);
+      setConfirmCallback(() => () => {
+        const _closeAwaitList = [];
+        for(let i=0; i<postionCheckList.length; i++){
+          if(postionCheckList[i] && postionList[i].ivData){
+            const _closeParam = {
+              closePostionSymbol: postionList[i].symbol,
+              closeAmount: postionList[i].contracts,
+              closePrice: postionList[i].side === 'short' ? postionList[i].ivData.ask_price : postionList[i].ivData.bid_price,
+              closeType: 'limit',
+              closeSide: postionList[i].side === 'short' ? 'buy' : 'sell'
+            };
+
+            console.log('_closeParam - ', _closeParam)
+            _closeAwaitList.push(closePostion(_closeParam, ()=>{}));
+          }
         }
-      }
-  
-      if(_closeAwaitList.length > 0){
-        Promise.all(_closeAwaitList).then((res) => {
-          console.log('closeAllPostions: ', res);
-          backCall();
-        });
-      }
-  
+
+        if(_closeAwaitList.length > 0){
+          Promise.all(_closeAwaitList).then((res) => {
+            console.log('closeAllPostions: ', res);
+            backCall();
+          });
+        }
+      });
+      return;
     }
 
     const closePostion = (closePostion = {
@@ -58,29 +63,29 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
         closePrice: 0, 
         closeType: 'buy',
         closeId: ''
-    }, backCall = ()=>{alert('Close postion done!')}) => {
-      // eslint-disable-next-line no-restricted-globals
-      const beSure = confirm(`Are you sure to close the "${closePostion.closePostionSymbol}"?`);
-      if(!beSure){
-        return;
-      }
-  
-      console.log('Close postion call params: ', {closePostion});
-  
-      handlerToCreatePosition(
-        closePostion.closePostionSymbol, 
-        closePostion.closeAmount,
-        closePostion.closePrice,
-        closePostion.closeType,
-        closePostion.closeSide
-      ).then((res) => {
-        console.log('handlerToCreatePosition: ', res);
-        if(res.status){
-          backCall();
-        }else{
-          alert(`Close postion failed! ${res.message}`);
-        }
+    }, backCall = ()=>{
+      setInfoModalContent('Close postion done!');
+      setInfoModalVisible(true);
+    }) => {
+      setConfirmModalVisible(true);
+      setConfirmCallback(() => () => {
+        handlerToCreatePosition(
+          closePostion.closePostionSymbol, 
+          closePostion.closeAmount,
+          closePostion.closePrice,
+          closePostion.closeType,
+          closePostion.closeSide
+        ).then((res) => {
+          console.log('handlerToCreatePosition: ', res);
+          if(res.status){
+            backCall();
+          }else{
+            setInfoModalContent(`Close postion failed! ${res.message}`);
+            setInfoModalVisible(true);
+          }
+        });
       });
+      return;
     }
 
     const handlerFetchAllIv = () => {
@@ -247,39 +252,41 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
       createAmount: 0,
       createPrice: 0,
       createType: 'sell'
-    }, backCall = ()=>{alert('Move postion done!')}) => {
+    }, backCall = ()=>{
+      setInfoModalContent('Move postion done!');
+      setInfoModalVisible(true);
+    }) => {
+      setConfirmModalVisible(true);
+      setConfirmCallback(() => () => {
+        const closePostion = handlerToCreatePosition(
+          movePostion.closePostionSymbol, 
+          movePostion.closeAmount,
+          movePostion.closePrice,
+          movePostion.closeType,
+          movePostion.closeSide
+        );
 
-      // eslint-disable-next-line no-restricted-globals
-      const beSure = confirm(`Are you sure move the "${movePostion.closePostionSymbol}" to the "${movePostion.createPostionSymbol}"?`);
-      if(!beSure){
-        return;
-      }
+        const createPostion = handlerToCreatePosition(
+          movePostion.createPostionSymbol,
+          movePostion.createAmount,
+          movePostion.createPrice,
+          movePostion.createType,
+          movePostion.createSide
+        );
 
-      console.log('Move to postion call params: ', {movePostion});
-        
-      const closePostion = handlerToCreatePosition(
-        movePostion.closePostionSymbol, 
-        movePostion.closeAmount,
-        movePostion.closePrice,
-        movePostion.closeType,
-        movePostion.closeSide
-      )
-
-      const createPostion = handlerToCreatePosition(
-        movePostion.createPostionSymbol,
-        movePostion.createAmount,
-        movePostion.createPrice,
-        movePostion.createType,
-        movePostion.createSide
-      )
-
-      Promise.all([closePostion, createPostion]).then((res) => {
-        console.log('handlerToCreatePosition: ', res);
-        alert('Close status: ' + res[0].status + ' Create status: ' + res[1].status);
-        backCall();
+        Promise.all([closePostion, createPostion]).then((res) => {
+          console.log('handlerToCreatePosition: ', res);
+          if(res[0].status && res[1].status){
+            backCall();
+          }else{
+            setInfoModalContent(`Move postion failed! Close status: ${res[0].status}, Create status: ${res[1].status}`);
+            setInfoModalVisible(true);
+          }
+        });
       });
-
+      return;
     }
+
 
     const refreshPostionList = () => {
         callPostionList().then((res) => {
@@ -312,6 +319,26 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
 
     return (
         <>
+        <Modal
+          title="确认"
+          visible={confirmModalVisible}
+          onOk={() => {
+            confirmCallback();
+            setConfirmModalVisible(false);
+          }}
+          onCancel={() => setConfirmModalVisible(false)}
+        >
+          <p>确定要执行此操作吗？</p>
+        </Modal>
+
+        <Modal
+          title="信息"
+          visible={infoModalVisible}
+          onOk={() => setInfoModalVisible(false)}
+          onCancel={() => setInfoModalVisible(false)}
+        >
+          <p>{infoModalContent}</p>
+        </Modal>
         <table>
                 <tr>
                   <td>
