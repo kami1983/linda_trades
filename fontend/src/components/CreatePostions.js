@@ -3,7 +3,7 @@ import { Table, Form, Input, Select, Button, Modal } from "antd";
 import { extractIVData } from "../utils/OptionApis";
 import { extractPrice, GetCoinSign, handleShowInferInfo, GetPostionSize} from "../utils/Utils";
 import { usePrices } from '../context/PriceContext';
-
+import Login from '../components/Login';
 
 
 function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}) {
@@ -12,6 +12,8 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
     const [createFormLength, setCreateFormLength] = useState(1);
     const [buttonCreateSign, setButtonCreateSign] = useState(['🟩']);
     const [buttonSubmitCreateSign, setButtonSubmitCreateSign] = useState(['⚡️']);
+
+    const [loginModalVisible, setLoginModalVisible] = useState(false);
 
 
     const [toCreateIvData, setToCreateIvData] = useState([null]);
@@ -439,6 +441,15 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
             ),
           }}
         />
+
+      <Modal
+        title="Login Required"
+        open={loginModalVisible}
+        onOk={() => setLoginModalVisible(false)}
+        onCancel={() => setLoginModalVisible(false)}
+      >
+        <Login />
+      </Modal>
       </div>
     );
 }
