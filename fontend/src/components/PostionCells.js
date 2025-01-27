@@ -410,7 +410,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                       <td>{parseFloat(postion.percentage).toFixed(2)}%</td>
                       <td>{postion.entryPrice}</td>
                       <td>{parseFloat(postion.markPrice).toFixed(4)}</td>
-                      {postion.marginRatio < 30 ? 
+                      {postion.marginRatio < 0.35 ? 
                         <td style={{color:'GREEN'}}><b>{postion.marginRatio}% # {(1/postion.marginRatio*100).toFixed(2)}</b></td>:
                         <td style={{color:'RED'}}><b>{postion.marginRatio}% # {(1/postion.marginRatio*100).toFixed(2)} </b></td>
                       }
