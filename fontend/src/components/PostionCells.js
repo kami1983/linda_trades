@@ -297,6 +297,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                   percentage: item.percentage,
                   entryPrice: item.entryPrice,
                   markPrice: item.markPrice,
+                  marginRatio: item.marginRatio,
                   ivData: null
                 });
               });
@@ -375,6 +376,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                     <th>percentage</th>
                     <th>entryPrice</th>
                     <th>markPrice</th>
+                    <th style={{color:'RED'}}>marginRatio</th>
                     <th>Refresh IV</th>
                     <th>delta</th>
                     <th>infer_price</th>
@@ -408,6 +410,10 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                       <td>{parseFloat(postion.percentage).toFixed(2)}%</td>
                       <td>{postion.entryPrice}</td>
                       <td>{parseFloat(postion.markPrice).toFixed(4)}</td>
+                      {postion.marginRatio < 30 ? 
+                        <td style={{color:'GREEN'}}><b>{postion.marginRatio}% # {(1/postion.marginRatio*100).toFixed(2)}</b></td>:
+                        <td style={{color:'RED'}}><b>{postion.marginRatio}% # {(1/postion.marginRatio*100).toFixed(2)} </b></td>
+                      }
                       <td>
                         <button onClick={() => refreshPostionIvData(postion.symbol, idx)}>{buttonPostionSign} &nbsp; {extractPrice(GetCoinSign(postion.symbol), coinPrices)}</button>
                         {/* <button onClick={()=>modifyCountList(postion, idx)}>Count[{countList[idx] && countList[idx].status?'Yes':'No'}]</button> */}
@@ -439,7 +445,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                         >{postion.ivData?<button>Open `{postion.side == 'short' ? 'buy': 'sell'}` to close .</button>:'Close need to refresh'}</td>
                     </tr>
                     <tr key={`${idx}b`}>
-                        <td colSpan={9}>
+                        <td colSpan={10}>
                           <input type="text" placeholder="BTC/USD:BTC-241206-100000-C"  style={{
                             width: '100%',
                             boxSizing: 'border-box',

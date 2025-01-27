@@ -45,8 +45,10 @@ python --version
 
 ## To do list
 * 实时记录期权市场当前市场价格、BTC、ETH 【DONE】
-* 需要编写一个运算函数，找出符合时间条件，价格条件的期权 
-* 获取某个给定日期，比如 2022-10-30，某个价格，就会返回与之最相关Call、Put期权信息
+* 需要编写一个运算函数，找出符合时间条件，价格条件的期权 【DONE】
+* 获取期权的保证金
+* 自动调整期权的保证金防止爆仓
+
 
 ## 新增一个Web 交互
 * pip install jupyterlab
@@ -78,7 +80,6 @@ Business WebSocket: wss://wspap.okx.com:8443/ws/v5/business
 * python websocket.py 启动websocket服务，用于记录订单数据
 * cd frontend && yarn start 启动前端服务
 
-# To Do List
 
 ## 交易模拟机器
 * 如何推断出某个期权合理的标记价格
