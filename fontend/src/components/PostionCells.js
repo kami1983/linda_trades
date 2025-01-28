@@ -438,8 +438,9 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                       <td>
                         {postion.collateral}
                         <button onClick={()=>modifyMargin(postion.symbol, postion.to015Margin-postion.collateral, ()=>refreshPostionList())}>To 0.15% {postion.to015Margin-postion.collateral}</button>
+                        <button onClick={()=>modifyMargin(postion.symbol, postion.to020Margin-postion.collateral, ()=>refreshPostionList())}>To 0.20% {postion.to020Margin-postion.collateral}</button>
                       </td>
-                      {postion.marginRatio < 0.20 ? 
+                      {postion.marginRatio < 0.25 ? 
                         <td style={{color:'GREEN'}}><b>{postion.marginRatio}% # {(1/postion.marginRatio*100).toFixed(2)}</b></td>:
                         <td style={{color:'RED'}}><b>{postion.marginRatio}% # {(1/postion.marginRatio*100).toFixed(2)} </b></td>
                       }
