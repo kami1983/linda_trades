@@ -536,6 +536,53 @@ async def create_position(user_data):
     finally:
         await exchange.close()
 
+
+def safe_string(dictionary, key):
+    return str(dictionary[key]) 
+
+@app.route('/api/add_margin')
+@login_required
+async def add_margin(user_data):
+    '''
+    @param: symbol: 期权的symbol
+    @param: amount: 增加或减少的保证金数量
+    @param: type: 修改的类型，可以是add或者reduce
+    '''
+    try:
+        exchange = createExchangeConn()
+        symbol = str(request.args.get('symbol')).upper()
+        amount = float(request.args.get('amount'))
+        result = await exchange.add_margin(symbol=symbol, amount=amount, params={})
+        return jsonify({"status": True, "data": result})
+    except Exception as e:
+        print('DEBUG: modify_margin = error:', e)
+        print(traceback.print_exc())
+        print(e.__traceback__.tb_frame.f_globals["__file__"])   # 发生异常所在的文件
+        print(e.__traceback__.tb_lineno)
+        return jsonify({"status": False, "message": e.args[0]})
+    finally:
+        await exchange.close()
+
+# reduce_margin
+@app.route('/api/reduce_margin')
+@login_required
+async def reduce_margin(user_data):
+    '''
+    @param: symbol: 期权的symbol
+    @param: amount: 增加或减少的保证金数量
+    @param: type: 修改的类型，可以是add或者reduce
+    '''
+    try:
+        exchange = createExchangeConn()
+        symbol = str(request.args.get('symbol')).upper()
+        amount = float(request.args.get('amount'))
+        result = await exchange.reduce_margin(symbol=symbol, amount=amount, params={})
+        return jsonify({"status": True, "data": result})
+    except Exception as e:
+        return jsonify({"status": False, "message": e.args[0]})
+    finally:
+        await exchange.close()
+
 # 调用方法，修改某个订单下单的价格
 @app.route('/api/cacluate_options_price')
 async def cacluate_options_price():

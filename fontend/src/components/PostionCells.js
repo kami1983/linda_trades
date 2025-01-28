@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { handlerToCreatePosition, extractIVData, callPostionList } from "../utils/OptionApis";
+import { handlerToCreatePosition, extractIVData, callPostionList, reduceMargin, addMargin } from "../utils/OptionApis";
 import { extractPrice, GetCoinSign, handleShowInferInfo, GetPostionSize } from "../utils/Utils";
 import { usePrices } from '../context/PriceContext';
 
@@ -223,6 +223,26 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
       setAimOptionList(oldDataList);
     }
 
+    const modifyMargin = (symbol, amount, callBack=null) => {
+      if(amount < 0){
+        // Call reduceMargin
+        reduceMargin(symbol, Math.abs(amount)).then((res) => {
+          console.log('reduceMargin: ', res);
+          alert('Reduce status: ' + res.status);
+          if(callBack){
+            callBack();
+          }
+        });
+      }else{
+        addMargin(symbol, Math.abs(amount)).then((res) => {
+          console.log('addMargin: ', res);
+          alert('Add status: ' + res.status);
+          if(callBack){
+            callBack();
+          }
+        });
+      }
+    }
 
     /**
      * 
@@ -298,6 +318,10 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                   entryPrice: item.entryPrice,
                   markPrice: item.markPrice,
                   marginRatio: item.marginRatio,
+                  collateral: item.collateral,
+                  maintenanceMargin: item.maintenanceMargin,
+                  to020Margin: item.maintenanceMargin/0.20,
+                  to015Margin: item.maintenanceMargin/0.15,
                   ivData: null
                 });
               });
@@ -376,6 +400,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                     <th>percentage</th>
                     <th>entryPrice</th>
                     <th>markPrice</th>
+                    <th>collateral</th>
                     <th style={{color:'RED'}}>marginRatio</th>
                     <th>Refresh IV</th>
                     <th>delta</th>
@@ -410,7 +435,11 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                       <td>{parseFloat(postion.percentage).toFixed(2)}%</td>
                       <td>{postion.entryPrice}</td>
                       <td>{parseFloat(postion.markPrice).toFixed(4)}</td>
-                      {postion.marginRatio < 0.35 ? 
+                      <td>
+                        {postion.collateral}
+                        <button onClick={()=>modifyMargin(postion.symbol, postion.to015Margin-postion.collateral, ()=>refreshPostionList())}>To 0.15% {postion.to015Margin-postion.collateral}</button>
+                      </td>
+                      {postion.marginRatio < 0.20 ? 
                         <td style={{color:'GREEN'}}><b>{postion.marginRatio}% # {(1/postion.marginRatio*100).toFixed(2)}</b></td>:
                         <td style={{color:'RED'}}><b>{postion.marginRatio}% # {(1/postion.marginRatio*100).toFixed(2)} </b></td>
                       }
@@ -445,7 +474,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                         >{postion.ivData?<button>Open `{postion.side == 'short' ? 'buy': 'sell'}` to close .</button>:'Close need to refresh'}</td>
                     </tr>
                     <tr key={`${idx}b`}>
-                        <td colSpan={10}>
+                        <td colSpan={11}>
                           <input type="text" placeholder="BTC/USD:BTC-241206-100000-C"  style={{
                             width: '100%',
                             boxSizing: 'border-box',

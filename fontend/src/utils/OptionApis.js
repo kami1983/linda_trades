@@ -84,6 +84,60 @@ const callPostionList = () => {
   });
 }
 
+// /api/reduce_margin?symbol=BTC/USD:BTC-250130-98000-C&amount=0.001
+const reduceMargin = (symbol, amount) => {
+  const toAmount = Math.abs(amount);
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/reduce_margin?symbol=${symbol}&amount=${toAmount}`, {
+      method: "GET",
+      credentials: "include"
+    }).then(response => {
+      if (response.status === 401) {
+        alert('Please login first');
+        reject('Unauthorized');
+        return;
+      }
+      return response.json();  // 继续处理其他响应
+    }).then(data => {
+      if (data) {
+        resolve(data); // 处理成功
+      } else {
+        reject('Error: No data returned');
+      }
+    }).catch(error => {
+      console.error('Error during fetch:', error);
+      reject(error);
+    });
+  });
+}
+
+// /api/add_margin?symbol=BTC/USD:BTC-250130-98000-C&amount=0.001
+const addMargin = (symbol, amount) => {
+  const toAmount = Math.abs(amount);
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/add_margin?symbol=${symbol}&amount=${toAmount}`, {
+      method: "GET",
+      credentials: "include"
+    }).then(response => {
+      if (response.status === 401) {
+        alert('Please login first');
+        reject('Unauthorized');
+        return;
+      }
+      return response.json();  // 继续处理其他响应
+    }).then(data => {
+      if (data) {
+        resolve(data); // 处理成功
+      } else {
+        reject('Error: No data returned');
+      }
+    }).catch(error => {
+      console.error('Error during fetch:', error);
+      reject(error);
+    });
+  });
+}
+
 // 取消订单
 const operToCancel = (orderid, symbol, backCall) => {
   // eslint-disable-next-line no-restricted-globals
@@ -225,6 +279,8 @@ const refillOrders = () => {
 }
 
 export { 
+  reduceMargin,
+  addMargin,
   getTOptionChain, 
   extractIVData, 
   handlerToCreatePosition, 
