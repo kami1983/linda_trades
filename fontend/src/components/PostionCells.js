@@ -437,7 +437,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                       <td>{postion.entryPrice}</td>
                       <td>{parseFloat(postion.markPrice).toFixed(4)}</td>
                       <td>
-                        {postion.collateral}
+                        {parseFloat(postion.collateral).toFixed(6)} # [{(postion.collateral*extractPrice(GetCoinSign(postion.symbol), coinPrices)).toFixed(2)}$]
                         <button onClick={()=>modifyMargin(postion.symbol, postion.to015Margin-postion.collateral, ()=>refreshPostionList())}>To 0.15%</button>
                         <button onClick={()=>modifyMargin(postion.symbol, postion.to020Margin-postion.collateral, ()=>refreshPostionList())}>To 0.20%</button>
                         <button onClick={()=>modifyMargin(postion.symbol, postion.to025Margin-postion.collateral, ()=>refreshPostionList())}>To 0.25%</button>
