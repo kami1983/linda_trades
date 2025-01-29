@@ -177,7 +177,7 @@ async def main():
                 await check_margin(orders, balance)
 
             print("Margin check completed. Sleeping for some minutes...")
-            await asyncio.sleep(10)  # 10 分钟
+            await asyncio.sleep(60)  # 10 分钟
         except Exception as e:
             logging.error(f"Main loop encountered an error: {e}")
             print("Restarting the loop after some seconds...")
