@@ -3,7 +3,7 @@ import os
 from urllib import request
 from db_operation import OrderResultToDb, getOptionChainByExpirationDate, getRecentOptionChainByTimestamp, getRecordedOrderList
 # from flask import Flask, jsonify, request
-from exchange import createExchangeConn
+from exchange import account_balance, createExchangeConn, fetch_orders
 from fetch_options import fetchOpenOrders, fetchOptionChain, fetchPostions, fetchTradeOrdersHistory
 from fetch_ticker import fetchTicker
 from iv import bsmOptionPrice, calculateIvData, extractIvData, handlerCalculateIv, inferCurrentPrice
@@ -355,14 +355,17 @@ async def get_postion_orders():
     '''
     获取我的期权订单
     '''
-    try:
-        exchange = createExchangeConn()
-        positions = await fetchPostions(exchange)
-        return jsonify({"status": True, "data": positions})
-    except Exception as e:
-        return jsonify({"status": False, "Error message": e.args[0]})
-    finally:
-        await exchange.close()
+    # try:
+    #     exchange = createExchangeConn()
+    #     positions = await fetchPostions(exchange)
+    #     return jsonify({"status": True, "data": positions})
+    # except Exception as e:
+    #     return jsonify({"status": False, "Error message": e.args[0]})
+    # finally:
+    #     await exchange.close()
+    res = await fetch_orders()
+    return jsonify(res)
+
 
 @app.route('/api/open_orders')
 async def get_open_orders():
@@ -769,77 +772,80 @@ async def get_recorded_order_list():
         return jsonify({"status": False, "message": e.args[0]})
 
 @app.route('/api/account_balance')
-async def account_balance():
-    '''
-    Result:
-        {
-        "data": {
-            "free": {
-                "ADA": 3000.0,
-                "BTC": 2.987497209392031,
-                "ETH": 14.983602450252652,
-                "JFI": 300.0,
-                "LTC": 30.0,
-                "OKB": 300.0,
-                "PAX": 9000.0,
-                "SUSHI": 998.435273292,
-                "TRX": 30000.0,
-                "TUSD": 9000.0,
-                "UNI": 1500.0,
-                "USDC": 9000.0,
-                "USDK": 9000.0,
-                "USDT": 9961.290478299716
-            },
-            "timestamp": 1736307197322,
-            "total": {
-                "ADA": 3000.0,
-                "BTC": 2.9975888729442217,
-                "ETH": 14.983602450252652,
-                "JFI": 300.0,
-                "LTC": 30.0,
-                "OKB": 300.0,
-                "PAX": 9000.0,
-                "SUSHI": 998.435273292,
-                "TRX": 30000.0,
-                "TUSD": 9000.0,
-                "UNI": 1500.0,
-                "USDC": 9000.0,
-                "USDK": 9000.0,
-                "USDT": 9961.290478299716
-            },
-            "used": {
-                "ADA": 0.0,
-                "BTC": 0.0100916635521907,
-                "ETH": 0.0,
-                "JFI": 0.0,
-                "LTC": 0.0,
-                "OKB": 0.0,
-                "PAX": 0.0,
-                "SUSHI": 0.0,
-                "TRX": 0.0,
-                "TUSD": 0.0,
-                "UNI": 0.0,
-                "USDC": 0.0,
-                "USDK": 0.0,
-                "USDT": 0.0
-            }
-        },
-        "status": true
-    }
-    '''
-    try:
-        exchange = createExchangeConn()
-        balance = await exchange.fetch_balance()
-        return jsonify({"status": True, "data": {
-            "total": balance['total'],
-            "free": balance['free'],
-            "used": balance['used'],
-            "timestamp": balance['timestamp']
-        }})
-    except Exception as e:
-        return jsonify({"status": False, "message": e.args[0]})
-    finally:
-        await exchange.close()
+async def api_account_balance():
+    # '''
+    # Result:
+    #     {
+    #     "data": {
+    #         "free": {
+    #             "ADA": 3000.0,
+    #             "BTC": 2.987497209392031,
+    #             "ETH": 14.983602450252652,
+    #             "JFI": 300.0,
+    #             "LTC": 30.0,
+    #             "OKB": 300.0,
+    #             "PAX": 9000.0,
+    #             "SUSHI": 998.435273292,
+    #             "TRX": 30000.0,
+    #             "TUSD": 9000.0,
+    #             "UNI": 1500.0,
+    #             "USDC": 9000.0,
+    #             "USDK": 9000.0,
+    #             "USDT": 9961.290478299716
+    #         },
+    #         "timestamp": 1736307197322,
+    #         "total": {
+    #             "ADA": 3000.0,
+    #             "BTC": 2.9975888729442217,
+    #             "ETH": 14.983602450252652,
+    #             "JFI": 300.0,
+    #             "LTC": 30.0,
+    #             "OKB": 300.0,
+    #             "PAX": 9000.0,
+    #             "SUSHI": 998.435273292,
+    #             "TRX": 30000.0,
+    #             "TUSD": 9000.0,
+    #             "UNI": 1500.0,
+    #             "USDC": 9000.0,
+    #             "USDK": 9000.0,
+    #             "USDT": 9961.290478299716
+    #         },
+    #         "used": {
+    #             "ADA": 0.0,
+    #             "BTC": 0.0100916635521907,
+    #             "ETH": 0.0,
+    #             "JFI": 0.0,
+    #             "LTC": 0.0,
+    #             "OKB": 0.0,
+    #             "PAX": 0.0,
+    #             "SUSHI": 0.0,
+    #             "TRX": 0.0,
+    #             "TUSD": 0.0,
+    #             "UNI": 0.0,
+    #             "USDC": 0.0,
+    #             "USDK": 0.0,
+    #             "USDT": 0.0
+    #         }
+    #     },
+    #     "status": true
+    # }
+    # '''
+    # try:
+    #     exchange = createExchangeConn()
+    #     balance = await exchange.fetch_balance()
+    #     return jsonify({"status": True, "data": {
+    #         "total": balance['total'],
+    #         "free": balance['free'],
+    #         "used": balance['used'],
+    #         "timestamp": balance['timestamp']
+    #     }})
+    # except Exception as e:
+    #     return jsonify({"status": False, "message": e.args[0]})
+    # finally:
+    #     await exchange.close()
+
+    res = await account_balance()
+    return jsonify(res)
 
 
 if __name__ == "__main__":

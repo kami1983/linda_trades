@@ -102,6 +102,11 @@ const AccountInfo = () => {
       render: (pnl) => parseFloat(pnl).toFixed(6)
     },
     {
+      title: 'Pnl USD',
+      key: 'pnl_usd',
+      render: (record) => `${(record.pnl * record.fill_px_usd).toFixed(2)}$`
+    },
+    {
       title: 'Filled Size',
       dataIndex: 'fill_sz',
       key: 'fill_sz',
@@ -117,7 +122,7 @@ const AccountInfo = () => {
       title: 'Filled Price USD',
       dataIndex: 'fill_px_usd',
       key: 'fill_px_usd',
-      render: (price) => parseFloat(price).toFixed(6)
+      render: (price) => {parseFloat(price).toFixed(6)}
     },
     {
       title: 'State',

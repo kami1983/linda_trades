@@ -1,25 +1,10 @@
 import time
 import logging
 import asyncio
-from exchange import createExchangeConn
+from exchange import account_balance, createExchangeConn, fetch_orders
 from fetch_options import fetchPostions
 from send_emails import send_email
 
-
-# 获取 OKX 订单数据
-async def fetch_orders():
-    """
-    获取我的期权订单
-    """
-    try:
-        exchange = createExchangeConn()
-        positions = await fetchPostions(exchange)  # 获取订单数据
-        return positions  # 返回原始数据，而不是 jsonify
-    except Exception as e:
-        logging.error(f"Error fetching orders: {e}")
-        return None
-    finally:
-        await exchange.close()
 
 # 提取 margin 相关信息
 def extract_margin_info(positions):
@@ -68,27 +53,6 @@ async def reduce_margin(symbol, amount):
     finally:
         await exchange.close()
 
-async def account_balance():
-    """
-    获取账户余额
-    """
-    try:
-        exchange = createExchangeConn()
-        balance = await exchange.fetch_balance()
-        return {
-            "status": True,
-            "data": {
-                "total": balance['total'],
-                "free": balance['free'],
-                "used": balance['used'],
-                "timestamp": balance['timestamp']
-            }
-        }
-    except Exception as e:
-        logging.error(f"Error fetching balance: {e}")
-        return {"status": False, "message": str(e)}  # **改成字典，避免 `jsonify()` 报错**
-    finally:
-        await exchange.close()
 
 # 记录最近发送邮件的时间 {ccy: timestamp}
 last_email_sent = {}
@@ -117,7 +81,7 @@ async def check_margin(positions, balance):
         ccy = pos["symbol"].split(":")[0].split("/")[0]
 
         # **避免 KeyError**
-        current_balance = balance['data']['free'].get(ccy, 0) + balance['data']['used'].get(ccy, 0)
+        current_balance = balance['free'].get(ccy, 0) + balance['used'].get(ccy, 0)
 
         to_020_margin = pos["maintenanceMargin"] / 0.20
 
@@ -170,8 +134,22 @@ async def main():
         try:
             print("Starting margin check...")
 
-            balance = await account_balance()
-            orders = await fetch_orders()
+            fetch_balance = await account_balance()
+            if not fetch_balance["status"]:
+                print(f"Error fetching balance: {fetch_balance['message']}")
+                print("Sleeping for some minutes...")
+                await asyncio.sleep(60)
+                continue
+                
+            balance = fetch_balance["data"]
+            print(balance)
+            fetch_res = await fetch_orders()
+            if not fetch_res["status"]:
+                print(f"Error fetching orders: {fetch_res['message']}")
+                print("Sleeping for some minutes...")
+                await asyncio.sleep(60)  # 1 分钟
+                continue
+            orders = fetch_res["data"]
 
             if orders:
                 await check_margin(orders, balance)

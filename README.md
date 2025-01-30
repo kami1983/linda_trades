@@ -76,10 +76,68 @@ Business WebSocket: wss://wspap.okx.com:8443/ws/v5/business
 ```
 
 ## How to start 
-* python app.py 启动API服务
-* python websocket.py 启动websocket服务，用于记录订单数据
-* cd frontend && yarn start 启动前端服务
 
+### Start service
+* /usr/bin/python3 /datadisk/git-files/linda_trades/app_apis.py 启动前端API伺服器
+* /usr/bin/python3 /datadisk/git-files/linda_trades/app_order_monitor.py 启动订单监视器需要数据库配合（非必须）
+* /usr/bin/python3 /datadisk/git-files/linda_trades/app_margin_checker.py 启动杠杆资金调整程序，这个程序会自动平衡不同仓位的杠杆，建议开启否则很容易爆仓
+
+
+### Start web server
+* cd frontend && yarn build
+* sudo npm install -g serve
+* serve -s build -l 3000 这里为什么必须是 3000 ？这是因为 CORS_ORIGIN 指定的路径是 http://localhost:3000，如果换成其他的 .env 后段也需要修改
+
+### supervisorctl
+* 安装 Supervisor（如果尚未安装）
+```
+sudo apt update 
+sudo apt install supervisor -y
+sudo vi /etc/supervisor/conf.d/linda_trade.conf 
+````
+* 尝试重新加载配置文件并且启动
+```
+sudo supervisorctl reread 
+sudo supervisorctl update 
+```
+* 启动之前需要确定在 root 环境下执行了 pip install -r requirements.txt
+```
+sudo supervisorctl start all
+```
+* 查看当前运行的进程
+```
+sudo supervisorctl
+status
+```
+
+* 查看当前运行的进程
+```
+sudo supervisorctl
+status
+```
+
+* 开启WEB端的服务查看工具
+```
+sudo vi /etc/supervisor/supervisord.conf
+[inet_http_server] 
+port=0.0.0.0:9001 ; 允许外部访问，改为 127.0.0.1:9001 只允许本机访问 
+username=admin ; 访问时的用户名 
+password=yourpassword ; 访问时的密码
+```
+
+* 重启服务
+```
+sudo supervisorctl reread
+sudo supervisorctl update
+sudo systemctl restart supervisor
+浏览器访问：
+http://服务器IP:9001
+```
+
+* 停止服务
+```
+sudo supervisorctl stop all
+```
 
 ## 交易模拟机器
 * 如何推断出某个期权合理的标记价格
