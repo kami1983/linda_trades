@@ -92,7 +92,9 @@ async def check_margin(positions, balance):
 
             res = await reduce_margin(pos["symbol"], to_reduce_margin)  # **直接 await**
             if res["status"]:
-               balance_changes[ccy] = balance_changes.get(ccy, 0) + to_reduce_margin  # **避免 KeyError**
+               balance_changes[ccy] = balance_changes.get(ccy, 0) + to_reduce_margin
+               print(f"Reduced margin for {pos['symbol']}: {to_reduce_margin}")
+               send_email("🚨 降低保证金", f"降低 {ccy} 的保证金成功：{to_reduce_margin}")
             else:
                 print(f"Error reducing margin: {res['message']}")
                 if should_send_email(ccy):
@@ -111,7 +113,9 @@ async def check_margin(positions, balance):
 
                 res = await add_margin(pos["symbol"], to_increase_margin)  # **直接 await**
                 if res["status"]:
-                    balance_changes[ccy] = balance_changes.get(ccy, 0) - to_increase_margin  # **避免负数**
+                    balance_changes[ccy] = balance_changes.get(ccy, 0) - to_increase_margin
+                    print(f"Increased margin for {pos['symbol']}: {to_increase_margin}")
+                    send_email("🚨 增加保证金", f"增加 {ccy} 的保证金成功：{to_increase_margin}")
                 else:
                     print(f"Error increasing margin: {res['message']}")
                     if should_send_email(ccy):
@@ -132,17 +136,15 @@ async def check_margin(positions, balance):
 async def main():
     while True:
         try:
-            print("Starting margin check...")
-
             fetch_balance = await account_balance()
             if not fetch_balance["status"]:
+                # 输出时间
                 print(f"Error fetching balance: {fetch_balance['message']}")
                 print("Sleeping for some minutes...")
                 await asyncio.sleep(60)
                 continue
                 
             balance = fetch_balance["data"]
-            print(balance)
             fetch_res = await fetch_orders()
             if not fetch_res["status"]:
                 print(f"Error fetching orders: {fetch_res['message']}")
@@ -154,6 +156,7 @@ async def main():
             if orders:
                 await check_margin(orders, balance)
 
+            print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             print("Margin check completed. Sleeping for some minutes...")
             await asyncio.sleep(60)  # 10 分钟
         except Exception as e:
