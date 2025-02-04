@@ -1,7 +1,7 @@
 import os
 import asyncio
-from db_operation import OrderResultToDb
-from db_struct import CreateOrderResult
+from libs.database.db_operation import OrderResultToDb
+from libs.database.db_struct import CreateOrderResult
 import websockets
 import json
 import hmac

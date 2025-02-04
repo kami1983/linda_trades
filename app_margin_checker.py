@@ -1,7 +1,7 @@
 import time
 import logging
 import asyncio
-from exchange import account_balance, createExchangeConn, fetch_orders
+from libs.exchange.exchange import account_balance, createExchangeConn, fetch_orders
 from fetch_options import fetchPostions
 from send_emails import send_email
 

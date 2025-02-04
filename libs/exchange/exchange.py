@@ -3,7 +3,7 @@ import os
 
 import ccxt.async_support as ccxt
 from dotenv import load_dotenv
-from fetch_options import fetchPostions
+from libs.exchange.fetch_options import fetchPostions
 load_dotenv()
 
 key = os.getenv('OKEX_API_KEY')

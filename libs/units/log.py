@@ -2,7 +2,7 @@
 import os
 import datetime
 
-from db_struct import EResultIvData
+from libs.database.db_struct import EResultIvData
 
 
 def recordLog(log):
