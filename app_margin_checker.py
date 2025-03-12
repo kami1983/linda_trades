@@ -1,8 +1,8 @@
 import time
 import logging
 import asyncio
-from exchange import account_balance, createExchangeConn, fetch_orders
-from fetch_options import fetchPostions
+from libs.exchange.exchange import account_balance, createExchangeConn, fetch_orders
+# from fetch_options import fetchPostions
 from send_emails import send_email
 
 
@@ -67,6 +67,19 @@ def should_send_email(ccy, cooldown=1800):
     if current_time - last_sent_time > cooldown:
         return True
     return False
+
+def extract_order_info(orders):
+    """
+    提取订单信息，包括 symbol, contracts, percentage
+    """
+    order_info = []
+    for order in orders:
+        order_info.append({
+            "symbol": order["symbol"],
+            "contracts": order["contracts"],
+            "percentage": order["percentage"] * 100  # 将百分比转换为百分数
+        })
+    return order_info
 
 async def check_margin(positions, balance):
     """
@@ -155,6 +168,12 @@ async def main():
 
             if orders:
                 await check_margin(orders, balance)
+
+            # 提取订单信息
+            order_info = extract_order_info(orders)
+            print("--------------------------------A")
+            print(order_info)
+            print("--------------------------------B")
 
             print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             print("Margin check completed. Sleeping for some minutes...")

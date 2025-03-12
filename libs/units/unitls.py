@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import List, Optional
 import time
-from db_struct import EResultOptionChain
+from libs.database.db_struct import EResultOptionChain
 
 def timeToStr(timestamp):
     return datetime.fromtimestamp(timestamp / 1000).strftime('%Y-%m-%d %H:%M:%S')
