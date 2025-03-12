@@ -171,7 +171,9 @@ async def main():
 
             # 提取订单信息
             order_info = extract_order_info(orders)
+            print("--------------------------------A")
             print(order_info)
+            print("--------------------------------B")
 
             print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             print("Margin check completed. Sleeping for some minutes...")
