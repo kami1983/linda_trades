@@ -68,9 +68,11 @@ def should_send_email(ccy, cooldown=1800):
         return True
     return False
 
+
 def extract_order_info(orders):
     """
     提取订单信息，包括 symbol, contracts, percentage
+    return [{'symbol': 'BTC/USD:BTC-250530-80000-C', 'contracts': 2.0, 'percentage': -12.4405394319383}, {'symbol': 'BTC/USD:BTC-250530-80000-P', 'contracts': 3.0, 'percentage': 9.64614439591147}, {'symbol': 'ETH/USD:ETH-250530-2100-C', 'contracts': 16.0, 'percentage': 28.28646975908004}, {'symbol': 'BTC/USD:BTC-250530-90000-C', 'contracts': 6.0, 'percentage': 31.65614656407597}]
     """
     order_info = []
     for order in orders:
@@ -147,48 +149,50 @@ async def check_margin(positions, balance):
 
 # 运行主循环
 async def main():
+    first_run = True  # 标记是否为首次运行
     while True:
         try:
             fetch_balance = await account_balance()
             if not fetch_balance["status"]:
-                # 输出时间
                 print(f"Error fetching balance: {fetch_balance['message']}")
                 print("Sleeping for some minutes...")
                 await asyncio.sleep(60)
                 continue
-                
+
             balance = fetch_balance["data"]
             fetch_res = await fetch_orders()
             if not fetch_res["status"]:
                 print(f"Error fetching orders: {fetch_res['message']}")
                 print("Sleeping for some minutes...")
-                await asyncio.sleep(60)  # 1 分钟
+                await asyncio.sleep(60)
                 continue
+
             orders = fetch_res["data"]
+
+            if first_run and orders:
+                # 提取订单信息并发送邮件
+                order_info = extract_order_info(orders)
+                email_content = "\n".join([f"Symbol: {info['symbol']}, Contracts: {info['contracts']}, Percentage: {info['percentage']}%" for info in order_info])
+                send_email("🚀 初始订单信息", f"当前系统的订单信息:\n{email_content}")
+                first_run = False  # 更新首次运行标记
 
             if orders:
                 await check_margin(orders, balance)
 
-            # 提取订单信息
-            order_info = extract_order_info(orders)
-            print("--------------------------------A")
-            print(order_info)
-            print("--------------------------------B")
-
             print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             print("Margin check completed. Sleeping for some minutes...")
-            await asyncio.sleep(60)  # 10 分钟
+            await asyncio.sleep(60)
         except Exception as e:
             logging.error(f"Main loop encountered an error: {e}")
             print("Restarting the loop after some seconds...")
-            await asyncio.sleep(60)  # 发生错误时，等待 1 分钟再重试
+            await asyncio.sleep(60)
 
 if __name__ == "__main__":
     send_email("🚀 OKX 期权保证金检查器已启动", "OKX 期权保证金检查器已启动")
     while True:
         try:
-            asyncio.run(main())  # 运行异步任务
+            asyncio.run(main())
         except Exception as e:
             logging.critical(f"Fatal error in asyncio loop: {e}")
             print("Restarting entire script after 120 seconds...")
-            time.sleep(60)  # 若 `asyncio.run(main())` 彻底崩溃，则等待 2 分钟再重启
+            time.sleep(60)
