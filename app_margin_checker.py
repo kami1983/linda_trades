@@ -178,10 +178,13 @@ async def main():
             if first_run and orders:
                 # 提取订单信息并发送邮件
                 order_info = extract_order_info(orders)
-                print("--------------------------------A")
-                print(order_info)
-                print("--------------------------------B")
-                email_content = "\n".join([f"Symbol: {info.symbol}, Contracts: {info.contracts}, Percentage: {info.percentage}%" for info in order_info])
+                # print("--------------------------------A")
+                # print(order_info)
+                # print("--------------------------------B")
+                email_content = "\n".join([f"Symbol: {info['symbol']}, Contracts: {info['contracts']}, Percentage: {info['percentage']}%" for info in order_info])
+                print("--------------------------------C")
+                print(email_content)
+                print("--------------------------------D")
                 send_email("🚀 系统订单信息", f"当前系统的订单信息:\n{email_content}")
                 first_run = False  # 更新首次运行标记
 
