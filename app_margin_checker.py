@@ -1,6 +1,7 @@
 import time
 import logging
 import asyncio
+from datetime import datetime
 from libs.exchange.exchange import account_balance, createExchangeConn, fetch_orders
 # from fetch_options import fetchPostions
 from send_emails import send_email
@@ -150,6 +151,7 @@ async def check_margin(positions, balance):
 # 运行主循环
 async def main():
     first_run = True  # 标记是否为首次运行
+    last_sent_hour = None  # 记录上次发送邮件的小时
     while True:
         try:
             fetch_balance = await account_balance()
@@ -175,18 +177,14 @@ async def main():
             print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             print("Margin check completed. Sleeping for some minutes...")
 
-            if first_run and orders:
+            current_hour = datetime.now().hour
+            if first_run or (current_hour in [6, 22] and current_hour != last_sent_hour):
                 # 提取订单信息并发送邮件
                 order_info = extract_order_info(orders)
-                # print("--------------------------------A")
-                # print(order_info)
-                # print("--------------------------------B")
-                email_content = "\n".join([f"Symbol: {info['symbol']}, Contracts: {info['contracts']}, Percentage: {info['percentage']}%" for info in order_info])
-                print("--------------------------------C")
-                print(email_content)
-                print("--------------------------------D")
+                email_content = "\n\n".join([f"Symbol: {info['symbol']}, Contracts: {info['contracts']}, Percentage: {info['percentage']}%" for info in order_info])
                 send_email("🚀 系统订单信息", f"当前系统的订单信息:\n{email_content}")
                 first_run = False  # 更新首次运行标记
+                last_sent_hour = current_hour  # 更新上次发送邮件的小时
 
             await asyncio.sleep(60)
         except Exception as e:
