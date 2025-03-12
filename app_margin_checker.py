@@ -75,9 +75,9 @@ def extract_order_info(orders):
     order_info = []
     for order in orders:
         order_info.append({
-            "symbol": order["symbol"],
-            "contracts": order["contracts"],
-            "percentage": order["percentage"] * 100  # 将百分比转换为百分数
+            "symbol": order.symbol,
+            "contracts": order.contracts,
+            "percentage": order.percentage
         })
     return order_info
 
@@ -169,11 +169,11 @@ async def main():
             if orders:
                 await check_margin(orders, balance)
 
-            # # 提取订单信息
-            # order_info = extract_order_info(orders)
-            # print("--------------------------------A")
-            # print(order_info)
-            # print("--------------------------------B")
+            # 提取订单信息
+            order_info = extract_order_info(orders)
+            print("--------------------------------A")
+            print(order_info)
+            print("--------------------------------B")
 
             print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             print("Margin check completed. Sleeping for some minutes...")
