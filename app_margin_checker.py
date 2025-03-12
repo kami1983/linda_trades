@@ -2,7 +2,7 @@ import time
 import logging
 import asyncio
 from libs.exchange.exchange import account_balance, createExchangeConn, fetch_orders
-# from fetch_options import fetchPostions
+from fetch_options import fetchPostions
 from send_emails import send_email
 
 
@@ -169,11 +169,11 @@ async def main():
             if orders:
                 await check_margin(orders, balance)
 
-            # 提取订单信息
-            order_info = extract_order_info(orders)
-            print("--------------------------------A")
-            print(order_info)
-            print("--------------------------------B")
+            # # 提取订单信息
+            # order_info = extract_order_info(orders)
+            # print("--------------------------------A")
+            # print(order_info)
+            # print("--------------------------------B")
 
             print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             print("Margin check completed. Sleeping for some minutes...")
