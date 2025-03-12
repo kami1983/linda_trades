@@ -93,7 +93,7 @@ Business WebSocket: wss://wspap.okx.com:8443/ws/v5/business
 ```
 sudo apt update 
 sudo apt install supervisor -y
-sudo vi /etc/supervisor/conf.d/linda_trade.conf 
+sudo vi /etc/supervisor/conf.d/manager.conf 
 ````
 * 尝试重新加载配置文件并且启动
 ```
@@ -102,7 +102,10 @@ sudo supervisorctl update
 ```
 * 启动之前需要确定在 root 环境下执行了 pip install -r requirements.txt
 ```
-sudo supervisorctl start all
+sudo supervisorctl start all [这个命令如果不好用使用systemctl进行管理]
+
+sudo systemctl stop supervisor
+sudo systemctl restart supervisor
 ```
 * 查看当前运行的进程
 ```
