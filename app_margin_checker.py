@@ -80,7 +80,8 @@ def extract_order_info(orders):
         order_info.append({
             "symbol": order.symbol,
             "contracts": order.contracts,
-            "percentage": order.percentage
+            "percentage": order.percentage,
+            "marginRatio": order.marginRatio
         })
     return order_info
 
@@ -181,7 +182,7 @@ async def main():
             if first_run or (current_hour in [6, 22] and current_hour != last_sent_hour):
                 # 提取订单信息并发送邮件
                 order_info = extract_order_info(orders)
-                email_content = "\n\n".join([f"Symbol: {info['symbol']}, Contracts: {info['contracts']}, Percentage: {info['percentage']}%" for info in order_info])
+                email_content = "\n\n".join([f"Symbol: {info['symbol']}, Contracts: {info['contracts']}, Percentage: {info['percentage']}%, Margin Ratio: {info['marginRatio']}%" for info in order_info])
                 send_email("🚀 系统订单信息", f"当前系统的订单信息:\n{email_content}")
                 first_run = False  # 更新首次运行标记
                 last_sent_hour = current_hour  # 更新上次发送邮件的小时
