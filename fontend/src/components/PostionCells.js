@@ -10,6 +10,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
 
     const [countList, setCountList] = useState([]);
     const [aimOptionList, setAimOptionList] = useState([]);
+    const [aimOptionContractSizeList, setAimOptionContractSizeList] = useState([]);
     const [aimOptioinIvDataList, setAimOptioinIvDataList] = useState([]);
     const [countProfitValue, setCountProfitValue] = useState(0);
     const [buttonPostionSign, setButtonPostionSign] = useState('🟩');
@@ -223,6 +224,12 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
       setAimOptionList(oldDataList);
     }
 
+    const updateAimOptionContractSize = (e, idx) => {
+      const oldDataList = aimOptionContractSizeList;
+      oldDataList[idx] = parseInt(e.target.value);
+      setAimOptionContractSizeList(oldDataList);
+    }
+
     const modifyMargin = (symbol, amount, callBack=null) => {
       if(amount < 0){
         // Call reduceMargin
@@ -270,7 +277,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
     }, backCall = ()=>{alert('Move postion done!')}) => {
 
       // eslint-disable-next-line no-restricted-globals
-      const beSure = confirm(`Are you sure move the "${movePostion.closePostionSymbol}" to the "${movePostion.createPostionSymbol}"?`);
+      const beSure = confirm(`Are you sure move the "${movePostion.closePostionSymbol} [${movePostion.closeAmount}]" to the "${movePostion.createPostionSymbol} [${movePostion.createAmount}]"?`);
       if(!beSure){
         return;
       }
@@ -477,13 +484,21 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                         >{postion.ivData?<button>Open `{postion.side == 'short' ? 'buy': 'sell'}` to close .</button>:'Close need to refresh'}</td>
                     </tr>
                     <tr key={`${idx}b`}>
-                        <td colSpan={11}>
+                        <td colSpan={10}>
                           <input type="text" placeholder="BTC/USD:BTC-241206-100000-C"  style={{
                             width: '100%',
                             boxSizing: 'border-box',
                             textAlign: 'right',
                             padding: '8px', 
                           }} onChange={(e) => updateAimOption(e, idx)} />
+                        </td>
+                        <td>
+                          <input type="number" placeholder={postion.contracts} style={{
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            textAlign: 'right',
+                            padding: '8px', 
+                          }} onChange={(e) => updateAimOptionContractSize(e, idx)} />
                         </td>
                         <td style={{ "color": "red" }}>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].delta).toFixed(4): 'N/A' }</td>
                         <td>
@@ -507,8 +522,8 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].time_value/extractPrice(GetCoinSign(postion.symbol), coinPrices)/parseFloat(aimOptioinIvDataList[idx].day_left)*365*100).toFixed(2): 'N/A'} %</td>
                         <td
                           onClick={() => moveToPostion({
-                            closePostionSymbol: postion.symbol, closeSide: 'buy', closeAmount: postion.contracts, closePrice: postion.ivData.ask_price, closeType: 'limit', closeId: postion.id,
-                            createPostionSymbol: aimOptionList[idx], createSide: 'sell', createAmount: postion.contracts, createPrice: aimOptioinIvDataList[idx].bid_price , createType: 'limit',
+                            closePostionSymbol: postion.symbol, closeSide: 'buy', closeAmount: isNaN(aimOptionContractSizeList[idx])?postion.contracts:parseInt(aimOptionContractSizeList[idx]), closePrice: postion.ivData.ask_price, closeType: 'limit', closeId: postion.id,
+                            createPostionSymbol: aimOptionList[idx], createSide: 'sell', createAmount: isNaN(aimOptionContractSizeList[idx])?postion.contracts:parseInt(aimOptionContractSizeList[idx]), createPrice: aimOptioinIvDataList[idx].bid_price , createType: 'limit',
                           }, ()=>{refreshPostionList();movePostionDone(); alert('Move postion done!!!')})}
                         >{aimOptioinIvDataList[idx] && postion.side == 'short'?<button>Move to this postion.</button>:'Move need to refresh'}</td>
                       </tr></>

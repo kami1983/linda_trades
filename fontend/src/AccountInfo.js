@@ -29,13 +29,20 @@ const AccountInfo = () => {
         getAccountBalance(),
         getRecordedOrderList()
       ]);
-
-      if (balanceRes.status && ordersRes.status) {
+      console.log(balanceRes, ordersRes);
+      if (balanceRes.status ) {
         setBalance(balanceRes.data);
+      } else {
+        console.error('Failed to fetch balance');
+      }
+
+      if (ordersRes.status) {
         setOrders(ordersRes.data);
       } else {
-        throw new Error('Failed to fetch data');
+        console.error('Failed to fetch orders');
       }
+
+
     } catch (err) {
       setError(err.message);
     } finally {
