@@ -14,6 +14,7 @@ import traceback
 import jwt
 from functools import wraps
 from datetime import datetime, timedelta, timezone
+import ccxt
 
 from libs.units.unitls import getCrrrentTime, selectOptions
 
@@ -770,6 +771,8 @@ async def get_recorded_order_list():
         return jsonify({"status": True, "data": result})
     except Exception as e:
         return jsonify({"status": False, "message": e.args[0]})
+    
+
 
 @app.route('/api/account_balance')
 async def api_account_balance():
@@ -848,6 +851,9 @@ async def api_account_balance():
     res = await account_balance()
     return jsonify(res)
 
+@app.route('/ccxt/version')
+async def ccxt_version():
+    return jsonify({"status": True, "data": ccxt.__version__})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=APP_PORT, debug=True)
