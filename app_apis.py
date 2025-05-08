@@ -15,6 +15,7 @@ import jwt
 from functools import wraps
 from datetime import datetime, timedelta, timezone
 import ccxt
+import sys
 
 from libs.units.unitls import getCrrrentTime, selectOptions
 
@@ -853,7 +854,7 @@ async def api_account_balance():
 
 @app.route('/ccxt/version')
 async def ccxt_version():
-    return jsonify({"status": True, "data": ccxt.__version__})
+    return jsonify({"status": True, "data": {"ccxt_version": ccxt.__version__, "sys_executable": sys.executable}})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=APP_PORT, debug=True)

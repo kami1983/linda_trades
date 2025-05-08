@@ -111,7 +111,7 @@ const AccountInfo = () => {
     {
       title: 'Pnl USD',
       key: 'pnl_usd',
-      render: (record) => `${(record.pnl * record.fill_px_usd).toFixed(2)}$`
+      render: (record) => `${(record.pnl * record.fill_fwd_px).toFixed(2)}$`
     },
     {
       title: 'Filled Size',
