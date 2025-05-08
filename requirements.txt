@@ -18,7 +18,7 @@ beautifulsoup4==4.12.3
 blackscholes==0.1.8
 bleach==6.2.0
 blinker==1.8.2
-ccxt==4.4.21
+ccxt==4.4.77
 certifi==2024.8.30
 cffi==1.17.1
 charset-normalizer==3.4.0

@@ -47,8 +47,11 @@ async def account_balance():
     获取账户余额
     """
     try:
+        print('Debug B account_balance')
         exchange = createExchangeConn()
+        print('Debug C account_balance')
         balance = await exchange.fetch_balance()
+        print('Debug D balance: ',balance)
         res = {
             "status": True,
             "data": {

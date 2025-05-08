@@ -844,6 +844,7 @@ async def api_account_balance():
     # finally:
     #     await exchange.close()
 
+    print('Debug A account_balance')
     res = await account_balance()
     return jsonify(res)
 
