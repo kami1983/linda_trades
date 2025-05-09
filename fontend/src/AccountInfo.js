@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getRecordedOrderList, getAccountBalance, refillOrders } from './utils/OptionApis';
 import { Table, Card, Spin, Alert, Button, Modal } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useLoginStatus } from './context/LoginStautsContext';
 import Login from './components/Login';
 
@@ -150,6 +150,42 @@ const AccountInfo = () => {
     }
   ];
 
+  const downloadCSV = () => {
+    // 准备 CSV 头部
+    const headers = orderColumns.map(col => col.title);
+    
+    // 准备 CSV 数据
+    const csvData = orders.map(order => {
+      return orderColumns.map(col => {
+        if (col.render) {
+          return col.render(order[col.dataIndex], order);
+        }
+        return order[col.dataIndex];
+      });
+    });
+
+    // 组合 CSV 内容
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.join(','))
+    ].join('\n');
+
+    // 创建 Blob 对象
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    
+    // 创建下载链接
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'order_history.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   if (loading) {
     return <Spin size="large" />;
   }
@@ -177,14 +213,24 @@ const AccountInfo = () => {
       <Card 
         title="Order History"
         extra={
-          <Button
-            type="primary"
-            icon={<ReloadOutlined />}
-            loading={refillLoading}
-            onClick={handleRefillOrders}
-          >
-            Refill Orders
-          </Button>
+          <div>
+            <Button
+              type="primary"
+              icon={<ReloadOutlined />}
+              loading={refillLoading}
+              onClick={handleRefillOrders}
+              style={{ marginRight: '10px' }}
+            >
+              Refill Orders
+            </Button>
+            <Button 
+              type="primary"
+              icon={<DownloadOutlined />}
+              onClick={downloadCSV}
+            >
+              Download CSV
+            </Button>
+          </div>
         }
       >
         <Table
