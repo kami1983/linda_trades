@@ -151,39 +151,62 @@ const AccountInfo = () => {
   ];
 
   const downloadCSV = () => {
-    // 准备 CSV 头部
-    const headers = orderColumns.map(col => col.title);
-    
-    // 准备 CSV 数据
-    const csvData = orders.map(order => {
-      return orderColumns.map(col => {
-        if (col.render) {
-          return col.render(order[col.dataIndex], order);
-        }
-        return order[col.dataIndex];
-      });
-    });
+    try {
+      // 检查 orders 是否存在且不为空
+      if (!orders || orders.length === 0) {
+        console.error('No orders data available');
+        return;
+      }
 
-    // 组合 CSV 内容
-    const csvContent = [
-      headers.join(','),
-      ...csvData.map(row => row.join(','))
-    ].join('\n');
+      // 准备 CSV 头部
+      const headers = orderColumns.map(col => col.title);
+      
+      // 准备 CSV 数据，添加错误处理
+      const csvData = orders.map(order => {
+        if (!order) return null; // 跳过无效的订单数据
+        
+        return orderColumns.map(col => {
+          try {
+            if (col.render) {
+              // 确保所有必需的属性都存在
+              if (col.key === 'pnl_usd' && (!order.pnl || !order.fill_fwd_px)) {
+                return 'N/A';
+              }
+              return col.render(order[col.dataIndex], order) || 'N/A';
+            }
+            return order[col.dataIndex] || 'N/A';
+          } catch (error) {
+            console.error(`Error processing column ${col.title}:`, error);
+            return 'N/A';
+          }
+        });
+      }).filter(row => row !== null); // 过滤掉无效的行
 
-    // 创建 Blob 对象
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    
-    // 创建下载链接
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'order_history.csv');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      // 组合 CSV 内容
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => row.join(','))
+      ].join('\n');
+
+      // 创建 Blob 对象
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // 创建下载链接
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'order_history.csv');
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error generating CSV:', error);
+      // 可以添加一个提示，告诉用户下载失败
+      alert('Failed to generate CSV file. Please try again.');
+    }
   };
 
   if (loading) {
