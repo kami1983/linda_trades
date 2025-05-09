@@ -166,6 +166,9 @@ const AccountInfo = () => {
         if (!order) return null; // 跳过无效的订单数据
         
         return orderColumns.map(col => {
+          console.log('Debug order: ', order);
+          console.log('Debug col: ', col);
+          console.log('########################');
           try {
             if (col.render) {
               // 确保所有必需的属性都存在
