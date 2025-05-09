@@ -166,17 +166,16 @@ const AccountInfo = () => {
         if (!order) return null; // 跳过无效的订单数据
         
         return orderColumns.map(col => {
-          console.log('Debug order: ', order);
-          console.log('Debug col: ', col);
-          console.log('Debug order[col.dataIndex]: ', col.dataIndex, order[col.dataIndex]);
-          console.log('########################');
           try {
             if (col.render) {
               // 确保所有必需的属性都存在
               if (col.key === 'pnl_usd' && (!order.pnl || !order.fill_fwd_px)) {
                 return 'N/A';
               }
-              return col.render(order) || 'N/A';
+              if(col.key === 'pnl_usd') {
+                return col.render(order) || 'N/A';
+              }
+              return col.render(order[col.dataIndex]) || 'N/A';
             }
             return order[col.dataIndex] || 'N/A';
           } catch (error) {
