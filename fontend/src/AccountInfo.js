@@ -168,6 +168,7 @@ const AccountInfo = () => {
         return orderColumns.map(col => {
           console.log('Debug order: ', order);
           console.log('Debug col: ', col);
+          console.log('Debug order[col.dataIndex]: ', col.dataIndex, order[col.dataIndex]);
           console.log('########################');
           try {
             if (col.render) {
@@ -175,7 +176,7 @@ const AccountInfo = () => {
               if (col.key === 'pnl_usd' && (!order.pnl || !order.fill_fwd_px)) {
                 return 'N/A';
               }
-              return col.render(order[col.dataIndex], order) || 'N/A';
+              return col.render(order) || 'N/A';
             }
             return order[col.dataIndex] || 'N/A';
           } catch (error) {
