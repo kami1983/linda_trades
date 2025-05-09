@@ -516,7 +516,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].b_iv).toFixed(2): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].bid_price).toFixed(4): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].s_iv).toFixed(2): 'N/A' }</td>
-                        
+                        <td>{aimOptioinIvDataList[idx]? parseFloat((aimOptioinIvDataList[idx].ask_price-aimOptioinIvDataList[idx].bid_price)/aimOptioinIvDataList[idx].bid_price).toFixed(2): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].gamma).toFixed(8): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].theta).toFixed(4): 'N/A' }</td>
                         <td sytle={{color: 'green'}}>[{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].intrinsic_value).toFixed(2): 'N/A'}]</td>
