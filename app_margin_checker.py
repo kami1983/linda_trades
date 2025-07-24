@@ -115,7 +115,17 @@ async def check_margin(positions, balance):
             else:
                 print(f"Error reducing margin: {res['message']}")
                 if should_send_email(ccy):
-                    send_email("🚨 Reduce margin error", f"减少 {ccy} 的保证金出现错误：{res['message']}")
+                    error_details = (
+                        f"币种: {ccy}\n"
+                        f"合约: {pos['symbol']}\n"
+                        f"当前保证金比例: {pos['marginRatio']:.4f}\n"
+                        f"目标保证金比例: 0.20\n"
+                        f"当前保证金: {pos['collateral']}\n"
+                        f"维持保证金: {pos['maintenanceMargin']}\n"
+                        f"尝试减少金额: {to_reduce_margin}\n"
+                        f"错误信息: {res['message']}"
+                    )
+                    send_email("🚨 Reduce margin error", f"减少保证金出现错误：\n{error_details}")
                     last_email_sent[ccy] = time.time()
 
         elif pos["marginRatio"] > 0.30:
@@ -136,13 +146,34 @@ async def check_margin(positions, balance):
                 else:
                     print(f"Error increasing margin: {res['message']}")
                     if should_send_email(ccy):
-                        send_email("🚨 Add margin error", f"新增 {ccy} 的保证金出现错误：{res['message']}")
+                        error_details = (
+                            f"币种: {ccy}\n"
+                            f"合约: {pos['symbol']}\n"
+                            f"当前保证金比例: {pos['marginRatio']:.4f}\n"
+                            f"目标保证金比例: 0.20\n"
+                            f"当前保证金: {pos['collateral']}\n"
+                            f"维持保证金: {pos['maintenanceMargin']}\n"
+                            f"当前可用余额: {current_balance}\n"
+                            f"尝试增加金额: {to_increase_margin}\n"
+                            f"错误信息: {res['message']}"
+                        )
+                        send_email("🚨 Add margin error", f"新增保证金出现错误：\n{error_details}")
                         last_email_sent[ccy] = time.time()  # 记录当前时间
             else:
                 print(f"Balance is not enough to increase margin: {to_increase_margin}")
                 # check if cooldown time has passed
                 if should_send_email(ccy):
-                    send_email("🚨 余额不足", f"余额不足以增加 {ccy} 的保证金")
+                    error_details = (
+                        f"币种: {ccy}\n"
+                        f"合约: {pos['symbol']}\n"
+                        f"当前保证金比例: {pos['marginRatio']:.4f}\n"
+                        f"目标保证金比例: 0.20\n"
+                        f"当前保证金: {pos['collateral']}\n"
+                        f"维持保证金: {pos['maintenanceMargin']}\n"
+                        f"当前可用余额: {current_balance}\n"
+                        f"需要增加金额: {to_increase_margin}"
+                    )
+                    send_email("🚨 余额不足", f"余额不足以增加保证金：\n{error_details}")
                     last_email_sent[ccy] = time.time()  # 记录当前时间
 
         else:
