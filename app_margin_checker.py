@@ -98,7 +98,7 @@ async def check_margin(positions, balance):
         ccy = pos["symbol"].split(":")[0].split("/")[0]
 
         # **避免 KeyError**
-        current_balance = balance['free'].get(ccy, 0) + balance['used'].get(ccy, 0)
+        current_balance = balance['free'].get(ccy, 0)  # 只使用可用余额，不包括已占用的余额
 
         to_020_margin = pos["maintenanceMargin"] / 0.20
 
