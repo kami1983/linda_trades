@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { getRecordedOrderList, getAccountBalance, refillOrders } from './utils/OptionApis';
 import { Table, Card, Spin, Alert, Button, Modal } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useLoginStatus } from './context/LoginStautsContext';
 import Login from './components/Login';
 
@@ -150,6 +150,68 @@ const AccountInfo = () => {
     }
   ];
 
+  const downloadCSV = () => {
+    try {
+      // 检查 orders 是否存在且不为空
+      if (!orders || orders.length === 0) {
+        console.error('No orders data available');
+        return;
+      }
+
+      // 准备 CSV 头部
+      const headers = orderColumns.map(col => col.title);
+      
+      // 准备 CSV 数据，添加错误处理
+      const csvData = orders.map(order => {
+        if (!order) return null; // 跳过无效的订单数据
+        
+        return orderColumns.map(col => {
+          try {
+            if (col.render) {
+              // 确保所有必需的属性都存在
+              if (col.key === 'pnl_usd' && (!order.pnl || !order.fill_fwd_px)) {
+                return 'N/A';
+              }
+              if(col.key === 'pnl_usd') {
+                return col.render(order) || 'N/A';
+              }
+              return col.render(order[col.dataIndex]) || 'N/A';
+            }
+            return order[col.dataIndex] || 'N/A';
+          } catch (error) {
+            console.error(`Error processing column ${col.title}:`, error);
+            return 'N/A';
+          }
+        });
+      }).filter(row => row !== null); // 过滤掉无效的行
+
+      // 组合 CSV 内容
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map(row => row.join(','))
+      ].join('\n');
+
+      // 创建 Blob 对象
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      
+      // 创建下载链接
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'order_history.csv');
+      link.style.visibility = 'hidden';
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Error generating CSV:', error);
+      // 可以添加一个提示，告诉用户下载失败
+      alert('Failed to generate CSV file. Please try again.');
+    }
+  };
+
   if (loading) {
     return <Spin size="large" />;
   }
@@ -177,14 +239,24 @@ const AccountInfo = () => {
       <Card 
         title="Order History"
         extra={
-          <Button
-            type="primary"
-            icon={<ReloadOutlined />}
-            loading={refillLoading}
-            onClick={handleRefillOrders}
-          >
-            Refill Orders
-          </Button>
+          <div>
+            <Button
+              type="primary"
+              icon={<ReloadOutlined />}
+              loading={refillLoading}
+              onClick={handleRefillOrders}
+              style={{ marginRight: '10px' }}
+            >
+              Refill Orders
+            </Button>
+            <Button 
+              type="primary"
+              icon={<DownloadOutlined />}
+              onClick={downloadCSV}
+            >
+              Download CSV
+            </Button>
+          </div>
         }
       >
         <Table

@@ -418,6 +418,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                     <th>S IV</th>
                     <th>bid_price</th>
                     <th>B IV</th>
+                    <th>Diff rate</th>
                     <th>gamma</th>
                     <th>theta</th>
                     <th>Intr Val</th>
@@ -471,8 +472,9 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                       <td>{postion.ivData ? parseFloat(postion.ivData.b_iv).toFixed(2) : 'N/A'}</td>
                       <td>{postion.ivData ? parseFloat(postion.ivData.bid_price).toFixed(4) : 'N/A'}</td>
                       <td>{postion.ivData ? parseFloat(postion.ivData.s_iv).toFixed(2) : 'N/A'}</td>
-                      
+                      <td>{postion.ivData ? parseFloat((postion.ivData.ask_price-postion.ivData.bid_price)/postion.ivData.bid_price).toFixed(2) : 'N/A'}</td>
                       <td>{postion.ivData ? parseFloat(postion.ivData.gamma).toFixed(8) : 'N/A'}</td>
+                      
                       <td>{postion.ivData ? parseFloat(postion.ivData.theta).toFixed(4) : 'N/A'}</td>
                       <td sytle={{color: 'green'}}>[{postion.ivData ? parseFloat(postion.ivData.intrinsic_value).toFixed(2) : 'N/A'}]</td>
                       <td style={{color: 'blue'}}>{postion.ivData ? parseFloat(postion.ivData.time_value).toFixed(2) : 'N/A'}</td>
@@ -514,7 +516,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].b_iv).toFixed(2): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].bid_price).toFixed(4): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].s_iv).toFixed(2): 'N/A' }</td>
-                        
+                        <td>{aimOptioinIvDataList[idx]? parseFloat((aimOptioinIvDataList[idx].ask_price-aimOptioinIvDataList[idx].bid_price)/aimOptioinIvDataList[idx].bid_price).toFixed(2): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].gamma).toFixed(8): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].theta).toFixed(4): 'N/A' }</td>
                         <td sytle={{color: 'green'}}>[{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].intrinsic_value).toFixed(2): 'N/A'}]</td>
