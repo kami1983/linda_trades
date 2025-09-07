@@ -83,9 +83,8 @@ def send_email(
 
         # 设置邮件内容
         msg = MIMEMultipart("mixed")
-        # 优先显示 sender_name<mail_user>；否则回退到环境变量中配置的显示名或账号本身
-        from_display = f"{sender_name} <{mail_user}>" if sender_name else (mail_send_host if mail_send_host and mail_send_host != "NotSet" else mail_user)
-        msg["From"] = from_display
+        # 与 main 分支一致：From 使用 MAIL_SEND_HOST 原样
+        msg["From"] = mail_send_host
         if to_candidates:
             msg["To"] = ", ".join(to_candidates)
         if cc_list:
@@ -119,61 +118,15 @@ def send_email(
                 except Exception as attach_err:
                     print(f"⚠️ 附件添加失败: {path} -> {attach_err}")
 
-        # 连接 SMTP 服务器（支持 SSL / STARTTLS / PLAIN），并在失败时做容错回退
+        # 连接 SMTP 服务器（与 main 分支一致：强制 SSL，不做回退）
         context = ssl.create_default_context()
-        secure = (mail_secure or "").strip().lower()
-
-        def _send_with_mode(mode: str):
-            if mode == "starttls":
-                with smtplib.SMTP(mail_host, mail_port, timeout=15) as server:
-                    server.ehlo()
-                    server.starttls(context=context)
-                    server.ehlo()
-                    server.login(mail_user, mail_pass)
-                    smtp_recipients = []
-                    smtp_recipients.extend(to_candidates)
-                    smtp_recipients.extend(cc_list)
-                    smtp_recipients.extend(bcc_list)
-                    server.sendmail(mail_user, smtp_recipients or [mail_to], msg.as_string())
-            elif mode == "plain":
-                with smtplib.SMTP(mail_host, mail_port, timeout=15) as server:
-                    server.ehlo()
-                    server.login(mail_user, mail_pass)
-                    smtp_recipients = []
-                    smtp_recipients.extend(to_candidates)
-                    smtp_recipients.extend(cc_list)
-                    smtp_recipients.extend(bcc_list)
-                    server.sendmail(mail_user, smtp_recipients or [mail_to], msg.as_string())
-            else:  # ssl
-                with smtplib.SMTP_SSL(mail_host, mail_port, context=context, timeout=15) as server:
-                    server.login(mail_user, mail_pass)
-                    smtp_recipients = []
-                    smtp_recipients.extend(to_candidates)
-                    smtp_recipients.extend(cc_list)
-                    smtp_recipients.extend(bcc_list)
-                    server.sendmail(mail_user, smtp_recipients or [mail_to], msg.as_string())
-
-        # 先按配置尝试一次，失败则依次回退 ssl -> starttls -> plain
-        tried = []
-        last_err = None
-        preferred = "ssl"
-        if secure in ("starttls", "tls"):
-            preferred = "starttls"
-        elif secure in ("plain", "none", "false", "0", "no"):
-            preferred = "plain"
-        for mode in [preferred, "ssl", "starttls", "plain"]:
-            if mode in tried:
-                continue
-            try:
-                _send_with_mode(mode)
-                last_err = None
-                break
-            except Exception as e:
-                last_err = e
-                tried.append(mode)
-                continue
-        if last_err is not None:
-            raise last_err
+        with smtplib.SMTP_SSL(mail_host, mail_port, context=context, timeout=15) as server:
+            server.login(mail_user, mail_pass)
+            smtp_recipients = []
+            smtp_recipients.extend(to_candidates)
+            smtp_recipients.extend(cc_list)
+            smtp_recipients.extend(bcc_list)
+            server.sendmail(mail_user, smtp_recipients or [mail_to], msg.as_string())
 
         print(f"📧 邮件已成功发送至 {mail_to}")
 
