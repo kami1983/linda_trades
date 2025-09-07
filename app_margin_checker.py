@@ -211,7 +211,7 @@ async def check_margin(positions, balance):
 # 运行主循环
 async def main():
     first_run = True  # 标记是否为首次运行
-    last_sent_hour = None  # 记录上次发送邮件的小时
+    last_report_sent_ts = None  # 上次发送报告的时间戳
     while True:
         try:
             fetch_balance = await account_balance()
@@ -237,8 +237,8 @@ async def main():
             print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             print("Margin check completed. Sleeping for some minutes...")
 
-            current_hour = datetime.now().hour
-            if first_run or (current_hour in [6, 22] and current_hour != last_sent_hour):
+            now_ts = time.time()
+            if first_run or (last_report_sent_ts is None) or (now_ts - last_report_sent_ts >= 6 * 3600):
                 # 提取订单信息并发送 HTML 邮件
                 order_info = extract_order_info(orders)
 
@@ -337,7 +337,7 @@ async def main():
                     html=True,
                 )
                 first_run = False  # 更新首次运行标记
-                last_sent_hour = current_hour  # 更新上次发送邮件的小时
+                last_report_sent_ts = now_ts  # 更新上次发送时间
 
             await asyncio.sleep(60)
         except Exception as e:
