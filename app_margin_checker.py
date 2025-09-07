@@ -72,8 +72,8 @@ def should_send_email(ccy, cooldown=1800):
 
 def extract_order_info(orders):
     """
-    提取订单信息，包括 symbol, contracts, percentage
-    return [{'symbol': 'BTC/USD:BTC-250530-80000-C', 'contracts': 2.0, 'percentage': -12.4405394319383}, {'symbol': 'BTC/USD:BTC-250530-80000-P', 'contracts': 3.0, 'percentage': 9.64614439591147}, {'symbol': 'ETH/USD:ETH-250530-2100-C', 'contracts': 16.0, 'percentage': 28.28646975908004}, {'symbol': 'BTC/USD:BTC-250530-90000-C', 'contracts': 6.0, 'percentage': 31.65614656407597}]
+    提取订单信息，包括 symbol, contracts, percentage, realizedPnl, entryPrice, markPrice
+    return [{'symbol': 'BTC/USD:BTC-250530-80000-C', 'contracts': 2.0, 'percentage': -12.4405394319383, 'realizedPnl': -0.000003, 'entryPrice': 0.039, 'markPrice': 0.0517050219330564}, ...]
     """
     order_info = []
     for order in orders:
@@ -81,7 +81,10 @@ def extract_order_info(orders):
             "symbol": order.symbol,
             "contracts": order.contracts,
             "percentage": order.percentage,
-            "marginRatio": order.marginRatio
+            "marginRatio": order.marginRatio,
+            "realizedPnl": order.realizedPnl,
+            "entryPrice": order.entryPrice,
+            "markPrice": order.markPrice
         })
     return order_info
 
@@ -259,6 +262,9 @@ async def main():
                             f"<td style='padding:6px 10px;text-align:right'>{info['contracts']}</td>",
                             f"<td style='padding:6px 10px;text-align:right'>{round(info['percentage'], 4) if isinstance(info['percentage'], (int, float)) else info['percentage']}</td>",
                             f"<td style='padding:6px 10px;text-align:right'>{round(info['marginRatio'], 4) if isinstance(info['marginRatio'], (int, float)) else info['marginRatio']}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{round(info['realizedPnl'], 6) if isinstance(info['realizedPnl'], (int, float)) else info['realizedPnl']}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{round(info['entryPrice'], 6) if isinstance(info['entryPrice'], (int, float)) else info['entryPrice']}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{round(info['markPrice'], 6) if isinstance(info['markPrice'], (int, float)) else info['markPrice']}</td>",
                             "</tr>",
                         ])
                     )
@@ -313,10 +319,13 @@ async def main():
                         <th style='padding:6px 10px;text-align:right'>Contracts</th>
                         <th style='padding:6px 10px;text-align:right'>Percentage</th>
                         <th style='padding:6px 10px;text-align:right'>Margin Ratio</th>
+                        <th style='padding:6px 10px;text-align:right'>Realized PnL</th>
+                        <th style='padding:6px 10px;text-align:right'>Entry Price</th>
+                        <th style='padding:6px 10px;text-align:right'>Mark Price</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {''.join(orders_rows) or "<tr><td colspan='4' style='padding:6px 10px;'>暂无</td></tr>"}
+                      {''.join(orders_rows) or "<tr><td colspan='7' style='padding:6px 10px;'>暂无</td></tr>"}
                     </tbody>
                   </table>
                 </div>
