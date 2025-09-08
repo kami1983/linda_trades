@@ -253,18 +253,39 @@ async def main():
                         rows.append(f"<tr><td style='padding:6px 10px;'>{ccy}</td><td style='padding:6px 10px;text-align:right;'>{amount}</td></tr>")
                     return "".join(rows) or "<tr><td colspan='2' style='padding:6px 10px;'>-</td></tr>"
 
+                def fmt(val, decimals=4, suffix='', allow_sign=False):
+                    if val is None:
+                        return '-'
+                    try:
+                        if allow_sign:
+                            return f"{float(val):+.{decimals}f}{suffix}"
+                        return f"{float(val):.{decimals}f}{suffix}"
+                    except Exception:
+                        return str(val)
+
                 orders_rows = []
                 for info in order_info:
+                    percentage_txt = fmt(info.get('percentage'), 2, '%')
+                    margin_ratio_txt = fmt(info.get('marginRatio'), 4)
+                    realized_pnl_txt = fmt(info.get('realizedPnl'), 8)
+                    entry_price_txt = fmt(info.get('entryPrice'), 6)
+                    mark_price_txt = fmt(info.get('markPrice'), 6)
+                    price_diff = None
+                    if isinstance(info.get('markPrice'), (int, float)) and isinstance(info.get('entryPrice'), (int, float)):
+                        price_diff = info['markPrice'] - info['entryPrice']
+                    price_diff_txt = fmt(price_diff, 6, allow_sign=True)
+
                     orders_rows.append(
                         "".join([
                             "<tr>",
                             f"<td style='padding:6px 10px;white-space:nowrap'>{info['symbol']}</td>",
                             f"<td style='padding:6px 10px;text-align:right'>{info['contracts']}</td>",
-                            f"<td style='padding:6px 10px;text-align:right'>{round(info['percentage'], 4) if isinstance(info['percentage'], (int, float)) else info['percentage']}</td>",
-                            f"<td style='padding:6px 10px;text-align:right'>{round(info['marginRatio'], 4) if isinstance(info['marginRatio'], (int, float)) else info['marginRatio']}</td>",
-                            f"<td style='padding:6px 10px;text-align:right'>{round(info['realizedPnl'], 6) if isinstance(info['realizedPnl'], (int, float)) else info['realizedPnl']}</td>",
-                            f"<td style='padding:6px 10px;text-align:right'>{round(info['entryPrice'], 6) if isinstance(info['entryPrice'], (int, float)) else info['entryPrice']}</td>",
-                            f"<td style='padding:6px 10px;text-align:right'>{round(info['markPrice'], 6) if isinstance(info['markPrice'], (int, float)) else info['markPrice']}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{percentage_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{margin_ratio_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{realized_pnl_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{entry_price_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{mark_price_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{price_diff_txt}</td>",
                             "</tr>",
                         ])
                     )
@@ -322,10 +343,11 @@ async def main():
                         <th style='padding:6px 10px;text-align:right'>Realized PnL</th>
                         <th style='padding:6px 10px;text-align:right'>Entry Price</th>
                         <th style='padding:6px 10px;text-align:right'>Mark Price</th>
+                        <th style='padding:6px 10px;text-align:right'>PnL (Mark-Entry)</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {''.join(orders_rows) or "<tr><td colspan='7' style='padding:6px 10px;'>暂无</td></tr>"}
+                      {''.join(orders_rows) or "<tr><td colspan='8' style='padding:6px 10px;'>暂无</td></tr>"}
                     </tbody>
                   </table>
                 </div>
