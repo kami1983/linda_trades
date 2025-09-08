@@ -72,13 +72,14 @@ def should_send_email(ccy, cooldown=1800):
 
 def extract_order_info(orders):
     """
-    提取订单信息，包括 symbol, contracts, percentage, realizedPnl, entryPrice, markPrice
-    return [{'symbol': 'BTC/USD:BTC-250530-80000-C', 'contracts': 2.0, 'percentage': -12.4405394319383, 'realizedPnl': -0.000003, 'entryPrice': 0.039, 'markPrice': 0.0517050219330564}, ...]
+    提取订单信息，包括 symbol, side, contracts, percentage, realizedPnl, entryPrice, markPrice
+    return [{'symbol': 'BTC/USD:BTC-250530-80000-C', 'side': 'short', 'contracts': 2.0, 'percentage': -12.44, 'realizedPnl': -0.000003, 'entryPrice': 0.039, 'markPrice': 0.0517050219330564}, ...]
     """
     order_info = []
     for order in orders:
         order_info.append({
             "symbol": order.symbol,
+            "side": order.side,
             "contracts": order.contracts,
             "percentage": order.percentage,
             "marginRatio": order.marginRatio,
@@ -272,13 +273,17 @@ async def main():
                     mark_price_txt = fmt(info.get('markPrice'), 6)
                     price_diff = None
                     if isinstance(info.get('markPrice'), (int, float)) and isinstance(info.get('entryPrice'), (int, float)):
-                        price_diff = info['markPrice'] - info['entryPrice']
+                        if str(info.get('side')).lower() == 'short':
+                            price_diff = info['entryPrice'] - info['markPrice']
+                        else:
+                            price_diff = info['markPrice'] - info['entryPrice']
                     price_diff_txt = fmt(price_diff, 6, allow_sign=True)
 
                     orders_rows.append(
                         "".join([
                             "<tr>",
                             f"<td style='padding:6px 10px;white-space:nowrap'>{info['symbol']}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{info.get('side','-')}</td>",
                             f"<td style='padding:6px 10px;text-align:right'>{info['contracts']}</td>",
                             f"<td style='padding:6px 10px;text-align:right'>{percentage_txt}</td>",
                             f"<td style='padding:6px 10px;text-align:right'>{margin_ratio_txt}</td>",
@@ -337,6 +342,7 @@ async def main():
                     <thead>
                       <tr style='background:#fafafa;'>
                         <th style='padding:6px 10px;text-align:left'>Symbol</th>
+                        <th style='padding:6px 10px;text-align:right'>Side</th>
                         <th style='padding:6px 10px;text-align:right'>Contracts</th>
                         <th style='padding:6px 10px;text-align:right'>Percentage</th>
                         <th style='padding:6px 10px;text-align:right'>Margin Ratio</th>
@@ -347,7 +353,7 @@ async def main():
                       </tr>
                     </thead>
                     <tbody>
-                      {''.join(orders_rows) or "<tr><td colspan='8' style='padding:6px 10px;'>暂无</td></tr>"}
+                      {''.join(orders_rows) or "<tr><td colspan='9' style='padding:6px 10px;'>暂无</td></tr>"}
                     </tbody>
                   </table>
                 </div>
