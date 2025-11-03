@@ -433,6 +433,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                     <th>Refresh IV</th>
                     <th>delta</th>
                     <th>infer_price</th>
+                    <th>vega</th>
                     <th>dayLeft</th>
                     <th>ask_price</th>
                     <th>S IV</th>
@@ -488,6 +489,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                           ]
                         </>: ''}
                       </td>
+                      <td>{postion.ivData ? (postion.ivData.vega !== null && postion.ivData.vega !== undefined ? parseFloat(postion.ivData.vega).toFixed(6) : 'N/A') : 'N/A'}</td>
                       <td>{postion.ivData ? parseFloat(postion.ivData.day_left).toFixed(2) : 'N/A'}</td>
                       <td>{postion.ivData ? parseFloat(postion.ivData.ask_price).toFixed(4) : 'N/A'}</td>
                       <td>{postion.ivData ? parseFloat(postion.ivData.b_iv).toFixed(2) : 'N/A'}</td>
@@ -532,6 +534,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                             ]
                           </>: ''}
                         </td>
+                        <td>{aimOptioinIvDataList[idx]? (aimOptioinIvDataList[idx].vega !== null && aimOptioinIvDataList[idx].vega !== undefined ? parseFloat(aimOptioinIvDataList[idx].vega).toFixed(6) : 'N/A') : 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].day_left).toFixed(2): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].ask_price).toFixed(4): 'N/A' }</td>
                         <td>{aimOptioinIvDataList[idx]? parseFloat(aimOptioinIvDataList[idx].b_iv).toFixed(2): 'N/A' }</td>

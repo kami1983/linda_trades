@@ -1,7 +1,7 @@
 import math
 import numpy as np
 from libs.database.db_struct import EResultIvData, EResultOptionChain
-from option_greeks import delta, gamma, theta
+from option_greeks import delta, gamma, theta, vega
 from scipy.stats import norm
 from scipy.optimize import brentq, fsolve
 # from implied_volatility import BlackScholes
@@ -129,11 +129,13 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
     _delta = None
     _gamma = None
     _theta = None
+    _vega = None
     if s_iv != None and b_iv != None:
         print('计算 option greeks')
         _delta = delta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
         _gamma = gamma(s=S,k=K,r=r,T=T,sigma=s_iv)
         _theta = theta(s=S,k=K,r=r,T=T,sigma=s_iv,n=1 if flag == 'c' else -1)
+        _vega = vega(s=S,k=K,r=r,T=T,sigma=s_iv)
 
     # 计算内在价值和时间价值,需要区分看涨和看跌期权
     # 这里的 intrinsic_value 指的是看涨期权的内在价值
@@ -187,6 +189,7 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
         delta=_delta,
         gamma=_gamma,
         theta=_theta,
+        vega=_vega,
         intrinsic_value=intrinsic_value,
         time_value=time_value
     )
