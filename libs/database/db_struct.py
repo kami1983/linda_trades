@@ -58,6 +58,7 @@ class EResultIvData:
     delta: float
     gamma: float
     theta: float
+    vega: float
     intrinsic_value: float
     time_value: float
 
