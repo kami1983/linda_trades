@@ -135,6 +135,21 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
             setToCreatePrice(_toCreatePriceList);
     
             handlerSetButtonCreateSign(idx, '🟩');
+          } else {
+            // graceful fallback when IV extraction fails
+            handlerSetButtonCreateSign(idx, '🟩');
+            setInfoModalContent(`Extract IV failed: ${res.message || 'unknown error'}. You can still submit with manual price.`);
+            setInfoModalVisible(true);
+            // keep existing price if any; otherwise default to 0
+            const _toCreatePriceList = toCreatePrice;
+            if (_toCreatePriceList[idx] == null) {
+              _toCreatePriceList[idx] = 0;
+              setToCreatePrice(_toCreatePriceList);
+            }
+            // explicitly mark ivData as null (no IV), submit will be allowed
+            const newIvData = toCreateIvData;
+            newIvData[idx] = null;
+            setToCreateIvData(newIvData);
           }
         });
     }
@@ -149,7 +164,8 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
       setConfirmModalVisible(true);
       setConfirmCallback(() => () => {
         for(let i=0; i<toCreateSlots.length; i++){
-          if(toCreateSymbol[i] && toCreateIvData[i]){
+          const priceOk = parseFloat(toCreatePrice[i]) > 0;
+          if(toCreateSymbol[i] && priceOk){
             createNewPostion(i, callBack);
           }
         }
@@ -163,11 +179,7 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
 
     const createNewPostion = (idx, callBack) => {
       console.log('DEBUG::', toCreateIvData[idx], idx);
-      if(toCreateIvData[idx] == null){
-        setInfoModalContent('Need to set postion first!');
-        setInfoModalVisible(true);
-        return;
-      }
+      // allow submit even when IV is null — user may set price manually
   
       const _toCreateSymbol = toCreateSymbol[idx];
       const _toCreateAmount = toCreateAmount[idx]??1;
@@ -304,7 +316,7 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
 
     const createPostionAllReady = () => {
       for(let i=0; i<toCreateSlots.length; i++){
-        if(toCreateSymbol[i] && toCreateIvData[i]){
+        if(toCreateSymbol[i]){
           continue;
         }
         return false;
@@ -409,7 +421,7 @@ function CreatePostions({ createNewPostionCallBack, createAllNewPostionCallBack}
               danger
               onClick={() => createNewPostion(idx, createNewPostionCallBack)}
               loading={loading}
-              disabled={!toCreateSymbol[idx] || !toCreateIvData[idx]}
+              disabled={!toCreateSymbol[idx] || !(parseFloat(toCreatePrice[idx]) > 0)}
             >
               {buttonSubmitCreateSign[idx] ?? '⚡️'} Submit
             </Button>
