@@ -72,16 +72,20 @@ def should_send_email(ccy, cooldown=1800):
 
 def extract_order_info(orders):
     """
-    提取订单信息，包括 symbol, contracts, percentage
-    return [{'symbol': 'BTC/USD:BTC-250530-80000-C', 'contracts': 2.0, 'percentage': -12.4405394319383}, {'symbol': 'BTC/USD:BTC-250530-80000-P', 'contracts': 3.0, 'percentage': 9.64614439591147}, {'symbol': 'ETH/USD:ETH-250530-2100-C', 'contracts': 16.0, 'percentage': 28.28646975908004}, {'symbol': 'BTC/USD:BTC-250530-90000-C', 'contracts': 6.0, 'percentage': 31.65614656407597}]
+    提取订单信息，包括 symbol, side, contracts, percentage, realizedPnl, entryPrice, markPrice
+    return [{'symbol': 'BTC/USD:BTC-250530-80000-C', 'side': 'short', 'contracts': 2.0, 'percentage': -12.44, 'realizedPnl': -0.000003, 'entryPrice': 0.039, 'markPrice': 0.0517050219330564}, ...]
     """
     order_info = []
     for order in orders:
         order_info.append({
             "symbol": order.symbol,
+            "side": order.side,
             "contracts": order.contracts,
             "percentage": order.percentage,
-            "marginRatio": order.marginRatio
+            "marginRatio": order.marginRatio,
+            "realizedPnl": order.realizedPnl,
+            "entryPrice": order.entryPrice,
+            "markPrice": order.markPrice
         })
     return order_info
 
@@ -111,7 +115,19 @@ async def check_margin(positions, balance):
             if res["status"]:
                balance_changes[ccy] = balance_changes.get(ccy, 0) + to_reduce_margin
                print(f"Reduced margin for {pos['symbol']}: {to_reduce_margin}")
-               send_email("🚨 降低保证金", f"降低 {ccy} 的保证金成功：{to_reduce_margin}")
+               send_email(
+                   "🚨 降低保证金",
+                   f"""
+                   <div>
+                     <p>降低 {ccy} 的保证金成功：{to_reduce_margin}</p>
+                     <p>合约: {pos['symbol']}</p>
+                     <p>当前保证金比例: {pos['marginRatio']:.4f}</p>
+                     <p>当前保证金: {pos['collateral']}</p>
+                     <p>维持保证金: {pos['maintenanceMargin']}</p>
+                   </div>
+                   """,
+                   html=True,
+               )
             else:
                 print(f"Error reducing margin: {res['message']}")
                 if should_send_email(ccy):
@@ -125,7 +141,7 @@ async def check_margin(positions, balance):
                         f"尝试减少金额: {to_reduce_margin}\n"
                         f"错误信息: {res['message']}"
                     )
-                    send_email("🚨 Reduce margin error", f"减少保证金出现错误：\n{error_details}")
+                    send_email("🚨 Reduce margin error", error_details.replace("\n", "<br/>") , html=True)
                     last_email_sent[ccy] = time.time()
 
         elif pos["marginRatio"] > 0.30:
@@ -142,7 +158,20 @@ async def check_margin(positions, balance):
                 if res["status"]:
                     balance_changes[ccy] = balance_changes.get(ccy, 0) - to_increase_margin
                     print(f"Increased margin for {pos['symbol']}: {to_increase_margin}")
-                    send_email("🚨 增加保证金", f"增加 {ccy} 的保证金成功：{to_increase_margin}")
+                    send_email(
+                        "🚨 增加保证金",
+                        f"""
+                        <div>
+                          <p>增加 {ccy} 的保证金成功：{to_increase_margin}</p>
+                          <p>合约: {pos['symbol']}</p>
+                          <p>当前保证金比例: {pos['marginRatio']:.4f}</p>
+                          <p>当前保证金: {pos['collateral']}</p>
+                          <p>维持保证金: {pos['maintenanceMargin']}</p>
+                          <p>可用余额: {current_balance}</p>
+                        </div>
+                        """,
+                        html=True,
+                    )
                 else:
                     print(f"Error increasing margin: {res['message']}")
                     if should_send_email(ccy):
@@ -157,7 +186,7 @@ async def check_margin(positions, balance):
                             f"尝试增加金额: {to_increase_margin}\n"
                             f"错误信息: {res['message']}"
                         )
-                        send_email("🚨 Add margin error", f"新增保证金出现错误：\n{error_details}")
+                        send_email("🚨 Add margin error", error_details.replace("\n", "<br/>") , html=True)
                         last_email_sent[ccy] = time.time()  # 记录当前时间
             else:
                 print(f"Balance is not enough to increase margin: {to_increase_margin}")
@@ -173,7 +202,7 @@ async def check_margin(positions, balance):
                         f"当前可用余额: {current_balance}\n"
                         f"需要增加金额: {to_increase_margin}"
                     )
-                    send_email("🚨 余额不足", f"余额不足以增加保证金：\n{error_details}")
+                    send_email("🚨 余额不足", error_details.replace("\n", "<br/>") , html=True)
                     last_email_sent[ccy] = time.time()  # 记录当前时间
 
         else:
@@ -183,7 +212,7 @@ async def check_margin(positions, balance):
 # 运行主循环
 async def main():
     first_run = True  # 标记是否为首次运行
-    last_sent_hour = None  # 记录上次发送邮件的小时
+    last_report_sent_ts = None  # 上次发送报告的时间戳
     while True:
         try:
             fetch_balance = await account_balance()
@@ -209,14 +238,134 @@ async def main():
             print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
             print("Margin check completed. Sleeping for some minutes...")
 
-            current_hour = datetime.now().hour
-            if first_run or (current_hour in [6, 22] and current_hour != last_sent_hour):
-                # 提取订单信息并发送邮件
+            now_ts = time.time()
+            if first_run or (last_report_sent_ts is None) or (now_ts - last_report_sent_ts >= 6 * 3600):
+                # 提取订单信息并发送 HTML 邮件
                 order_info = extract_order_info(orders)
-                email_content = "\n\n".join([f"Symbol: {info['symbol']}, Contracts: {info['contracts']}, Percentage: {info['percentage']}%, Margin Ratio: {info['marginRatio']}%" for info in order_info])
-                send_email("🚀 系统订单信息", f"当前系统的订单信息:\n{email_content}")
+
+                # 余额摘要
+                total = balance.get('total', {})
+                free = balance.get('free', {})
+                used = balance.get('used', {})
+
+                def render_balance_rows(kind_dict):
+                    rows = []
+                    for ccy, amount in kind_dict.items():
+                        rows.append(f"<tr><td style='padding:6px 10px;'>{ccy}</td><td style='padding:6px 10px;text-align:right;'>{amount}</td></tr>")
+                    return "".join(rows) or "<tr><td colspan='2' style='padding:6px 10px;'>-</td></tr>"
+
+                def fmt(val, decimals=4, suffix='', allow_sign=False):
+                    if val is None:
+                        return '-'
+                    try:
+                        if allow_sign:
+                            return f"{float(val):+.{decimals}f}{suffix}"
+                        return f"{float(val):.{decimals}f}{suffix}"
+                    except Exception:
+                        return str(val)
+
+                orders_rows = []
+                for info in order_info:
+                    percentage_txt = fmt(info.get('percentage'), 2, '%')
+                    margin_ratio_txt = fmt(info.get('marginRatio'), 4)
+                    realized_pnl_txt = fmt(info.get('realizedPnl'), 8)
+                    entry_price_txt = fmt(info.get('entryPrice'), 6)
+                    mark_price_txt = fmt(info.get('markPrice'), 6)
+                    price_diff = None
+                    if isinstance(info.get('markPrice'), (int, float)) and isinstance(info.get('entryPrice'), (int, float)):
+                        if str(info.get('side')).lower() == 'short':
+                            price_diff = info['entryPrice'] - info['markPrice']
+                        else:
+                            price_diff = info['markPrice'] - info['entryPrice']
+                    price_diff_txt = fmt(price_diff, 6, allow_sign=True)
+
+                    orders_rows.append(
+                        "".join([
+                            "<tr>",
+                            f"<td style='padding:6px 10px;white-space:nowrap'>{info['symbol']}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{info.get('side','-')}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{info['contracts']}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{percentage_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{margin_ratio_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{realized_pnl_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{entry_price_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{mark_price_txt}</td>",
+                            f"<td style='padding:6px 10px;text-align:right'>{price_diff_txt}</td>",
+                            "</tr>",
+                        ])
+                    )
+
+                html_body = f"""
+                <div style='font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Helvetica, Arial, sans-serif; color:#111; line-height:1.6;'>
+                  <h2 style='margin:0 0 12px;'>系统订单与账户摘要</h2>
+                  <p style='margin: 0 0 14px;'>生成时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+
+                  <h3 style='margin: 20px 0 8px;'>账户余额</h3>
+                  <table cellpadding='0' cellspacing='0' style='border-collapse:collapse;border:1px solid #eee;'>
+                    <thead>
+                      <tr style='background:#fafafa;'>
+                        <th style='padding:6px 10px;text-align:left'>币种</th>
+                        <th style='padding:6px 10px;text-align:right'>总额</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {render_balance_rows(total)}
+                    </tbody>
+                  </table>
+
+                  <table cellpadding='0' cellspacing='0' style='border-collapse:collapse;border:1px solid #eee;margin-top:8px;'>
+                    <thead>
+                      <tr style='background:#fafafa;'>
+                        <th style='padding:6px 10px;text-align:left'>币种</th>
+                        <th style='padding:6px 10px;text-align:right'>可用</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {render_balance_rows(free)}
+                    </tbody>
+                  </table>
+
+                  <table cellpadding='0' cellspacing='0' style='border-collapse:collapse;border:1px solid #eee;margin-top:8px;'>
+                    <thead>
+                      <tr style='background:#fafafa;'>
+                        <th style='padding:6px 10px;text-align:left'>币种</th>
+                        <th style='padding:6px 10px;text-align:right'>占用</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {render_balance_rows(used)}
+                    </tbody>
+                  </table>
+
+                  <h3 style='margin: 20px 0 8px;'>当前订单</h3>
+                  <table cellpadding='0' cellspacing='0' style='border-collapse:collapse;border:1px solid #eee;'>
+                    <thead>
+                      <tr style='background:#fafafa;'>
+                        <th style='padding:6px 10px;text-align:left'>Symbol</th>
+                        <th style='padding:6px 10px;text-align:right'>Side</th>
+                        <th style='padding:6px 10px;text-align:right'>Contracts</th>
+                        <th style='padding:6px 10px;text-align:right'>Percentage</th>
+                        <th style='padding:6px 10px;text-align:right'>Margin Ratio</th>
+                        <th style='padding:6px 10px;text-align:right'>Realized PnL</th>
+                        <th style='padding:6px 10px;text-align:right'>Entry Price</th>
+                        <th style='padding:6px 10px;text-align:right'>Mark Price</th>
+                        <th style='padding:6px 10px;text-align:right'>PnL (Mark-Entry)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {''.join(orders_rows) or "<tr><td colspan='9' style='padding:6px 10px;'>暂无</td></tr>"}
+                    </tbody>
+                  </table>
+                </div>
+                """
+
+                send_email(
+                    "🚀 系统订单信息",
+                    html_body,
+                    html=True,
+                )
                 first_run = False  # 更新首次运行标记
-                last_sent_hour = current_hour  # 更新上次发送邮件的小时
+                last_report_sent_ts = now_ts  # 更新上次发送时间
 
             await asyncio.sleep(60)
         except Exception as e:

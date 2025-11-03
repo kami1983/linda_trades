@@ -101,7 +101,7 @@ def login_required(f):
     @wraps(f)
     async def decorated_function(*args, **kwargs):
         token = request.cookies.get("auth_token")
-        print('DEBUG ======> token:', token)
+        # print('DEBUG ======> token:', token)
         if not token:
             return jsonify({"error": "Unauthorized"}), 401
 

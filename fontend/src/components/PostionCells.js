@@ -19,6 +19,24 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
 
     const coinPrices = usePrices();
 
+    const getDaysLeftFromSymbol = (symbol) => {
+      try {
+        const m = symbol.match(/-(\d{6})-/);
+        if (!m) return null;
+        const yy = parseInt(m[1].slice(0, 2), 10);
+        const mm = parseInt(m[1].slice(2, 4), 10);
+        const dd = parseInt(m[1].slice(4, 6), 10);
+        const fullYear = 2000 + yy; // assume 20xx
+        // Use UTC date to avoid TZ shifts
+        const expiry = Date.UTC(fullYear, mm - 1, dd, 0, 0, 0);
+        const now = Date.now();
+        const days = (expiry - now) / (24 * 60 * 60 * 1000);
+        return days;
+      } catch (e) {
+        return null;
+      }
+    }
+
   
     const closeAllPostions = (backCall = ()=>{alert('Close all postions done!')}) => {
       // eslint-disable-next-line no-restricted-globals
@@ -316,6 +334,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                 finalData.push({
                   id: item.id,
                   symbol: item.symbol,
+                  daysLeft: getDaysLeftFromSymbol(item.symbol),
                   contracts: item.contracts,
                   amount: (item.contracts*GetPostionSize(GetCoinSign(item.symbol))).toFixed(2),
                   side: item.side,
@@ -402,6 +421,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                   <tr>
                     <th>id</th>
                     <th>symbol</th>
+                    <th>Days Left</th>
                     <th>side</th>
                     <th>contracts</th>
                     <th>realizedPnl</th>
@@ -438,6 +458,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                       style={{ cursor: 'pointer', color: 'blue', textDecoration: 'underline' }}
                       title="Click to copy"
                       >{postion.symbol}</td>
+                      <td>{postion.daysLeft != null ? parseFloat(postion.daysLeft).toFixed(2) : 'N/A'}</td>
                       <td>{postion.side}</td>
                       <td>{postion.contracts} [{postion.amount}]</td>
                       <td>{postion.realizedPnl}</td>
@@ -486,7 +507,7 @@ function PostionCells({ onSymbolClick, closePostionDone, movePostionDone, closeA
                         >{postion.ivData?<button>Open `{postion.side == 'short' ? 'buy': 'sell'}` to close .</button>:'Close need to refresh'}</td>
                     </tr>
                     <tr key={`${idx}b`}>
-                        <td colSpan={10}>
+                        <td colSpan={11}>
                           <input type="text" placeholder="BTC/USD:BTC-241206-100000-C"  style={{
                             width: '100%',
                             boxSizing: 'border-box',
