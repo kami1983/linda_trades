@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getTOptionChain } from "../utils/OptionApis";
 import { extractPrice, GetCoinSign, handleShowInferInfo } from "../utils/Utils";
 import { usePrices } from '../context/PriceContext';
-import { Table, Button, Input, Space, Spin } from 'antd';
+import { Table, Button, Input, Space, Spin, Checkbox } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 
 function OptionTables({ onSymbolClick }) {
@@ -11,8 +11,25 @@ function OptionTables({ onSymbolClick }) {
   const [buttonGetBtcOptionSign, setButtonGetBtcOptionSign] = useState('🟩');
   const [buttonGetEthOptionSign, setButtonGetEthOptionSign] = useState('🟩');
   const [optionChainRange, setOptionChainRange] = useState([0.4, 0.6]);
+  const [showNoIv, setShowNoIv] = useState(false);
 
   const coinPrices = usePrices();
+
+  const getDaysLeftFromSymbol = (symbol) => {
+    try {
+      const m = symbol.match(/-(\d{6})-/);
+      if (!m) return null;
+      const yy = parseInt(m[1].slice(0, 2), 10);
+      const mm = parseInt(m[1].slice(2, 4), 10);
+      const dd = parseInt(m[1].slice(4, 6), 10);
+      const fullYear = 2000 + yy;
+      const expiry = Date.UTC(fullYear, mm - 1, dd, 0, 0, 0);
+      const now = Date.now();
+      return (expiry - now) / (24 * 60 * 60 * 1000);
+    } catch (e) {
+      return null;
+    }
+  }
 
   const refreshOptionTable = async (symbol) => {
     setLoading(true);
@@ -30,14 +47,17 @@ function OptionTables({ onSymbolClick }) {
         const _optionChainList = res.data;
         const _optionChainListFiltered = [];
         for(let i=0; i<_optionChainList.length; i++){
-          if(_optionChainList[i][1] && Math.abs(_optionChainList[i][1].delta) > optionChainRange[0] && Math.abs(_optionChainList[i][1].delta) < optionChainRange[1]){
-            _optionChainListFiltered.push(_optionChainList[i]);
-          }
+          const iv = _optionChainList[i][1];
+          const inRange = iv && Math.abs(iv.delta) > optionChainRange[0] && Math.abs(iv.delta) < optionChainRange[1];
+          const noIv = !iv && showNoIv;
+          if (inRange || noIv) _optionChainListFiltered.push(_optionChainList[i]);
         }
 
         // 按照 day_left 排序
         _optionChainListFiltered.sort((a, b) => {
-          return a[1].day_left - b[1].day_left;
+          const da = a[1] ? a[1].day_left : Number.POSITIVE_INFINITY;
+          const db = b[1] ? b[1].day_left : Number.POSITIVE_INFINITY;
+          return da - db;
         });
 
         setOptionChainList(_optionChainListFiltered);
@@ -71,8 +91,12 @@ function OptionTables({ onSymbolClick }) {
       title: 'Delta',
       dataIndex: ['1', 'delta'],
       key: 'delta',
-      render: (text) => parseFloat(text).toFixed(2),
-      sorter: (a, b) => a[1].delta - b[1].delta,
+      render: (text, record) => record[1] ? parseFloat(text).toFixed(2) : 'N/A',
+      sorter: (a, b) => {
+        const va = a[1] ? a[1].delta : Number.POSITIVE_INFINITY;
+        const vb = b[1] ? b[1].delta : Number.POSITIVE_INFINITY;
+        return va - vb;
+      },
     },
     {
       title: 'Infer Price',
@@ -80,7 +104,7 @@ function OptionTables({ onSymbolClick }) {
       key: 'infer_price',
       render: (text, record) => (
         <>
-          {parseFloat(text).toFixed(2)}
+          {record[1] ? parseFloat(text).toFixed(2) : 'N/A'}
           {record[1] && (
             <span style={{ marginLeft: 8 }}>
               [{handleShowInferInfo(record[1], coinPrices)}]
@@ -88,14 +112,28 @@ function OptionTables({ onSymbolClick }) {
           )}
         </>
       ),
-      sorter: (a, b) => a[1].infer_price - b[1].infer_price,
+      sorter: (a, b) => {
+        const va = a[1] ? a[1].infer_price : Number.POSITIVE_INFINITY;
+        const vb = b[1] ? b[1].infer_price : Number.POSITIVE_INFINITY;
+        return va - vb;
+      },
     },
     {
       title: 'Days Left',
       dataIndex: ['1', 'day_left'],
       key: 'day_left',
-      render: (text) => parseFloat(text).toFixed(2),
-      sorter: (a, b) => a[1].day_left - b[1].day_left,
+      render: (text, record) => {
+        if (record[1]) return parseFloat(text).toFixed(2);
+        const fallback = getDaysLeftFromSymbol(record[0]?.symbol || '');
+        return fallback != null ? parseFloat(fallback).toFixed(2) : 'N/A';
+      },
+      sorter: (a, b) => {
+        const fa = a[1] ? a[1].day_left : getDaysLeftFromSymbol(a[0]?.symbol || '') ?? Number.POSITIVE_INFINITY;
+        const fb = b[1] ? b[1].day_left : getDaysLeftFromSymbol(b[0]?.symbol || '') ?? Number.POSITIVE_INFINITY;
+        const va = fa == null ? Number.POSITIVE_INFINITY : fa;
+        const vb = fb == null ? Number.POSITIVE_INFINITY : fb;
+        return va - vb;
+      },
     },
     {
       title: 'Ask Price',
@@ -103,17 +141,31 @@ function OptionTables({ onSymbolClick }) {
       key: 'ask_price',
       render: (text, record) => (
         <span style={{ color: 'red' }}>
-          {text} [{record[1]?.ask_usd?.toFixed(2)}$]
+          {record[1] ? text : (record[0]?.ask_price ?? 'N/A')} {(() => {
+            if (record[1]) return `[${record[1]?.ask_usd?.toFixed(2)}$]`;
+            const ap = record[0]?.ask_price;
+            if (ap == null) return '';
+            const cp = extractPrice(GetCoinSign(record[0]?.symbol), coinPrices);
+            return cp ? `[${(ap * cp).toFixed(2)}$]` : '';
+          })()}
         </span>
       ),
-      sorter: (a, b) => a[1].ask_price - b[1].ask_price,
+      sorter: (a, b) => {
+        const va = a[1] ? a[1].ask_price : (a[0]?.ask_price ?? Number.POSITIVE_INFINITY);
+        const vb = b[1] ? b[1].ask_price : (b[0]?.ask_price ?? Number.POSITIVE_INFINITY);
+        return va - vb;
+      },
     },
     {
       title: 'S IV',
       dataIndex: ['1', 's_iv'],
       key: 's_iv',
-      render: (text) => parseFloat(text).toFixed(2),
-      sorter: (a, b) => a[1].s_iv - b[1].s_iv,
+      render: (text, record) => record[1] ? parseFloat(text).toFixed(2) : 'N/A',
+      sorter: (a, b) => {
+        const va = a[1] ? a[1].s_iv : Number.POSITIVE_INFINITY;
+        const vb = b[1] ? b[1].s_iv : Number.POSITIVE_INFINITY;
+        return va - vb;
+      },
     },
     {
       title: 'Bid Price',
@@ -121,31 +173,53 @@ function OptionTables({ onSymbolClick }) {
       key: 'bid_price',
       render: (text, record) => (
         <span style={{ color: 'blue' }}>
-          {text} [{record[1]?.bid_usd?.toFixed(2)}$]
+          {record[1] ? text : (record[0]?.bid_price ?? 'N/A')} {(() => {
+            if (record[1]) return `[${record[1]?.bid_usd?.toFixed(2)}$]`;
+            const bp = record[0]?.bid_price;
+            if (bp == null) return '';
+            const cp = extractPrice(GetCoinSign(record[0]?.symbol), coinPrices);
+            return cp ? `[${(bp * cp).toFixed(2)}$]` : '';
+          })()}
         </span>
       ),
-      sorter: (a, b) => a[1].bid_price - b[1].bid_price,
+      sorter: (a, b) => {
+        const va = a[1] ? a[1].bid_price : (a[0]?.bid_price ?? Number.POSITIVE_INFINITY);
+        const vb = b[1] ? b[1].bid_price : (b[0]?.bid_price ?? Number.POSITIVE_INFINITY);
+        return va - vb;
+      },
     },
     {
       title: 'B IV',
       dataIndex: ['1', 'b_iv'],
       key: 'b_iv',
-      render: (text) => parseFloat(text).toFixed(2),
-      sorter: (a, b) => a[1].b_iv - b[1].b_iv,
+      render: (text, record) => record[1] ? parseFloat(text).toFixed(2) : 'N/A',
+      sorter: (a, b) => {
+        const va = a[1] ? a[1].b_iv : Number.POSITIVE_INFINITY;
+        const vb = b[1] ? b[1].b_iv : Number.POSITIVE_INFINITY;
+        return va - vb;
+      },
     },
     {
       title: 'Intrinsic Value',
       dataIndex: ['1', 'intrinsic_value'],
       key: 'intrinsic_value',
-      render: (text) => parseFloat(text).toFixed(4),
-      sorter: (a, b) => a[1].intrinsic_value - b[1].intrinsic_value,
+      render: (text, record) => record[1] ? parseFloat(text).toFixed(4) : 'N/A',
+      sorter: (a, b) => {
+        const va = a[1] ? a[1].intrinsic_value : Number.POSITIVE_INFINITY;
+        const vb = b[1] ? b[1].intrinsic_value : Number.POSITIVE_INFINITY;
+        return va - vb;
+      },
     },
     {
       title: 'Time Value',
       dataIndex: ['1', 'time_value'],
       key: 'time_value',
-      render: (text) => parseFloat(text).toFixed(4),
-      sorter: (a, b) => a[1].time_value - b[1].time_value,
+      render: (text, record) => record[1] ? parseFloat(text).toFixed(4) : 'N/A',
+      sorter: (a, b) => {
+        const va = a[1] ? a[1].time_value : Number.POSITIVE_INFINITY;
+        const vb = b[1] ? b[1].time_value : Number.POSITIVE_INFINITY;
+        return va - vb;
+      },
     },
     {
       title: 'Yield Rate',
@@ -160,9 +234,9 @@ function OptionTables({ onSymbolClick }) {
         return `${yieldRate} %`;
       },
       sorter: (a, b) => {
-        const yieldA = a[1].time_value / extractPrice(GetCoinSign(a[0].symbol), coinPrices) / parseFloat(a[1].day_left) * 365 * 100;
-        const yieldB = b[1].time_value / extractPrice(GetCoinSign(b[0].symbol), coinPrices) / parseFloat(b[1].day_left) * 365 * 100;
-        return yieldA - yieldB;
+        const ya = a[1] ? (a[1].time_value / extractPrice(GetCoinSign(a[0].symbol), coinPrices) / parseFloat(a[1].day_left) * 365 * 100) : Number.NEGATIVE_INFINITY;
+        const yb = b[1] ? (b[1].time_value / extractPrice(GetCoinSign(b[0].symbol), coinPrices) / parseFloat(b[1].day_left) * 365 * 100) : Number.NEGATIVE_INFINITY;
+        return ya - yb;
       },
     },
   ];
@@ -185,6 +259,7 @@ function OptionTables({ onSymbolClick }) {
           value={optionChainRange[1]} 
           onChange={(e) => setOptionChainRange([optionChainRange[0], parseFloat(e.target.value)])} 
         />
+        <Checkbox checked={showNoIv} onChange={(e) => setShowNoIv(e.target.checked)}>Show without IV</Checkbox>
       </Space>
 
       <Spin spinning={loading}>
