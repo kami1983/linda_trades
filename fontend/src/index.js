@@ -17,6 +17,7 @@ import { PriceProvider } from './context/PriceContext';
 import AccountInfo from './AccountInfo';
 import { Layout, Card, Typography, Row, Col } from 'antd';
 import Header from './components/Header';
+import Quotes from './pages/quotes/Quotes';
 const { Content, Footer } = Layout;
 const { Title, Text } = Typography;
 
@@ -40,6 +41,7 @@ root.render(
             <Route path='/prepare' element={<Prepare />} />
             <Route path='/account' element={<AccountInfo />} />
             <Route path='/login' element={<Login />} />
+            <Route path='/quotes' element={<Quotes />} />
           </Routes>
           <Footer style={{ textAlign: 'center' }}>
                 Linda's Trading System ©2024

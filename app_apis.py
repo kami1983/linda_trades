@@ -2,6 +2,7 @@ import asyncio
 import os
 from urllib import request
 from libs.database.db_operation import OrderResultToDb, getOptionChainByExpirationDate, getRecentOptionChainByTimestamp, getRecordedOrderList
+from libs.database.ohlcv_repo import query_market_daily_ohlcv
 # from flask import Flask, jsonify, request
 from libs.exchange.exchange import account_balance, createExchangeConn, fetch_orders
 from libs.exchange.fetch_options import fetchOpenOrders, fetchOptionChain, fetchPostions, fetchTradeOrdersHistory
@@ -855,6 +856,27 @@ async def api_account_balance():
 @app.route('/ccxt/version')
 async def ccxt_version():
     return jsonify({"status": True, "data": {"ccxt_version": ccxt.__version__, "sys_executable": sys.executable}})
+
+@app.route('/api/ohlcv_daily')
+@login_required
+async def api_ohlcv_daily(user_data):
+    try:
+        exchange = str(request.args.get('exchange') or 'okx').lower()
+        symbol = str(request.args.get('symbol'))
+        limit = int(request.args.get('limit') or 500)
+        since_ts = request.args.get('since_ts')
+        if since_ts is not None and since_ts != '':
+            since_ts = int(since_ts)
+        else:
+            since_ts = None
+
+        if not symbol:
+            return jsonify({"status": False, "message": "symbol is required"}), 400
+
+        rows = await query_market_daily_ohlcv(exchange=exchange, symbol=symbol, timeframe='1d', limit=limit, since_ts=since_ts)
+        return jsonify({"status": True, "data": rows})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=APP_PORT, debug=True)

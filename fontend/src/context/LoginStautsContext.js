@@ -5,11 +5,13 @@ const LoginStatusContext = createContext();
 export const LoginStatusProvider = ({ children }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [currentUsername, setCurrentUsername] = useState("");
+    const [isChecking, setIsChecking] = useState(true);
     
     const apiHost = process.env.REACT_APP_API_HOSTS;
 
     // 定义一个更新登录状态的方法
     const updateLoginStatus = async () => {
+        setIsChecking(true);
         try {
             const response = await fetch(`${apiHost}/current_user`, {
                 method: "GET",
@@ -31,6 +33,9 @@ export const LoginStatusProvider = ({ children }) => {
             setIsLoggedIn(false);
             setCurrentUsername("");
         }
+        finally {
+            setIsChecking(false);
+        }
     };
 
     useEffect(() => {
@@ -39,7 +44,7 @@ export const LoginStatusProvider = ({ children }) => {
     }, [apiHost]);
 
     return (
-        <LoginStatusContext.Provider value={{ isLoggedIn, currentUsername, updateLoginStatus }}>
+        <LoginStatusContext.Provider value={{ isLoggedIn, currentUsername, updateLoginStatus, isChecking }}>
             {children}
         </LoginStatusContext.Provider>
     );

@@ -138,3 +138,59 @@ async def get_last_daily_ts(exchange: str, symbol: str, timeframe: str = "1d") -
         connection.close()
 
 
+async def query_market_daily_ohlcv(
+    exchange: str,
+    symbol: str,
+    timeframe: str = "1d",
+    limit: int = 500,
+    since_ts: Optional[int] = None,
+):
+    """
+    查询日线 OHLCV，按时间升序。
+    返回：[{timestamp, datetime, open, high, low, close, volume}]
+    """
+    connection = await getDbConn()
+    try:
+        async with connection.cursor() as cursor:
+            if since_ts is not None:
+                await cursor.execute(
+                    """
+                    SELECT timestamp, datetime, open, high, low, close, volume
+                    FROM market_daily_ohlcv
+                    WHERE exchange = %s AND symbol = %s AND timeframe = %s AND timestamp >= %s
+                    ORDER BY timestamp ASC
+                    LIMIT %s
+                    """,
+                    (exchange, symbol, timeframe, since_ts, int(limit)),
+                )
+            else:
+                await cursor.execute(
+                    """
+                    SELECT timestamp, datetime, open, high, low, close, volume
+                    FROM market_daily_ohlcv
+                    WHERE exchange = %s AND symbol = %s AND timeframe = %s
+                    ORDER BY timestamp DESC
+                    LIMIT %s
+                    """,
+                    (exchange, symbol, timeframe, int(limit)),
+                )
+            rows = await cursor.fetchall()
+            # 如果是倒序取的，翻转为升序
+            if since_ts is None:
+                rows = list(rows)[::-1]
+            return [
+                {
+                    "timestamp": r[0],
+                    "datetime": r[1],
+                    "open": float(r[2]),
+                    "high": float(r[3]),
+                    "low": float(r[4]),
+                    "close": float(r[5]),
+                    "volume": None if r[6] is None else float(r[6]),
+                }
+                for r in rows
+            ]
+    finally:
+        connection.close()
+
+
