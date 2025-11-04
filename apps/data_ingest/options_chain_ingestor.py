@@ -80,6 +80,22 @@ async def ingest_once(exchange_id: str, bases: List[str]):
                 gamma = None
                 theta = None
                 vega = None
+                # 计算 moneyness
+                moneyness_pct = None
+                moneyness_type = None
+                try:
+                    if strike and underlying_price:
+                        moneyness_pct = (underlying_price - strike) / strike
+                        th = 0.01  # 1% 视为 ATM
+                        if abs(moneyness_pct) <= th:
+                            moneyness_type = 'ATM'
+                        else:
+                            if opt_type.upper() == 'C':
+                                moneyness_type = 'ITM' if underlying_price > strike else 'OTM'
+                            else:
+                                moneyness_type = 'ITM' if underlying_price < strike else 'OTM'
+                except Exception:
+                    pass
                 try:
                     ivd = handlerCalculateIv(symbol=symbol, current_price=underlying_price, bid=item.bid_price, ask=item.ask_price)
                     s_iv = ivd.s_iv
@@ -106,6 +122,8 @@ async def ingest_once(exchange_id: str, bases: List[str]):
                     'last_price': item.last_price if hasattr(item, 'last_price') else None,
                     'last_size': item.last_size if hasattr(item, 'last_size') else None,
                     'underlying_price': underlying_price,
+                    'moneyness_pct': moneyness_pct,
+                    'moneyness_type': moneyness_type,
                     's_iv': s_iv,
                     'b_iv': b_iv,
                     'delta': delta,

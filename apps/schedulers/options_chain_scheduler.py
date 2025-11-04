@@ -4,6 +4,7 @@ import asyncio
 import random
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Ensure project root on sys.path for direct execution
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -14,9 +15,11 @@ from apps.data_ingest.options_chain_ingestor import ingest_once
 
 
 async def scheduler_loop():
+    # load .env so interval can be configured there
+    load_dotenv()
     exchange_id = os.getenv('OPTIONS_EXCHANGE', 'okx')
     bases = [s.strip().upper() for s in os.getenv('OPTIONS_BASES', 'BTC,ETH').split(',') if s.strip()]
-    interval_sec = int(os.getenv('SCHED_OPTIONS_INTERVAL_SEC', '300'))  # 默认5分钟
+    interval_sec = int(os.getenv('SCHED_OPTIONS_INTERVAL_SEC', '3600'))  # 默认1小时
     jitter_sec = int(os.getenv('SCHED_OPTIONS_JITTER_SEC', '30'))
     run_on_start = os.getenv('SCHED_OPTIONS_RUN_ON_START', '1') == '1'
 

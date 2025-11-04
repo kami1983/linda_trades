@@ -53,11 +53,11 @@ async def upsert_option_quotes(rows: List[dict]) -> None:
                 INSERT INTO market_option_quote_ts (
                     exchange, symbol, expiration_date, strike, option_type, timestamp, datetime,
                     bid_price, bid_size, ask_price, ask_size, last_price, last_size,
-                    underlying_price, s_iv, b_iv, delta, gamma, theta, vega
+                    underlying_price, moneyness_pct, moneyness_type, s_iv, b_iv, delta, gamma, theta, vega
                 ) VALUES (
                     %s,%s,%s,%s,%s,%s,%s,
                     %s,%s,%s,%s,%s,%s,
-                    %s,%s,%s,%s,%s,%s,%s
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s
                 ) AS new_values
                 ON DUPLICATE KEY UPDATE
                     bid_price = new_values.bid_price,
@@ -67,6 +67,8 @@ async def upsert_option_quotes(rows: List[dict]) -> None:
                     last_price = new_values.last_price,
                     last_size = new_values.last_size,
                     underlying_price = new_values.underlying_price,
+                    moneyness_pct = new_values.moneyness_pct,
+                    moneyness_type = new_values.moneyness_type,
                     s_iv = new_values.s_iv,
                     b_iv = new_values.b_iv,
                     delta = new_values.delta,
@@ -92,7 +94,8 @@ async def upsert_option_quotes(rows: List[dict]) -> None:
                     r.get('option_type'), int(r.get('timestamp')), r.get('datetime'),
                     san(r.get('bid_price')), san(r.get('bid_size')), san(r.get('ask_price')), san(r.get('ask_size')),
                     san(r.get('last_price')), san(r.get('last_size')),
-                    san(r.get('underlying_price')), san(r.get('s_iv')), san(r.get('b_iv')), san(r.get('delta')), san(r.get('gamma')), san(r.get('theta')), san(r.get('vega'))
+                    san(r.get('underlying_price')), san(r.get('moneyness_pct')), r.get('moneyness_type'),
+                    san(r.get('s_iv')), san(r.get('b_iv')), san(r.get('delta')), san(r.get('gamma')), san(r.get('theta')), san(r.get('vega'))
                 ) for r in rows
             ]
             await cursor.executemany(sql, values)

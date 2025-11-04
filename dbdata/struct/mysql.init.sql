@@ -222,6 +222,8 @@ CREATE TABLE IF NOT EXISTS `market_option_quote_ts` (
   `last_price` decimal(40,20) DEFAULT NULL,
   `last_size` decimal(40,20) DEFAULT NULL,
   `underlying_price` decimal(40,20) DEFAULT NULL,
+  `moneyness_pct` decimal(40,20) DEFAULT NULL COMMENT '(underlying - strike)/strike',
+  `moneyness_type` varchar(8) DEFAULT NULL COMMENT 'ITM/OTM/ATM',
   `s_iv` decimal(40,20) DEFAULT NULL COMMENT 'sell side IV',
   `b_iv` decimal(40,20) DEFAULT NULL COMMENT 'buy side IV',
   `delta` decimal(40,20) DEFAULT NULL,

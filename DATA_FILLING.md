@@ -5,6 +5,11 @@
 - `market_symbol_meta`：市场品种元数据
 - `market_daily_ohlcv`：日线级别 OHLCV（Open/High/Low/Close/Volume）
 
+此外，还包含“期权合约与报价/Greeks”的采集与存储：
+
+- `market_option_contract_meta`：期权合约元数据
+- `market_option_quote_ts`：期权报价与 Greeks 时间序列（含标的价格与 moneyness）
+
 不依赖 cron，提供内置 asyncio 调度器进行每日增量更新。
 
 ---
@@ -22,6 +27,24 @@
   - 断点续跑：按该唯一键自然去重，通过查询最大 `timestamp` 增量补写。
 
 这两张表的 DDL 已追加在 `dbdata/struct/mysql.init.sql` 末尾，如需初始化数据库，请确保执行该 SQL。
+
+——
+
+期权相关：
+
+- `market_option_contract_meta`
+  - 用途：记录期权合约维度的元数据（`exchange`, `symbol`, `base`, `quote`, `expiration_date`, `strike`, `option_type` 等）。
+  - 唯一键：(`exchange`, `symbol`)。
+  - 备注：`first_seen_ts/last_seen_ts` 记录发现时间与最近活跃时间。
+
+- `market_option_quote_ts`
+  - 用途：存储期权合约的报价快照与 Greeks，形成时间序列。
+  - 唯一键：(`exchange`, `symbol`, `timestamp`)（幂等、去重）。
+  - 字段概览：
+    - 报价：`bid_price/bid_size/ask_price/ask_size/last_price/last_size`
+    - 标的：`underlying_price`
+    - moneyness：`moneyness_pct` = (underlying − strike) / strike；`moneyness_type` = ITM/OTM/ATM（ATM 判定阈值默认 1%）
+    - Greeks/IV：`s_iv/b_iv/delta/gamma/theta/vega`
 
 ---
 
@@ -42,6 +65,16 @@
 - 异步日调度器（不依赖 cron）：
   - `apps/schedulers/daily_ohlcv_scheduler.py`
     - 每日 UTC 指定时间运行，带随机抖动；可配置启动即跑一次
+
+- 期权合约与报价/Greeks：
+  - 仓储：`libs/database/options_repo.py`
+    - `upsert_option_contract_meta(items)`
+    - `upsert_option_quotes(rows)`（含 NaN/Inf 清洗）
+  - 单次抓取器：`apps/data_ingest/options_chain_ingestor.py`
+    - 对所选 base（默认 BTC、ETH）抓取整条期权链，计算 IV/Greeks，写入 `market_option_quote_ts`
+    - 使用 SWAP 价格近似标的 `underlying_price`；同时计算 moneyness_pct 与 ITM/OTM/ATM
+  - 定时调度器：`apps/schedulers/options_chain_scheduler.py`
+    - 默认每 5 分钟（可配）抓取一次，带抖动；启动即跑一次
 
 ---
 
@@ -123,6 +156,16 @@ DAILY_OHLCV_LOOKBACK_DAYS=365
 SCHED_OHLCV_RUN_AT_UTC=00:10
 SCHED_OHLCV_JITTER_SEC=120
 SCHED_OHLCV_RUN_ON_START=1
+
+# Options ingest
+OPTIONS_EXCHANGE=okx
+OPTIONS_BASES=BTC,ETH
+
+# Options scheduler (no cron)
+# 默认 1 小时（3600s），可在 .env 中修改
+SCHED_OPTIONS_INTERVAL_SEC=3600
+SCHED_OPTIONS_JITTER_SEC=30
+SCHED_OPTIONS_RUN_ON_START=1
 ```
 
 ---
@@ -144,6 +187,22 @@ python apps/data_ingest/ohlcv_daily_ingestor.py
 - 对每个品种，先查询 DB 的最后一根 `1d` K 线时间戳，仅补增量；首次回补按 `DAILY_OHLCV_LOOKBACK_DAYS` 回溯。
 - 分批写入 `market_daily_ohlcv` 与同步更新 `market_symbol_meta`。
 
+期权合约与报价/Greeks 一次性抓取：
+
+```bash
+# 推荐（在项目根目录执行）
+python -m apps.data_ingest.options_chain_ingestor
+
+# 备选（直接运行脚本）
+python apps/data_ingest/options_chain_ingestor.py
+```
+
+行为：
+- 遍历 `OPTIONS_BASES`（默认 BTC, ETH），抓取整条链，计算 IV/Greeks；
+- 写入/更新 `market_option_contract_meta`；
+- 按 (`exchange`,`symbol`,`timestamp`) 幂等写入 `market_option_quote_ts`；
+- 每条记录含 `underlying_price/moneyness_pct/moneyness_type`，便于筛选 ATM/ITM/OTM。
+
 ---
 
 ### 5) 长期运行（异步调度器）
@@ -157,6 +216,18 @@ python -m apps.schedulers.daily_ohlcv_scheduler
 # 备选（直接运行脚本）
 python apps/schedulers/daily_ohlcv_scheduler.py
 ```
+
+期权调度（不依赖 cron）：
+
+```bash
+# 推荐（在项目根目录执行）
+python -m apps.schedulers.options_chain_scheduler
+
+# 备选（直接运行脚本）
+python apps/schedulers/options_chain_scheduler.py
+```
+
+默认每 1 小时抓取一次（`SCHED_OPTIONS_INTERVAL_SEC` 可配置）。
 
 行为：
 - 每日 `SCHED_OHLCV_RUN_AT_UTC` 指定的 UTC 时刻启动一次抓取，带 `SCHED_OHLCV_JITTER_SEC` 抖动；
@@ -196,6 +267,24 @@ GROUP BY exchange, symbol
 ORDER BY symbol;
 ```
 
+期权数据规模与最近时间：
+
+```sql
+SELECT exchange, COUNT(DISTINCT symbol) AS contracts, COUNT(*) AS rows,
+       FROM_UNIXTIME(MAX(timestamp)/1000) AS last_ts
+FROM market_option_quote_ts
+GROUP BY exchange;
+```
+
+按 moneyness 统计：
+
+```sql
+SELECT exchange, moneyness_type, COUNT(*) AS cnt
+FROM market_option_quote_ts
+GROUP BY exchange, moneyness_type
+ORDER BY exchange, moneyness_type;
+```
+
 ---
 
 ### 7) 设计选择与最佳实践
@@ -215,6 +304,11 @@ ORDER BY symbol;
 
 - 可扩展性：
   - 需要更多时间粒度时，可沿用 `market_daily_ohlcv` 的 `timeframe` 列（当前默认 `1d`）。
+
+- 期权抓取频率与范围建议：
+  - 频率：研究/日级回测 5m 足够；日内策略/风控 30–60s；更高频建议 WebSocket。
+  - 范围：常态仅抓近端到期（2–3 个）+ ATM 附近若干档（±10% 或各侧 5–7 档）；每日一次全链补档。
+  - 过滤：仅保留买卖价均非 0 的合约以减少噪声；翼部可以低频补齐。
 
 ---
 
