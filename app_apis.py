@@ -3,6 +3,7 @@ import os
 from urllib import request
 from libs.database.db_operation import OrderResultToDb, getOptionChainByExpirationDate, getRecentOptionChainByTimestamp, getRecordedOrderList
 from libs.database.ohlcv_repo import query_market_daily_ohlcv
+from libs.database.options_repo import query_atm_iv_series
 # from flask import Flask, jsonify, request
 from libs.exchange.exchange import account_balance, createExchangeConn, fetch_orders
 from libs.exchange.fetch_options import fetchOpenOrders, fetchOptionChain, fetchPostions, fetchTradeOrdersHistory
@@ -877,6 +878,20 @@ async def api_ohlcv_daily(user_data):
         return jsonify({"status": True, "data": rows})
     except Exception as e:
         return jsonify({"status": False, "message": str(e)}), 200
+
+@app.route('/api/atm_iv_series')
+@login_required
+async def api_atm_iv_series(user_data):
+    try:
+        exchange = str(request.args.get('exchange') or 'okx').lower()
+        base = str(request.args.get('base') or 'ETH').upper()
+        expiry = int(request.args.get('expiry'))
+        limit = int(request.args.get('limit') or 2000)
+        threshold = float(request.args.get('threshold') or 0.01)
+        rows = await query_atm_iv_series(exchange=exchange, base=base, expiry=expiry, limit=limit, atm_threshold_pct=threshold)
+        return jsonify({"status": True, "data": rows})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=APP_PORT, debug=True)

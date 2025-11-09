@@ -104,3 +104,55 @@ async def upsert_option_quotes(rows: List[dict]) -> None:
         connection.close()
 
 
+async def query_atm_iv_series(
+    exchange: str,
+    base: str,
+    expiry: int,
+    limit: int = 2000,
+    atm_threshold_pct: float = 0.01,
+):
+    """
+    查询 ATM 附近期权（moneyness_type = 'ATM' 或 |moneyness_pct|<=阈值）的时间序列，聚合每个时间点的
+    - underlying_price（取 MAX）
+    - atm_iv = AVG(COALESCE(s_iv, b_iv))
+    返回按时间升序的 [{timestamp, datetime, underlying, atm_iv}]
+    """
+    connection = await getDbConn()
+    try:
+        async with connection.cursor() as cursor:
+            # 先取最近 limit 条（按时间倒序），再在 Python 中翻转为升序
+            sql = (
+                """
+                SELECT t.timestamp,
+                       MAX(t.datetime) AS datetime,
+                       MAX(t.underlying_price) AS underlying,
+                       AVG(COALESCE(t.s_iv, t.b_iv)) AS atm_iv
+                FROM market_option_quote_ts t
+                WHERE t.exchange = %s
+                  AND t.symbol LIKE %s
+                  AND t.expiration_date = %s
+                  AND (
+                        t.moneyness_type = 'ATM'
+                        OR (t.moneyness_pct IS NOT NULL AND ABS(t.moneyness_pct) <= %s)
+                      )
+                GROUP BY t.timestamp
+                ORDER BY t.timestamp DESC
+                LIMIT %s
+                """
+            )
+            like_pattern = f"{base.upper()}/%"
+            await cursor.execute(sql, (exchange.lower(), like_pattern, int(expiry), float(atm_threshold_pct), int(limit)))
+            rows = await cursor.fetchall()
+            rows = list(rows)[::-1]
+            return [
+                {
+                    'timestamp': r[0],
+                    'datetime': r[1],
+                    'underlying': None if r[2] is None else float(r[2]),
+                    'atm_iv': None if r[3] is None else float(r[3]),
+                }
+                for r in rows
+            ]
+    finally:
+        connection.close()
+

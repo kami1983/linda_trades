@@ -19,6 +19,8 @@ const Header = () => {
       setSelectedKeys(['3']);
     } else if (path === '/quotes') {
       setSelectedKeys(['5']);
+    } else if (path === '/atmiv_series') {
+      setSelectedKeys(['6']);
     } else if (path === '/login') {
       setSelectedKeys(['4']);
     }
@@ -36,6 +38,7 @@ const Header = () => {
         <Menu.Item key="2"><a href="/prepare">Option calculator</a></Menu.Item>
         <Menu.Item key="3"><a href="/postionlist">Position List</a></Menu.Item>
         <Menu.Item key="5"><a href="/quotes">Coin Quotes</a></Menu.Item>
+        <Menu.Item key="6"><a href="/atmiv_series">ATM IV vs Underlying</a></Menu.Item>
         <Menu.Item key="4" style={{ marginLeft: 'auto' }}>
           {isLoggedIn ? (
             <span>Welcome, {currentUsername}</span>
