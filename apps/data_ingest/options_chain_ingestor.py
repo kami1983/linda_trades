@@ -35,29 +35,10 @@ async def create_exchange(exchange_id: str) -> ccxt.Exchange:
 
 
 async def fetch_underlying_price(exchange: ccxt.Exchange, base: str) -> float:
-    """
-    获取标的价格：
-    - OKX: 优先用 USD-SWAP 合约，比如 BTC-USD-SWAP
-    - BINANCE: 优先用 USDT 永续（BTC/USDT:USDT），失败回退现货（BTC/USDT）
-    """
-    eid = getattr(exchange, 'id', '').lower()
-    if eid == 'okx':
-        sym = f'{base}-USD-SWAP'
-        t = await exchange.fetch_ticker(sym)
-        return float(t['last'])
-    elif eid == 'binance':
-        # try USDT perpetual first, then spot
-        for sym in (f'{base}/USDT:USDT', f'{base}/USDT'):
-            try:
-                t = await exchange.fetch_ticker(sym)
-                return float(t['last'])
-            except Exception:
-                continue
-        raise Exception('failed to fetch binance underlying price')
-    else:
-        # generic fallback: try spot
-        t = await exchange.fetch_ticker(f'{base}/USDT')
-        return float(t['last'])
+    # 使用 SWAP 近似标的价格
+    sym = f'{base}-USD-SWAP'
+    t = await exchange.fetch_ticker(sym)
+    return float(t['last'])
 
 
 async def ingest_once(exchange_id: str, bases: List[str]):
