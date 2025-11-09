@@ -137,3 +137,105 @@ CREATE TABLE `okx_orders` (
   KEY `idx_api_key` (`api_key`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='创建订单表';
 
+-- 市场品种元数据（非破坏性新增）
+CREATE TABLE IF NOT EXISTS `market_symbol_meta` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `exchange` varchar(64) NOT NULL COMMENT '交易所标识，例如 okx、binance',
+  `symbol` varchar(255) NOT NULL COMMENT '交易所原生符号，例如 BTC/USDT, BTC/USDT:USDT',
+  `base` varchar(64) DEFAULT NULL COMMENT '基础货币，例如 BTC',
+  `quote` varchar(64) DEFAULT NULL COMMENT '计价货币，例如 USDT',
+  `market_type` varchar(32) NOT NULL DEFAULT 'spot' COMMENT '市场类型：spot/swap/futures/index',
+  `first_seen_ts` bigint DEFAULT NULL COMMENT '首次发现时间戳(ms)',
+  `last_seen_ts` bigint DEFAULT NULL COMMENT '最近发现时间戳(ms)',
+  `is_active` tinyint DEFAULT '1' COMMENT '是否活跃',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_exchange_symbol` (`exchange`,`symbol`),
+  KEY `idx_exchange` (`exchange`),
+  KEY `idx_symbol` (`symbol`),
+  KEY `idx_market_type` (`market_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='市场品种元数据表';
+
+-- 日线级别 OHLCV（非破坏性新增）
+CREATE TABLE IF NOT EXISTS `market_daily_ohlcv` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `exchange` varchar(64) NOT NULL COMMENT '交易所标识，例如 okx、binance',
+  `symbol` varchar(255) NOT NULL COMMENT '交易所原生符号，例如 BTC/USDT',
+  `base` varchar(64) DEFAULT NULL COMMENT '基础货币',
+  `quote` varchar(64) DEFAULT NULL COMMENT '计价货币',
+  `market_type` varchar(32) NOT NULL DEFAULT 'spot' COMMENT '市场类型：spot/swap/futures/index',
+  `timeframe` varchar(16) NOT NULL DEFAULT '1d' COMMENT '时间粒度，固定 1d 便于扩展',
+  `open` decimal(40,20) NOT NULL COMMENT '开盘价',
+  `high` decimal(40,20) NOT NULL COMMENT '最高价',
+  `low` decimal(40,20) NOT NULL COMMENT '最低价',
+  `close` decimal(40,20) NOT NULL COMMENT '收盘价',
+  `volume` decimal(40,20) DEFAULT NULL COMMENT '成交量（base 维度，如 BTC 数量）',
+  `turnover` decimal(40,20) DEFAULT NULL COMMENT '成交额（quote 维度，如 USDT 金额）',
+  `trades` bigint DEFAULT NULL COMMENT '成交笔数（若交易所提供）',
+  `timestamp` bigint NOT NULL COMMENT 'K线时间戳(ms)，一般为日线起始时刻',
+  `datetime` varchar(64) DEFAULT NULL COMMENT '日期字符串，例如 2025-01-01',
+  `status` int DEFAULT '1' COMMENT '状态标志',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_exchange_symbol_tf_ts` (`exchange`,`symbol`,`timeframe`,`timestamp`),
+  KEY `idx_exchange` (`exchange`),
+  KEY `idx_symbol` (`symbol`),
+  KEY `idx_timestamp` (`timestamp`),
+  KEY `idx_market_type` (`market_type`),
+  KEY `idx_timeframe` (`timeframe`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='日线级别 OHLCV 数据表';
+
+-- 期权合约元数据（非破坏性新增）
+CREATE TABLE IF NOT EXISTS `market_option_contract_meta` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `exchange` varchar(64) NOT NULL COMMENT '交易所标识，例如 okx',
+  `symbol` varchar(255) NOT NULL COMMENT '期权合约符号，例如 BTC/USD:BTC-241213-100000-C',
+  `base` varchar(64) DEFAULT NULL COMMENT '基础货币，例如 BTC',
+  `quote` varchar(64) DEFAULT NULL COMMENT '计价货币，例如 USD',
+  `expiration_date` int NOT NULL COMMENT '行权日 YYMMDD，例如 241213',
+  `strike` decimal(40,20) NOT NULL COMMENT '行权价',
+  `option_type` char(1) NOT NULL COMMENT 'C / P',
+  `underlying` varchar(128) DEFAULT NULL COMMENT '标的合约（可选）',
+  `first_seen_ts` bigint DEFAULT NULL,
+  `last_seen_ts` bigint DEFAULT NULL,
+  `is_active` tinyint DEFAULT '1',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_exchange_symbol` (`exchange`,`symbol`),
+  KEY `idx_exchange` (`exchange`),
+  KEY `idx_expiration_date` (`expiration_date`),
+  KEY `idx_option_type` (`option_type`),
+  KEY `idx_base` (`base`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='期权合约元数据表';
+
+-- 期权报价与Greeks时间序列表（非破坏性新增）
+CREATE TABLE IF NOT EXISTS `market_option_quote_ts` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键 ID',
+  `exchange` varchar(64) NOT NULL,
+  `symbol` varchar(255) NOT NULL,
+  `expiration_date` int NOT NULL,
+  `strike` decimal(40,20) NOT NULL,
+  `option_type` char(1) NOT NULL,
+  `timestamp` bigint NOT NULL COMMENT 'ms',
+  `datetime` varchar(64) DEFAULT NULL,
+  `bid_price` decimal(40,20) DEFAULT NULL,
+  `bid_size` decimal(40,20) DEFAULT NULL,
+  `ask_price` decimal(40,20) DEFAULT NULL,
+  `ask_size` decimal(40,20) DEFAULT NULL,
+  `last_price` decimal(40,20) DEFAULT NULL,
+  `last_size` decimal(40,20) DEFAULT NULL,
+  `underlying_price` decimal(40,20) DEFAULT NULL,
+  `moneyness_pct` decimal(40,20) DEFAULT NULL COMMENT '(underlying - strike)/strike',
+  `moneyness_type` varchar(8) DEFAULT NULL COMMENT 'ITM/OTM/ATM',
+  `s_iv` decimal(40,20) DEFAULT NULL COMMENT 'sell side IV',
+  `b_iv` decimal(40,20) DEFAULT NULL COMMENT 'buy side IV',
+  `delta` decimal(40,20) DEFAULT NULL,
+  `gamma` decimal(40,20) DEFAULT NULL,
+  `theta` decimal(40,20) DEFAULT NULL,
+  `vega` decimal(40,20) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_ex_sym_ts` (`exchange`,`symbol`,`timestamp`),
+  KEY `idx_exchange` (`exchange`),
+  KEY `idx_symbol` (`symbol`),
+  KEY `idx_expiration_date` (`expiration_date`),
+  KEY `idx_option_type` (`option_type`),
+  KEY `idx_timestamp` (`timestamp`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='期权报价与Greeks时间序列';
+

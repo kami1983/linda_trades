@@ -150,21 +150,25 @@ def handlerCalculateIv(symbol, current_price, bid, ask )-> EResultIvData:
 
     infer_price = None
     if s_iv != None and b_iv != None:
-        # 计算 infer price
+        # 计算 infer price（稳健：捕获数值求解异常）
         _tmp_buy_price = bid_usd
         _tmp_iv = b_iv
         if flag == 'p':
             _tmp_buy_price = ask_usd
             _tmp_iv = s_iv
 
-        infer_price = inferCurrentPrice(
-            buy_price=_tmp_buy_price,
-            strike_price=K,
-            iv=_tmp_iv,
-            r=r,
-            day_left=day_left,
-            option_type=flag
-        )
+        try:
+            infer_price = inferCurrentPrice(
+                buy_price=_tmp_buy_price,
+                strike_price=K,
+                iv=_tmp_iv,
+                r=r,
+                day_left=day_left,
+                option_type=flag
+            )
+        except Exception as e:
+            print('inferCurrentPrice failed:', e)
+            infer_price = None
 
 
     return EResultIvData(

@@ -1,11 +1,13 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { getRecordedOrderList, getAccountBalance, refillOrders } from './utils/OptionApis';
-import { Table, Card, Spin, Alert, Button, Modal, Checkbox, Space } from 'antd';
+import { Table, Card, Spin, Alert, Button, Modal } from 'antd';
 import { ReloadOutlined, DownloadOutlined } from '@ant-design/icons';
 import { useLoginStatus } from './context/LoginStautsContext';
 import Login from './components/Login';
 import PnlChart from './components/PnlChart';
 import PnlBarChart from './components/PnlBarChart';
+import usePnlSeries from './hooks/usePnlSeries';
+import ChartFilter from './components/ChartFilter';
 
 const AccountInfo = () => {
   const [balance, setBalance] = useState(null);
@@ -154,43 +156,7 @@ const AccountInfo = () => {
     }
   ];
 
-  const pnlSeries = useMemo(() => {
-    if (!orders || orders.length === 0) {
-      return { labels: [], btcCum: [], ethCum: [], btcDelta: [], ethDelta: [] };
-    }
-
-    const sorted = [...orders].sort((a, b) => (a.fill_time || 0) - (b.fill_time || 0));
-    const labels = [];
-    const btcCum = [];
-    const ethCum = [];
-    const btcDelta = [];
-    const ethDelta = [];
-    let btcSum = 0;
-    let ethSum = 0;
-
-    for (const o of sorted) {
-      const inst = String(o.inst_id || '');
-      const pnl = parseFloat(o.pnl || 0);
-      const fwd = parseFloat(o.fill_fwd_px || 0);
-      const usd = (isNaN(pnl) || isNaN(fwd)) ? 0 : (pnl * fwd);
-      const isBTC = inst.startsWith('BTC');
-      const isETH = inst.startsWith('ETH');
-
-      const btcThis = isBTC ? usd : 0;
-      const ethThis = isETH ? usd : 0;
-
-      if (isBTC) btcSum += usd;
-      if (isETH) ethSum += usd;
-
-      labels.push(new Date(o.fill_time || 0).toLocaleString());
-      btcCum.push(btcSum);
-      ethCum.push(ethSum);
-      btcDelta.push(btcThis);
-      ethDelta.push(ethThis);
-    }
-
-    return { labels, btcCum, ethCum, btcDelta, ethDelta };
-  }, [orders]);
+  const pnlSeries = usePnlSeries(orders);
 
   const downloadCSV = () => {
     try {
@@ -266,10 +232,7 @@ const AccountInfo = () => {
     <div style={{ padding: '20px' }}>
       <Card title="PnL Chart (USD) - BTC vs ETH" style={{ marginBottom: '20px' }}>
         <div style={{ marginBottom: 12 }}>
-          <Space>
-            <Checkbox checked={showBTC} onChange={(e) => setShowBTC(e.target.checked)}>BTC</Checkbox>
-            <Checkbox checked={showETH} onChange={(e) => setShowETH(e.target.checked)}>ETH</Checkbox>
-          </Space>
+          <ChartFilter showBTC={showBTC} showETH={showETH} onChangeBTC={setShowBTC} onChangeETH={setShowETH} />
         </div>
         <div style={{ width: '100%', height: 400 }}>
           <PnlChart labels={pnlSeries.labels} btcData={pnlSeries.btcCum} ethData={pnlSeries.ethCum} title="Cumulative PnL (USD)" showBTC={showBTC} showETH={showETH} />
