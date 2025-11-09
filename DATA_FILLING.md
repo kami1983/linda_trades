@@ -229,6 +229,13 @@ python apps/schedulers/options_chain_scheduler.py
 
 默认每 1 小时抓取一次（`SCHED_OPTIONS_INTERVAL_SEC` 可配置）。
 
+同时启动两个调度器（同一进程）：
+
+```bash
+# 推荐（在项目根目录执行）
+python -m apps.schedulers.all_schedulers
+```
+
 行为：
 - 每日 `SCHED_OHLCV_RUN_AT_UTC` 指定的 UTC 时刻启动一次抓取，带 `SCHED_OHLCV_JITTER_SEC` 抖动；
 - 失败不中断循环；
