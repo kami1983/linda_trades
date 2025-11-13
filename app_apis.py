@@ -20,6 +20,7 @@ import ccxt
 import sys
 
 from libs.units.unitls import getCrrrentTime, selectOptions
+from libs.exchange.lighter_client import lighter_order_books, lighter_recent_trades, lighter_send_tx, lighter_account_by_l1_address
 
 APP_PORT = os.getenv('APP_PORT', 5000)
 CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'http://localhost:3000')
@@ -857,6 +858,56 @@ async def api_account_balance():
 @app.route('/ccxt/version')
 async def ccxt_version():
     return jsonify({"status": True, "data": {"ccxt_version": ccxt.__version__, "sys_executable": sys.executable}})
+
+@app.route('/api/lighter/order_books')
+async def api_lighter_order_books():
+    try:
+        market = str(request.args.get('market'))
+        if not market:
+            return jsonify({"status": False, "message": "market is required"}), 400
+        limit = request.args.get('limit')
+        limit_v = int(limit) if limit is not None and limit != '' else None
+        data = await lighter_order_books(market=market, limit=limit_v)
+        return jsonify({"status": True, "data": data})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
+
+@app.route('/api/lighter/recent_trades')
+async def api_lighter_recent_trades():
+    try:
+        market = str(request.args.get('market'))
+        if not market:
+            return jsonify({"status": False, "message": "market is required"}), 400
+        limit = request.args.get('limit')
+        limit_v = int(limit) if limit is not None and limit != '' else None
+        data = await lighter_recent_trades(market=market, limit=limit_v)
+        return jsonify({"status": True, "data": data})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
+
+@app.route('/api/lighter/send_tx', methods=['POST'])
+@login_required
+async def api_lighter_send_tx(user_data):
+    try:
+        body = await request.json
+        if not body or not isinstance(body, dict):
+            return jsonify({"status": False, "message": "JSON body required"}), 400
+        data = await lighter_send_tx(body)
+        return jsonify({"status": True, "data": data})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
+
+@app.route('/api/lighter/account_by_l1')
+@login_required
+async def api_lighter_account_by_l1(user_data):
+    try:
+        address = str(request.args.get('address'))
+        if not address:
+            return jsonify({"status": False, "message": "address is required"}), 400
+        data = await lighter_account_by_l1_address(address)
+        return jsonify({"status": True, "data": data})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
 
 @app.route('/api/ohlcv_daily')
 @login_required

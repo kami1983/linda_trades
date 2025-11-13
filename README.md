@@ -145,3 +145,8 @@ sudo supervisorctl stop all
 ## 交易模拟机器
 * 如何推断出某个期权合理的标记价格
 
+## Lighter Python SDK 支持
+* 推荐方式（PyPI）：`pip install lighter-sdk==0.1.4`
+* 或安装源码（GitHub）：`pip install "git+https://github.com/elliottech/lighter-python.git#egg=lighter-sdk"`
+* 若出现 urllib3 相关冲突提示，可将项目 `requirements.txt` 中的 `urllib3` 固定为 `>=2.0.7,<2.1.0`
+
