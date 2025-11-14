@@ -20,7 +20,8 @@ import ccxt
 import sys
 
 from libs.units.unitls import getCrrrentTime, selectOptions
-from libs.exchange.lighter_client import lighter_order_books, lighter_recent_trades, lighter_send_tx, lighter_account_by_l1_address
+from libs.exchange.lighter_client import lighter_order_books, lighter_recent_trades, lighter_send_tx, lighter_account_by_l1_address, lighter_account_by_index, lighter_account_inactive_orders
+from libs.exchange.lighter_signer import signer_create_order, signer_cancel_order, signer_cancel_all_orders
 
 APP_PORT = os.getenv('APP_PORT', 5000)
 CORS_ORIGIN = os.getenv('CORS_ORIGIN', 'http://localhost:3000')
@@ -52,6 +53,25 @@ def generate_token(username):
         "exp": datetime.now(timezone.utc) + timedelta(hours=1),  # 使用时区感知的 UTC 时间
     }
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
+
+def _jsonable(obj):
+    """
+    Convert SDK return objects (e.g. Pydantic/BaseModel/OpenAPI models) into JSON-serializable structures.
+    """
+    try:
+        # pydantic v2 models
+        if hasattr(obj, 'model_dump'):
+            return obj.model_dump()
+        # openapi-generator models
+        if hasattr(obj, 'to_dict'):
+            return obj.to_dict()
+    except Exception:
+        pass
+    if isinstance(obj, list) or isinstance(obj, tuple):
+        return [_jsonable(x) for x in obj]
+    if isinstance(obj, dict):
+        return {k: _jsonable(v) for k, v in obj.items()}
+    return obj
 
 # Decode and validate JWT token
 def decode_token(token):
@@ -152,7 +172,7 @@ async def get_current_price():
         task = asyncio.create_task(fetchTicker(exchange, f'{symbol}-USD-SWAP'))
         price = await asyncio.gather(task)
         
-        print('DEBUG: price:', price)
+        # print('DEBUG: price:', price)
 
         return jsonify({"status": True, "data": {"price": price[0].last, "symbol": symbol } })
     except Exception as e:
@@ -455,11 +475,7 @@ async def close_position(user_data):
             params = {}
         else:
             params = {'clientOrderId': order_id}
-
-        print('DEBUG: symbol: A ---- close_position', symbol, 'side:', side, 'params:', params)
-        
         result = await exchange.close_position(symbol=symbol, side='short', params=params)
-        print('DEBUG: result: B ---- ', result)
         return jsonify({"status": True, "data": result})
     except Exception as e:
         return jsonify({"status": False, "message": e.args[0]})
@@ -533,11 +549,11 @@ async def create_position(user_data):
         }
 
 
-        print('DEBUG A: symbol ========= :', symbol, 'side:', side, 'amount:', amount, 'price:', price, 'type:', type)
+        # print('DEBUG A: symbol ========= :', symbol, 'side:', side, 'amount:', amount, 'price:', price, 'type:', type)
         # return jsonify({"status": False, "message": "Not implemented!"})
         # call async def create_order(self, symbol: str, type: OrderType, side: OrderSide, amount: float, price: Num = None, params={}):
         result = await exchange.create_order(symbol=symbol, type=type, side=side, amount=amount, price=price, params=params)
-        print('DEBUG B: result ---------- :', result)
+        # print('DEBUG B: result ---------- :', result)
         return jsonify({"status": True, "data": result})
     except Exception as e:
         return jsonify({"status": False, "message": e.args[0]})
@@ -851,7 +867,7 @@ async def api_account_balance():
     # finally:
     #     await exchange.close()
 
-    print('Debug A account_balance')
+    # print('Debug A account_balance')
     res = await account_balance()
     return jsonify(res)
 
@@ -868,7 +884,7 @@ async def api_lighter_order_books():
         limit = request.args.get('limit')
         limit_v = int(limit) if limit is not None and limit != '' else None
         data = await lighter_order_books(market=market, limit=limit_v)
-        return jsonify({"status": True, "data": data})
+        return jsonify({"status": True, "data": _jsonable(data)})
     except Exception as e:
         return jsonify({"status": False, "message": str(e)}), 200
 
@@ -881,7 +897,7 @@ async def api_lighter_recent_trades():
         limit = request.args.get('limit')
         limit_v = int(limit) if limit is not None and limit != '' else None
         data = await lighter_recent_trades(market=market, limit=limit_v)
-        return jsonify({"status": True, "data": data})
+        return jsonify({"status": True, "data": _jsonable(data)})
     except Exception as e:
         return jsonify({"status": False, "message": str(e)}), 200
 
@@ -893,7 +909,7 @@ async def api_lighter_send_tx(user_data):
         if not body or not isinstance(body, dict):
             return jsonify({"status": False, "message": "JSON body required"}), 400
         data = await lighter_send_tx(body)
-        return jsonify({"status": True, "data": data})
+        return jsonify({"status": True, "data": _jsonable(data)})
     except Exception as e:
         return jsonify({"status": False, "message": str(e)}), 200
 
@@ -905,7 +921,90 @@ async def api_lighter_account_by_l1(user_data):
         if not address:
             return jsonify({"status": False, "message": "address is required"}), 400
         data = await lighter_account_by_l1_address(address)
-        return jsonify({"status": True, "data": data})
+        return jsonify({"status": True, "data": _jsonable(data)})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
+
+@app.route('/api/lighter/account_by_index')
+@login_required
+async def api_lighter_account_by_index(user_data):
+    try:
+        index_str = request.args.get('index')
+        if index_str is None or index_str == '':
+            return jsonify({"status": False, "message": "index is required"}), 400
+        index = int(index_str)
+        data = await lighter_account_by_index(index)
+        return jsonify({"status": True, "data": _jsonable(data)})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
+
+@app.route('/api/lighter/account_inactive_orders')
+@login_required
+async def api_lighter_account_inactive_orders(user_data):
+    try:
+        account_index_str = request.args.get('account_index')
+        if account_index_str is None or account_index_str == '':
+            return jsonify({"status": False, "message": "account_index is required"}), 400
+        account_index = int(account_index_str)
+        index_str = request.args.get('index') or '0'
+        limit_str = request.args.get('limit') or '50'
+        index = int(index_str)
+        limit = int(limit_str)
+        data = await lighter_account_inactive_orders(account_index=account_index, index=index, limit=limit)
+        return jsonify({"status": True, "data": _jsonable(data)})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
+
+# Signer endpoints
+@app.route('/api/lighter/signer/create_order', methods=['POST'])
+@login_required
+async def api_lighter_signer_create_order(user_data):
+    try:
+        body = await request.json
+        required = ['market_index', 'client_order_index', 'base_amount', 'price', 'is_ask']
+        for k in required:
+            if k not in body:
+                return jsonify({"status": False, "message": f"{k} is required"}), 400
+        tx, tx_hash = await signer_create_order(
+            market_index=int(body['market_index']),
+            client_order_index=int(body['client_order_index']),
+            base_amount=int(body['base_amount']),
+            price=int(body['price']),
+            is_ask=bool(body['is_ask']),
+            order_type=body.get('order_type'),
+            time_in_force=body.get('time_in_force'),
+            reduce_only=bool(body.get('reduce_only') or False),
+            trigger_price=int(body.get('trigger_price') or 0),
+        )
+        return jsonify({"status": True, "data": {"tx": _jsonable(tx), "tx_hash": tx_hash}})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
+
+@app.route('/api/lighter/signer/cancel_order', methods=['POST'])
+@login_required
+async def api_lighter_signer_cancel_order(user_data):
+    try:
+        body = await request.json
+        required = ['market_index', 'order_index']
+        for k in required:
+            if k not in body:
+                return jsonify({"status": False, "message": f"{k} is required"}), 400
+        tx, tx_hash = await signer_cancel_order(
+            market_index=int(body['market_index']),
+            order_index=int(body['order_index']),
+        )
+        return jsonify({"status": True, "data": {"tx": _jsonable(tx), "tx_hash": tx_hash}})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
+
+@app.route('/api/lighter/signer/cancel_all_orders', methods=['POST'])
+@login_required
+async def api_lighter_signer_cancel_all_orders(user_data):
+    try:
+        body = await request.json
+        tif = body.get('time_in_force')
+        tx, tx_hash = await signer_cancel_all_orders(time_in_force=tif)
+        return jsonify({"status": True, "data": {"tx": _jsonable(tx), "tx_hash": tx_hash}})
     except Exception as e:
         return jsonify({"status": False, "message": str(e)}), 200
 

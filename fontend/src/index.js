@@ -19,6 +19,7 @@ import { Layout, Card, Typography, Row, Col } from 'antd';
 import Header from './components/Header';
 import Quotes from './pages/quotes/Quotes';
 import AtmIvChart from './pages/quotes/AtmIvChart';
+import LighterAccount from './pages/lighter/LighterAccount';
 const { Content, Footer } = Layout;
 const { Title, Text } = Typography;
 
@@ -44,6 +45,7 @@ root.render(
             <Route path='/login' element={<Login />} />
             <Route path='/quotes' element={<Quotes />} />
             <Route path='/atmiv_series' element={<AtmIvChart />} />
+            <Route path='/lighter/account' element={<LighterAccount />} />
           </Routes>
           <Footer style={{ textAlign: 'center' }}>
                 Linda's Trading System ©2024

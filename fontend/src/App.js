@@ -62,6 +62,9 @@ function App() {
                   <Col>
                     <Link to='/account'>Account Info</Link>
                   </Col>
+                  <Col>
+                    <Link to='/lighter/account'>Lighter Account</Link>
+                  </Col>
                 </Row>
               </Card>
             </Col>

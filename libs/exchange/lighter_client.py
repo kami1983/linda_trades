@@ -91,11 +91,48 @@ async def lighter_account_by_l1_address(address: str) -> Any:
 	client = _create_client()
 	try:
 		api = lighter.AccountApi(client)  # type: ignore[attr-defined]
-		# Prefer explicit endpoint, fallback to generic account lookup if signature differs
+		# Prefer explicit accounts_by_l1_address(l1_address=...) first
 		try:
-			return await api.accounts_by_l1_address(address=address)  # type: ignore[func-returns-value]
+			return await api.accounts_by_l1_address(l1_address=address)  # type: ignore[func-returns-value]
 		except Exception:
-			return await api.account(by="l1Address", value=address)  # type: ignore[func-returns-value]
+			# Fallback to different signatures or generic account(by="l1_address", value=...)
+			try:
+				return await api.accounts_by_l1_address(address=address)  # type: ignore[func-returns-value]
+			except Exception:
+				return await api.account(by="l1_address", value=address)  # type: ignore[func-returns-value]
+	finally:
+		try:
+			await client.close()
+		except Exception:
+			pass
+
+
+async def lighter_account_by_index(index: int) -> Any:
+	"""
+	Fetch account by numerical index.
+	"""
+	lighter = _import_lighter()
+	client = _create_client()
+	try:
+		api = lighter.AccountApi(client)  # type: ignore[attr-defined]
+		return await api.account(by="index", value=str(index))  # type: ignore[func-returns-value]
+	finally:
+		try:
+			await client.close()
+		except Exception:
+			pass
+
+
+async def lighter_account_inactive_orders(account_index: int, index: int = 0, limit: int = 50) -> Any:
+	"""
+	Fetch historical (inactive) orders for an account.
+	"""
+	lighter = _import_lighter()
+	client = _create_client()
+	try:
+		order_api = lighter.OrderApi(client)  # type: ignore[attr-defined]
+		# OpenAPI usually uses pagination with index/limit
+		return await order_api.account_inactive_orders(account_index=account_index, index=index, limit=limit)  # type: ignore[func-returns-value]
 	finally:
 		try:
 			await client.close()

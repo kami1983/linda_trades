@@ -150,3 +150,28 @@ sudo supervisorctl stop all
 * 或安装源码（GitHub）：`pip install "git+https://github.com/elliottech/lighter-python.git#egg=lighter-sdk"`
 * 若出现 urllib3 相关冲突提示，可将项目 `requirements.txt` 中的 `urllib3` 固定为 `>=2.0.7,<2.1.0`
 
+### Lighter 环境变量配置
+- **LIGHTER_BASE_URL**: Lighter 接口域名。主网为 `https://mainnet.zklighter.elliot.ai`；如使用测试网，请替换为相应测试网地址（以官方文档为准）。
+- **LIGHTER_API_KEY_PRIVATE_KEY**: Lighter API Key 的私钥，用于签名交易（SignerClient 需要）。
+- **ETH_PRIVATE_KEY**: 绑定的以太坊私钥（根据官方示例要求，用于签名链路）。
+- **LIGHTER_ACCOUNT_INDEX**: 账户索引（ACCOUNT_INDEX）。用于指定要操作的账户。
+- **LIGHTER_API_KEY_INDEX**: API Key 索引（API_KEY_INDEX，范围通常为 2–254；255 用于查询全部 API keys）。
+- **LIGHTER_L1_ADDRESS**: 你的 L1 地址（用于按地址查询账户、在前端默认展示你的账户）。
+
+示例（.env）：
+```
+LIGHTER_BASE_URL=https://mainnet.zklighter.elliot.ai
+LIGHTER_API_KEY_PRIVATE_KEY=0xabcdef...your_api_key_private_key
+ETH_PRIVATE_KEY=0xabcdef...your_eth_private_key
+LIGHTER_ACCOUNT_INDEX=1
+LIGHTER_API_KEY_INDEX=2
+LIGHTER_L1_ADDRESS=0xyour_l1_address
+```
+
+说明：
+- 只有查询公开市场数据（如 order books、recent trades）可以不带签名；涉及下单、撤单、修改订单等都需要使用 SignerClient 以私钥签名，再通过 `TransactionApi.send_tx` 推送。
+- Nonce 需要逐次递增；可通过 `TransactionApi.next_nonce` 获取下一个可用 nonce。
+- 详细说明与示例参考官方文档与仓库：
+  - `https://apidocs.lighter.xyz/docs/get-started-for-programmers-1#/`
+  - `https://github.com/elliottech/lighter-python`
+

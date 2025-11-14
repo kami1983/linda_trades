@@ -278,6 +278,169 @@ const refillOrders = () => {
   
 }
 
+// Lighter: get account data by L1 address
+const lighterAccountByL1 = (address) => {
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/lighter/account_by_l1?address=${encodeURIComponent(address)}`, {
+      method: "GET",
+      credentials: "include"
+    })
+      .then(response => {
+        if (response.status === 401) {
+          alert('Please login first');
+          reject('Unauthorized');
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      })
+      .catch(err => reject(err));
+  });
+}
+
+// Lighter: get account data by index
+const lighterAccountByIndex = (index) => {
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/lighter/account_by_index?index=${encodeURIComponent(index)}`, {
+      method: "GET",
+      credentials: "include"
+    })
+      .then(response => {
+        if (response.status === 401) {
+          alert('Please login first');
+          reject('Unauthorized');
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      })
+      .catch(err => reject(err));
+  });
+}
+
+// Lighter: get account inactive orders
+const lighterAccountInactiveOrders = (accountIndex, index = 0, limit = 50) => {
+  return new Promise((resolve, reject) => {
+    const url = `${apiHost}/api/lighter/account_inactive_orders?account_index=${encodeURIComponent(accountIndex)}&index=${encodeURIComponent(index)}&limit=${encodeURIComponent(limit)}`;
+    fetch(url, {
+      method: "GET",
+      credentials: "include"
+    })
+      .then(response => {
+        if (response.status === 401) {
+          alert('Please login first');
+          reject('Unauthorized');
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      })
+      .catch(err => reject(err));
+  });
+}
+
+// Lighter Signer: create order
+const lighterSignerCreateOrder = (payload) => {
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/lighter/signer/create_order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload)
+    })
+      .then(response => {
+        if (response.status === 401) {
+          alert('Please login first');
+          reject('Unauthorized');
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      })
+      .catch(err => reject(err));
+  });
+}
+
+// Lighter Signer: cancel order
+const lighterSignerCancelOrder = (marketIndex, orderIndex) => {
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/lighter/signer/cancel_order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ market_index: marketIndex, order_index: orderIndex })
+    })
+      .then(response => {
+        if (response.status === 401) {
+          alert('Please login first');
+          reject('Unauthorized');
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      })
+      .catch(err => reject(err));
+  });
+}
+
+// Lighter Signer: cancel all orders
+const lighterSignerCancelAllOrders = (timeInForce) => {
+  return new Promise((resolve, reject) => {
+    fetch(`${apiHost}/api/lighter/signer/cancel_all_orders`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ time_in_force: timeInForce })
+    })
+      .then(response => {
+        if (response.status === 401) {
+          alert('Please login first');
+          reject('Unauthorized');
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      })
+      .catch(err => reject(err));
+  });
+}
+
 export { 
   reduceMargin,
   addMargin,
@@ -290,5 +453,11 @@ export {
   callOpenOrders,
   getRecordedOrderList,
   getAccountBalance,
-  refillOrders
+  refillOrders,
+  lighterAccountByL1,
+  lighterAccountByIndex,
+  lighterAccountInactiveOrders,
+  lighterSignerCreateOrder,
+  lighterSignerCancelOrder,
+  lighterSignerCancelAllOrders
 };
