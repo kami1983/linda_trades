@@ -1057,6 +1057,6 @@ async def api_atm_iv_series(user_data):
         return jsonify({"status": False, "message": str(e)})
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=APP_PORT, debug=True)
+    app.run(host="0.0.0.0", port=APP_PORT, debug=False)
 
 

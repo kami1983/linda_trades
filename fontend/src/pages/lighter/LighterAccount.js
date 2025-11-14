@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Button, Typography, Space, Spin, Alert, Row, Col, Table } from 'antd';
+import { Card, Button, Typography, Space, Spin, Alert, Row, Col, Table, Descriptions, Tag, Collapse } from 'antd';
 import { lighterAccountByL1, lighterAccountByIndex, lighterAccountInactiveOrders, lighterSignerCancelOrder, lighterSignerCancelAllOrders } from '../../utils/OptionApis';
 
 const { Text } = Typography;
@@ -13,6 +13,22 @@ const LighterAccount = () => {
 	const [data, setData] = useState(null);
 	const [orders, setOrders] = useState([]);
 	const [acting, setActing] = useState(false);
+	const getAccountObject = (payload) => {
+		if (!payload) return null;
+		if (payload.accounts && Array.isArray(payload.accounts) && payload.accounts.length > 0) return payload.accounts[0];
+		if (payload.account) return payload.account;
+		return payload;
+	};
+	const toNumber = (v) => {
+		if (v === null || v === undefined) return '-';
+		const n = typeof v === 'string' ? parseFloat(v) : v;
+		if (Number.isNaN(n)) return v;
+		return n;
+	};
+	const fmtNum = (v) => {
+		const n = toNumber(v);
+		return typeof n === 'number' ? n.toLocaleString(undefined, { maximumFractionDigits: 6 }) : n;
+	};
 
 	const onFetchByL1 = async (addrParam) => {
 		const addr = addrParam || address;
@@ -88,39 +104,43 @@ const LighterAccount = () => {
 			</Card>
 			{loading && <Spin size="large" />}
 			{error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
-			{data && (
-				<Card title="Account Summary" style={{ marginBottom: 16 }}>
-					<div>
-						<Text strong>Account Index: </Text>
-						<Text>
-							{(() => {
-								const acc =
-									(data && data.accounts && data.accounts[0]) ? data.accounts[0] :
-									(data && data.account) ? data.account : null;
-								return acc?.account_index ?? acc?.index ?? data?.account_index ?? data?.index ?? '-';
-							})()}
-						</Text>
-					</div>
-					<div>
-						<Text strong>L1 Address: </Text>
-						<Text>
-							{(() => {
-								const acc =
-									(data && data.accounts && data.accounts[0]) ? data.accounts[0] :
-									(data && data.account) ? data.account : null;
-								return acc?.l1_address ?? data?.l1_address ?? '-';
-							})()}
-						</Text>
-					</div>
-				</Card>
-			)}
-			{data && (
-				<Card title="Response Data">
-					<pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
-{JSON.stringify(data, null, 2)}
-					</pre>
-				</Card>
-			)}
+			{data && (() => {
+				const acc = getAccountObject(data);
+				return (
+					<Card title="Account Overview" style={{ marginBottom: 16 }}>
+						<Descriptions bordered size="small" column={{ xs: 1, sm: 2, md: 3 }}>
+							<Descriptions.Item label="Account Index">{acc?.account_index ?? acc?.index ?? '-'}</Descriptions.Item>
+							<Descriptions.Item label="L1 Address">{acc?.l1_address ?? '-'}</Descriptions.Item>
+							<Descriptions.Item label="Account Type">{acc?.account_type ?? '-'}</Descriptions.Item>
+							<Descriptions.Item label="Status">
+								{acc?.status !== undefined ? <Tag color={acc.status === 0 ? 'green' : 'blue'}>{acc.status}</Tag> : '-'}
+							</Descriptions.Item>
+							<Descriptions.Item label="Collateral">{fmtNum(acc?.collateral)}</Descriptions.Item>
+							<Descriptions.Item label="Available">{fmtNum(acc?.available_balance)}</Descriptions.Item>
+							<Descriptions.Item label="Total Asset">{fmtNum(acc?.total_asset_value)}</Descriptions.Item>
+							<Descriptions.Item label="Cross Asset">{fmtNum(acc?.cross_asset_value)}</Descriptions.Item>
+							<Descriptions.Item label="Pending Orders">{acc?.pending_order_count ?? '-'}</Descriptions.Item>
+							<Descriptions.Item label="Total Orders">{acc?.total_order_count ?? '-'}</Descriptions.Item>
+							<Descriptions.Item label="Isolated Orders">{acc?.total_isolated_order_count ?? '-'}</Descriptions.Item>
+							<Descriptions.Item label="Cancel All Time">{acc?.cancel_all_time ?? '-'}</Descriptions.Item>
+						</Descriptions>
+						<div style={{ marginTop: 12 }}>
+							<Text type="secondary">
+								Positions: {Array.isArray(acc?.positions) ? acc.positions.length : 0} | Shares: {Array.isArray(acc?.shares) ? acc.shares.length : 0}
+							</Text>
+						</div>
+						<div style={{ marginTop: 12 }}>
+							<Collapse>
+								<Collapse.Panel header="Raw JSON (debug)" key="raw">
+									<pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+{JSON.stringify(acc, null, 2)}
+									</pre>
+								</Collapse.Panel>
+							</Collapse>
+						</div>
+					</Card>
+				);
+			})()}
 			{(index && String(index).length > 0) && (
 				<Card title="Inactive Orders" style={{ marginTop: 16 }}>
 					<div style={{ marginBottom: 12 }}>
