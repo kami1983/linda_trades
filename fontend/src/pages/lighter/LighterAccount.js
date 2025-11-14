@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
-import { Card, Input, Button, Typography, Space, Spin, Alert, Row, Col, Table } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Card, Button, Typography, Space, Spin, Alert, Row, Col, Table } from 'antd';
 import { lighterAccountByL1, lighterAccountByIndex, lighterAccountInactiveOrders, lighterSignerCancelOrder, lighterSignerCancelAllOrders } from '../../utils/OptionApis';
 
 const { Text } = Typography;
 
 const LighterAccount = () => {
+	const apiHost = process.env.REACT_APP_API_HOSTS;
 	const [address, setAddress] = useState('');
 	const [loading, setLoading] = useState(false);
 	const [index, setIndex] = useState('');
@@ -13,15 +14,16 @@ const LighterAccount = () => {
 	const [orders, setOrders] = useState([]);
 	const [acting, setActing] = useState(false);
 
-	const onFetchByL1 = async () => {
-		if (!address) {
+	const onFetchByL1 = async (addrParam) => {
+		const addr = addrParam || address;
+		if (!addr) {
 			setError('Please input L1 address');
 			return;
 		}
 		setError(null);
 		setLoading(true);
 		try {
-			const res = await lighterAccountByL1(address);
+			const res = await lighterAccountByL1(addr);
 			if (res && res.status) {
 				setData(res.data);
 				// try to derive account index from response and fetch orders
@@ -54,78 +56,31 @@ const LighterAccount = () => {
 		}
 	};
 
-	const onFetchByIndex = async () => {
-		if (!index) {
-			setError('Please input account index');
-			return;
-		}
-		setError(null);
-		setLoading(true);
-		try {
-			const idx = parseInt(index, 10);
-			if (Number.isNaN(idx)) {
-				setError('Index must be a number');
-				setLoading(false);
-				return;
-			}
-			const res = await lighterAccountByIndex(idx);
-			if (res && res.status) {
-				setData(res.data);
-				// Also fetch orders for this account index
-				try {
-					const ordersRes = await lighterAccountInactiveOrders(idx, 0, 50);
-					if (ordersRes && ordersRes.status) {
-						// Normalize to array
-						const list = Array.isArray(ordersRes.data?.orders) ? ordersRes.data.orders : (ordersRes.data || []);
-						setOrders(list);
-					} else {
-						setOrders([]);
-					}
-				} catch {
-					setOrders([]);
+	useEffect(() => {
+		(async () => {
+			// Always fetch server-side configured L1 address; frontend does not control account
+			try {
+				setLoading(true);
+				const res = await fetch(`${apiHost}/api/lighter/config`, { credentials: 'include' });
+				const json = await res.json();
+				const serverL1 = json?.data?.l1_address;
+				if (serverL1) {
+					setAddress(serverL1);
+					await onFetchByL1(serverL1);
 				}
-			} else {
-				setError(res?.message || 'Fetch failed');
+			} catch (e) {
+				// ignore
+			} finally {
+				setLoading(false);
 			}
-		} catch (e) {
-			setError(e.message || 'Fetch error');
-		} finally {
-			setLoading(false);
-		}
-	};
+		})();
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	return (
 		<div style={{ padding: 24 }}>
 			<Card title="Lighter Account Info" style={{ marginBottom: 16 }}>
 				<Space direction="vertical" size="middle" style={{ width: '100%' }}>
-					<Row gutter={[12, 12]}>
-						<Col xs={24} md={16}>
-							<Input
-								placeholder="Enter L1 Address (0x...)"
-								value={address}
-								onChange={(e) => setAddress(e.target.value)}
-							/>
-						</Col>
-						<Col xs={24} md={8}>
-							<Button block type="primary" onClick={onFetchByL1} loading={loading}>
-								Fetch by L1 Address
-							</Button>
-						</Col>
-					</Row>
-					<Row gutter={[12, 12]}>
-						<Col xs={24} md={16}>
-							<Input
-								placeholder="Enter Account Index (e.g. 65)"
-								value={index}
-								onChange={(e) => setIndex(e.target.value)}
-							/>
-						</Col>
-						<Col xs={24} md={8}>
-							<Button block onClick={onFetchByIndex} loading={loading}>
-								Fetch by Index
-							</Button>
-						</Col>
-					</Row>
 					<Text type="secondary">
 						The endpoint requires login. Please login first if you receive Unauthorized.
 					</Text>

@@ -888,6 +888,19 @@ async def api_lighter_order_books():
     except Exception as e:
         return jsonify({"status": False, "message": str(e)}), 200
 
+@app.route('/api/lighter/config')
+async def api_lighter_config():
+    try:
+        # Expose minimal safe config needed by frontend
+        return jsonify({
+            "status": True,
+            "data": {
+                "l1_address": os.getenv("LIGHTER_L1_ADDRESS", "")
+            }
+        })
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
+
 @app.route('/api/lighter/recent_trades')
 async def api_lighter_recent_trades():
     try:
