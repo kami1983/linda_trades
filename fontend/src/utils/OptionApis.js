@@ -331,9 +331,16 @@ const lighterAccountByIndex = (index) => {
 }
 
 // Lighter: get account inactive orders
-const lighterAccountInactiveOrders = (accountIndex, index = 0, limit = 50) => {
+const lighterAccountInactiveOrders = (accountIndex, cursor = undefined, limit = 50) => {
   return new Promise((resolve, reject) => {
-    const url = `${apiHost}/api/lighter/account_inactive_orders?account_index=${encodeURIComponent(accountIndex)}&index=${encodeURIComponent(index)}&limit=${encodeURIComponent(limit)}`;
+    const params = new URLSearchParams();
+    params.set('account_index', String(accountIndex));
+    if (cursor !== undefined && cursor !== null && cursor !== '' && cursor !== 0) {
+      // use 'cursor' param for pagination if provided
+      params.set('cursor', String(cursor));
+    }
+    params.set('limit', String(limit));
+    const url = `${apiHost}/api/lighter/account_inactive_orders?${params.toString()}`;
     fetch(url, {
       method: "GET",
       credentials: "include"

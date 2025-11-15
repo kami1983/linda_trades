@@ -966,15 +966,29 @@ async def api_lighter_account_inactive_orders(user_data):
         if cursor_param_raw is None or cursor_param_raw == '':
             cursor_param_raw = request.args.get('index')
         limit_str = request.args.get('limit') or '50'
+        # Normalize cursor: treat '0' / 'null' / '' as None (first page should omit cursor)
         cursor_val_str = None
-        if cursor_param_raw is not None and cursor_param_raw != '':
-            # Keep as string for SDKs that require string cursor; numeric strings are fine
-            cursor_val_str = str(cursor_param_raw)
+        if cursor_param_raw is not None:
+            raw = str(cursor_param_raw).strip().lower()
+            if raw not in ['', '0', 'null', 'none']:
+                cursor_val_str = str(cursor_param_raw)
         limit = int(limit_str)
         data = await lighter_account_inactive_orders(account_index=account_index, cursor=cursor_val_str, limit=limit)
         return jsonify({"status": True, "data": _jsonable(data)})
     except Exception as e:
-        return jsonify({"status": False, "message": str(e)}), 200
+        return jsonify({
+            "status": False,
+            "message": str(e),
+            "debug": {
+                "req_account_index": account_index_str,
+                "req_cursor": request.args.get('cursor'),
+                "req_index": request.args.get('index'),
+                "normalized_cursor": cursor_val_str,
+                "limit": request.args.get('limit'),
+                "server_account_index": os.getenv("LIGHTER_ACCOUNT_INDEX", ""),
+                "server_api_key_index": os.getenv("LIGHTER_API_KEY_INDEX", "")
+            }
+        }), 200
 
 # Signer endpoints
 @app.route('/api/lighter/signer/create_order', methods=['POST'])

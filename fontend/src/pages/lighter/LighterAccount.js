@@ -57,7 +57,7 @@ const LighterAccount = () => {
 					if (accIndex !== undefined && accIndex !== null) {
 						const idxStr = String(accIndex);
 						setIndex(idxStr);
-						const ordersRes = await lighterAccountInactiveOrders(parseInt(idxStr, 10), 0, 50);
+						const ordersRes = await lighterAccountInactiveOrders(parseInt(idxStr, 10), undefined, 50);
 						if (ordersRes && ordersRes.status) {
 							const list = Array.isArray(ordersRes.data?.orders) ? ordersRes.data.orders : (ordersRes.data || []);
 							setOrders(list);
@@ -234,7 +234,7 @@ const LighterAccount = () => {
 											// Refresh list
 											if (index) {
 												const idx = parseInt(index, 10);
-												const ordersRes = await lighterAccountInactiveOrders(idx, 0, 50);
+												const ordersRes = await lighterAccountInactiveOrders(idx, undefined, 50);
 												if (ordersRes && ordersRes.status) {
 													const list = Array.isArray(ordersRes.data?.orders) ? ordersRes.data.orders : (ordersRes.data || []);
 													setOrders(list);
