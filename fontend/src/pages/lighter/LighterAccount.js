@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Button, Typography, Space, Spin, Alert, Row, Col, Table, Descriptions, Collapse } from 'antd';
-import { lighterAccountByL1, lighterAccountByIndex, lighterAccountInactiveOrders, lighterSignerCancelOrder, lighterSignerCancelAllOrders } from '../../utils/OptionApis';
+import { lighterAccountByL1, lighterAccountByIndex, lighterAccountInactiveOrders, lighterOpenOrders, lighterSignerCancelOrder, lighterSignerCancelAllOrders } from '../../utils/OptionApis';
 
 const { Text } = Typography;
 
@@ -13,6 +13,7 @@ const LighterAccount = () => {
 	const [data, setData] = useState(null);
 	const [config, setConfig] = useState(null);
 	const [orders, setOrders] = useState([]);
+	const [openOrders, setOpenOrders] = useState([]);
 	const [acting, setActing] = useState(false);
 	const getAccountObject = (payload) => {
 		if (!payload) return null;
@@ -63,6 +64,17 @@ const LighterAccount = () => {
 							setOrders(list);
 						} else {
 							setOrders([]);
+						}
+						// fetch active (open) orders
+						try {
+							const openRes = await lighterOpenOrders(parseInt(idxStr, 10));
+							if (openRes && openRes.status) {
+								setOpenOrders(Array.isArray(openRes.data) ? openRes.data : []);
+							} else {
+								setOpenOrders([]);
+							}
+						} catch {
+							setOpenOrders([]);
 						}
 					}
 				} catch {
@@ -140,12 +152,23 @@ const LighterAccount = () => {
 													try {
 														setIndex(String(r.index));
 														setLoading(true);
-														const ordersRes = await lighterAccountInactiveOrders(Number(r.index), 0, 50);
+													const ordersRes = await lighterAccountInactiveOrders(Number(r.index), undefined, 50);
 														if (ordersRes && ordersRes.status) {
 															const list = Array.isArray(ordersRes.data?.orders) ? ordersRes.data.orders : (ordersRes.data || []);
 															setOrders(list);
 														} else {
 															setOrders([]);
+														}
+														// refresh active too
+														try {
+															const openRes = await lighterOpenOrders(Number(r.index));
+															if (openRes && openRes.status) {
+																setOpenOrders(Array.isArray(openRes.data) ? openRes.data : []);
+															} else {
+																setOpenOrders([]);
+															}
+														} catch {
+															setOpenOrders([]);
 														}
 													} finally {
 														setLoading(false);
@@ -172,39 +195,9 @@ const LighterAccount = () => {
 				);
 			})()}
 			{(index && String(index).length > 0) && (
-				<Card title="Inactive Orders" style={{ marginTop: 16 }}>
-					<div style={{ marginBottom: 12 }}>
-						<Space>
-							<Button
-								danger
-								onClick={async () => {
-									try {
-										setActing(true);
-										// default IOC for cancel all
-										await lighterSignerCancelAllOrders(undefined);
-										// refresh orders after action
-										if (index) {
-											const idx = parseInt(index, 10);
-											const ordersRes = await lighterAccountInactiveOrders(idx, 0, 50);
-											if (ordersRes && ordersRes.status) {
-												const list = Array.isArray(ordersRes.data?.orders) ? ordersRes.data.orders : (ordersRes.data || []);
-												setOrders(list);
-											}
-										}
-									} catch (e) {
-										// ignore UI error handling here
-									} finally {
-										setActing(false);
-									}
-								}}
-								loading={acting}
-							>
-								Cancel All Orders
-							</Button>
-						</Space>
-					</div>
+				<Card title="Active Orders" style={{ marginTop: 16 }}>
 					<Table
-						dataSource={orders || []}
+						dataSource={openOrders || []}
 						rowKey={(row, idx) => row?.id || row?.order_id || row?.client_order_index || idx}
 						pagination={{ pageSize: 10 }}
 						columns={[
@@ -231,17 +224,16 @@ const LighterAccount = () => {
 											const marketIndex = r?.market_id ?? r?.marketId;
 											const orderIndex = r?.client_order_index ?? r?.clientOrderIndex;
 											await lighterSignerCancelOrder(marketIndex, orderIndex);
-											// Refresh list
+											// Refresh
 											if (index) {
 												const idx = parseInt(index, 10);
-												const ordersRes = await lighterAccountInactiveOrders(idx, undefined, 50);
-												if (ordersRes && ordersRes.status) {
-													const list = Array.isArray(ordersRes.data?.orders) ? ordersRes.data.orders : (ordersRes.data || []);
-													setOrders(list);
+												const openRes = await lighterOpenOrders(idx);
+												if (openRes && openRes.status) {
+													setOpenOrders(Array.isArray(openRes.data) ? openRes.data : []);
 												}
 											}
 										} catch (e) {
-											// ignore UI error handling here
+											// ignore
 										} finally {
 											setActing(false);
 										}
@@ -251,6 +243,65 @@ const LighterAccount = () => {
 									Cancel
 								</Button>
 							) },
+						]}
+					/>
+				</Card>
+			)}
+			{(index && String(index).length > 0) && (
+				<Card title="Order History (inactive)" style={{ marginTop: 16 }}>
+					<Table
+						dataSource={orders || []}
+						rowKey={(row, idx) => row?.id || row?.order_id || row?.client_order_index || idx}
+						pagination={{ pageSize: 10 }}
+						columns={[
+							{ title: 'Market', dataIndex: 'market_id', key: 'market_id', render: (v, r) => v ?? r?.marketId ?? '-' },
+							{ title: 'ClientOrderIdx', dataIndex: 'client_order_index', key: 'client_order_index', render: (v, r) => v ?? r?.clientOrderIndex ?? '-' },
+							{ title: 'Side', dataIndex: 'is_ask', key: 'is_ask', render: (v, r) => (v ?? r?.isAsk) ? 'sell' : 'buy' },
+							{ title: 'Price', dataIndex: 'price', key: 'price', render: (v, r) => (v ?? r?.price) ?? '-' },
+							{ title: 'Base Amount', dataIndex: 'base_amount', key: 'base_amount', render: (v, r) => (v ?? r?.baseAmount) ?? '-' },
+							{ title: 'Status', dataIndex: 'status', key: 'status', render: (v) => v ?? '-' },
+							{ title: 'Timestamp', dataIndex: 'timestamp', key: 'timestamp', render: (v, r) => {
+								const ts = (v ?? r?.created_at ?? r?.createdAt);
+								if (!ts) return '-';
+								const num = typeof ts === 'string' ? parseInt(ts, 10) : ts;
+								if (Number.isNaN(num)) return String(ts);
+								return new Date(num * (num > 1e12 ? 1 : 1000)).toLocaleString();
+							}},
+							{ title: 'Action', key: 'action', render: (_, r) => {
+								const st = r?.status;
+								const active = st === 'open' || st === 'new' || st === 'working' || st === 'pending' || st === 'partially-filled';
+								if (!active) return null;
+								return (
+									<Button
+										size="small"
+										danger
+										onClick={async () => {
+											try {
+												setActing(true);
+												const marketIndex = r?.market_id ?? r?.marketId;
+												const orderIndex = r?.client_order_index ?? r?.clientOrderIndex;
+												await lighterSignerCancelOrder(marketIndex, orderIndex);
+												// Refresh list
+												if (index) {
+													const idx = parseInt(index, 10);
+													const ordersRes = await lighterAccountInactiveOrders(idx, undefined, 50);
+													if (ordersRes && ordersRes.status) {
+														const list = Array.isArray(ordersRes.data?.orders) ? ordersRes.data.orders : (ordersRes.data || []);
+														setOrders(list);
+													}
+												}
+											} catch (e) {
+												// ignore
+											} finally {
+												setActing(false);
+											}
+										}}
+										loading={acting}
+									>
+										Cancel
+									</Button>
+								);
+							} },
 						]}
 					/>
 				</Card>

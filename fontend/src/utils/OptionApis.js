@@ -448,6 +448,35 @@ const lighterSignerCancelAllOrders = (timeInForce) => {
   });
 }
 
+// Lighter: get active/open orders (from WS cache)
+const lighterOpenOrders = (accountIndex) => {
+  return new Promise((resolve, reject) => {
+    const params = new URLSearchParams();
+    params.set('account_index', String(accountIndex));
+    const url = `${apiHost}/api/lighter/open_orders?${params.toString()}`;
+    fetch(url, {
+      method: "GET",
+      credentials: "include"
+    })
+      .then(response => {
+        if (response.status === 401) {
+          alert('Please login first');
+          reject('Unauthorized');
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      })
+      .catch(err => reject(err));
+  });
+}
+
 export { 
   reduceMargin,
   addMargin,
@@ -464,6 +493,7 @@ export {
   lighterAccountByL1,
   lighterAccountByIndex,
   lighterAccountInactiveOrders,
+  lighterOpenOrders,
   lighterSignerCreateOrder,
   lighterSignerCancelOrder,
   lighterSignerCancelAllOrders

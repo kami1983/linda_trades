@@ -21,6 +21,7 @@ import sys
 
 from libs.units.unitls import getCrrrentTime, selectOptions
 from libs.exchange.lighter_client import lighter_order_books, lighter_recent_trades, lighter_send_tx, lighter_account_by_l1_address, lighter_account_by_index, lighter_account_inactive_orders
+from libs.exchange.lighter_ws import get_open_orders_cached, ensure_ws_started
 from libs.exchange.lighter_signer import signer_create_order, signer_cancel_order, signer_cancel_all_orders
 
 APP_PORT = os.getenv('APP_PORT', 5000)
@@ -989,6 +990,23 @@ async def api_lighter_account_inactive_orders(user_data):
                 "server_api_key_index": os.getenv("LIGHTER_API_KEY_INDEX", "")
             }
         }), 200
+
+@app.route('/api/lighter/open_orders')
+@login_required
+async def api_lighter_open_orders(user_data):
+    """
+    Return cached active/open orders for given account index (via WS). First request starts WS consumer.
+    """
+    try:
+        account_index_str = request.args.get('account_index')
+        if account_index_str is None or account_index_str == '':
+            return jsonify({"status": False, "message": "account_index is required"}), 400
+        account_index = int(account_index_str)
+        await ensure_ws_started()
+        orders = await get_open_orders_cached(account_index)
+        return jsonify({"status": True, "data": orders})
+    except Exception as e:
+        return jsonify({"status": False, "message": str(e)}), 200
 
 # Signer endpoints
 @app.route('/api/lighter/signer/create_order', methods=['POST'])
