@@ -13,6 +13,9 @@ _subscribed_ids: set[int] = set()
 _lock = asyncio.Lock()
 _account_payloads: Dict[int, Any] = {}
 _account_open_orders: Dict[int, List[Dict[str, Any]]] = {}
+_orders_ws_tasks: Dict[int, asyncio.Task] = {}
+_open_orders_by_market: Dict[int, Dict[str, List[Dict[str, Any]]]] = {}
+_orders_ws_tasks_by_market: Dict[int, Dict[int, asyncio.Task]] = {}
 
 
 def _import_lighter():
@@ -123,6 +126,30 @@ async def _run_ws(account_ids: List[int]):
 		# Best-effort cache update; no await inside sync callback
 		_account_payloads[acc_id] = account
 		_account_open_orders[acc_id] = orders
+		# Auto-discover markets from positions and ensure per-market orders subscription
+		try:
+			pos = None
+			if isinstance(account, dict):
+				pos = account.get("positions") or (account.get("data") and account.get("data").get("positions"))
+			else:
+				if hasattr(account, "positions"):
+					pos = getattr(account, "positions")
+			if pos:
+				market_ids: List[int] = []
+				if isinstance(pos, dict):
+					for k, v in pos.items():
+						try:
+							market_ids.append(int(v.get("market_id") if isinstance(v, dict) else int(k)))
+						except Exception:
+							continue
+				# Fire-and-forget ensure
+				for mid in market_ids:
+					try:
+						asyncio.create_task(ensure_orders_for_market(acc_id, mid))
+					except Exception:
+						continue
+		except Exception:
+			pass
 
 	# Try to attach auth token for private account streams
 	auth_token = None
@@ -220,4 +247,172 @@ async def get_account_snapshot(account_index: int) -> Any:
 	await ensure_ws_started()
 	payload = _account_payloads.get(account_index)
 	return _to_jsonable(payload)
+
+
+# ----------------------------
+# Orders detail subscription (account_all_orders)
+# ----------------------------
+import json
+import websockets
+
+def _ws_url() -> str:
+	base = os.getenv("LIGHTER_BASE_URL", "https://mainnet.zklighter.elliot.ai")
+	return base.replace("https://", "wss://").rstrip("/") + "/stream"
+
+def _is_open_order(status: Optional[str]) -> bool:
+	if not status:
+		return False
+	s = str(status).lower()
+	return s in ("open", "new", "working", "pending", "partially-filled", "partially_filled")
+
+async def _orders_ws_loop(account_index: int):
+	from libs.exchange.lighter_signer import get_auth_token
+	url = _ws_url()
+	backoff = 1
+	while True:
+		try:
+			auth = await get_auth_token()
+			async with websockets.connect(url) as ws:
+				# Drain hello
+				try:
+					await ws.recv()
+				except Exception:
+					pass
+				# Subscribe account_all_orders/{ACCOUNT_ID}
+				sub_msg = {
+					"type": "subscribe",
+					"channel": f"account_all_orders/{account_index}",
+					"auth": auth,
+				}
+				await ws.send(json.dumps(sub_msg))
+				# Read loop
+				while True:
+					msg = await ws.recv()
+					data = None
+					try:
+						data = json.loads(msg)
+					except Exception:
+						continue
+					if not isinstance(data, dict):
+						continue
+					orders_by_market = data.get("orders") or {}
+					if isinstance(orders_by_market, dict):
+						# Merge per-market to avoid dropping markets on partial updates
+						acc_map = _open_orders_by_market.get(account_index) or {}
+						for _, arr in orders_by_market.items():
+							if isinstance(arr, list):
+								# infer market id from items if present
+								market_list: List[Dict[str, Any]] = []
+								for it in arr:
+									try:
+										if hasattr(it, "model_dump"):
+											d = it.model_dump()
+										elif hasattr(it, "to_dict"):
+											d = it.to_dict()
+										elif isinstance(it, dict):
+											d = it
+										else:
+											continue
+										if _is_open_order(d.get("status")):
+											market_list.append(d)
+									except Exception:
+										continue
+								# store by market (use market_index or symbol as key)
+								mkey = None
+								if len(market_list) > 0:
+									mkey = market_list[0].get("market_index") or market_list[0].get("marketId") or "unknown"
+								else:
+									# empty list for this market, keep empty to clear it
+									mkey = "unknown"
+								acc_map[str(mkey)] = market_list
+						_open_orders_by_market[account_index] = acc_map
+						# Recompute flat
+						flat: List[Dict[str, Any]] = []
+						for ml in acc_map.values():
+							flat.extend(ml)
+						_account_open_orders[account_index] = flat
+				# end while
+		except asyncio.CancelledError:
+			break
+		except Exception:
+			# reconnect with backoff
+			await asyncio.sleep(backoff)
+			backoff = min(backoff * 2, 30)
+
+async def ensure_orders_for_account(account_index: int):
+	async with _lock:
+		task = _orders_ws_tasks.get(account_index)
+		if task and not task.done():
+			return
+		t = asyncio.create_task(_orders_ws_loop(account_index))
+		_orders_ws_tasks[account_index] = t
+
+async def _orders_ws_loop_market(account_index: int, market_index: int):
+	from libs.exchange.lighter_signer import get_auth_token
+	url = _ws_url()
+	backoff = 1
+	while True:
+		try:
+			auth = await get_auth_token()
+			async with websockets.connect(url) as ws:
+				# Drain hello
+				try:
+					await ws.recv()
+				except Exception:
+					pass
+				# Subscribe account_orders/{MARKET_INDEX}/{ACCOUNT_ID}
+				sub_msg = {
+					"type": "subscribe",
+					"channel": f"account_orders/{market_index}/{account_index}",
+					"auth": auth,
+				}
+				await ws.send(json.dumps(sub_msg))
+				while True:
+					msg = await ws.recv()
+					try:
+						data = json.loads(msg)
+					except Exception:
+						continue
+					orders_by_market = data.get("orders") or {}
+					if isinstance(orders_by_market, dict):
+						acc_map = _open_orders_by_market.get(account_index) or {}
+						mlist = []
+						for _, arr in orders_by_market.items():
+							if isinstance(arr, list):
+								for it in arr:
+                                    # normalize
+									try:
+										if hasattr(it, "model_dump"):
+											d = it.model_dump()
+										elif hasattr(it, "to_dict"):
+											d = it.to_dict()
+										elif isinstance(it, dict):
+											d = it
+										else:
+											continue
+										if _is_open_order(d.get("status")):
+											mlist.append(d)
+									except Exception:
+										continue
+						acc_map[str(market_index)] = mlist
+						_open_orders_by_market[account_index] = acc_map
+						flat: List[Dict[str, Any]] = []
+						for ml in acc_map.values():
+							flat.extend(ml)
+						_account_open_orders[account_index] = flat
+		except asyncio.CancelledError:
+			break
+		except Exception:
+			await asyncio.sleep(backoff)
+			backoff = min(backoff * 2, 30)
+
+async def ensure_orders_for_market(account_index: int, market_index: int):
+	async with _lock:
+		acc_map = _orders_ws_tasks_by_market.get(account_index) or {}
+		task = acc_map.get(market_index)
+		if task and not task.done():
+			return
+		t = asyncio.create_task(_orders_ws_loop_market(account_index, market_index))
+		acc_map[market_index] = t
+		_orders_ws_tasks_by_market[account_index] = acc_map
 

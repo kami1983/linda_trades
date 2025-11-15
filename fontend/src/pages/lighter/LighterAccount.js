@@ -15,6 +15,28 @@ const LighterAccount = () => {
 	const [orders, setOrders] = useState([]);
 	const [openOrders, setOpenOrders] = useState([]);
 	const [wsSnapshot, setWsSnapshot] = useState(null);
+	const getOpenCountFromSnapshot = (snap) => {
+		try {
+			if (!snap) return 0;
+			const pos = snap.positions || (snap.data && snap.data.positions);
+			if (!pos) return 0;
+			let sum = 0;
+			if (Array.isArray(pos)) {
+				for (const p of pos) {
+					const c = Number(p?.open_order_count || 0);
+					if (!Number.isNaN(c)) sum += c;
+				}
+			} else if (typeof pos === 'object') {
+				for (const k of Object.keys(pos)) {
+					const c = Number(pos[k]?.open_order_count || 0);
+					if (!Number.isNaN(c)) sum += c;
+				}
+			}
+			return sum;
+		} catch {
+			return 0;
+		}
+	};
 	const [acting, setActing] = useState(false);
 	const getAccountObject = (payload) => {
 		if (!payload) return null;
@@ -74,6 +96,13 @@ const LighterAccount = () => {
 							} else {
 								setOpenOrders([]);
 							}
+							// also fetch WS snapshot to compute open count
+							try {
+								const snapRes = await lighterWsAccountSnapshot(parseInt(idxStr, 10));
+								if (snapRes && snapRes.status) {
+									setWsSnapshot(snapRes.data || null);
+								}
+							} catch {}
 						} catch {
 							setOpenOrders([]);
 						}
@@ -168,6 +197,10 @@ const LighterAccount = () => {
 															} else {
 																setOpenOrders([]);
 															}
+															const snapRes = await lighterWsAccountSnapshot(Number(r.index));
+															if (snapRes && snapRes.status) {
+																setWsSnapshot(snapRes.data || null);
+															}
 														} catch {
 															setOpenOrders([]);
 														}
@@ -196,7 +229,7 @@ const LighterAccount = () => {
 				);
 			})()}
 			{(index && String(index).length > 0) && (
-				<Card title="Active Orders" style={{ marginTop: 16 }}
+				<Card title={`Active Orders${wsSnapshot ? ` (${getOpenCountFromSnapshot(wsSnapshot)})` : ''}`} style={{ marginTop: 16 }}
 					extra={
 						<Button size="small" onClick={async () => {
 							try {

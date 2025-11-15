@@ -12,6 +12,7 @@ from libs.units.iv import bsmOptionPrice, calculateIvData, extractIvData, handle
 from quart import Quart, jsonify, request, make_response
 # from flask_cors import CORS
 from quart_cors import cors
+import logging
 import traceback
 import jwt
 from functools import wraps
@@ -21,7 +22,7 @@ import sys
 
 from libs.units.unitls import getCrrrentTime, selectOptions
 from libs.exchange.lighter_client import lighter_order_books, lighter_recent_trades, lighter_send_tx, lighter_account_by_l1_address, lighter_account_by_index, lighter_account_inactive_orders
-from libs.exchange.lighter_ws import get_open_orders_cached, ensure_ws_started, ensure_ws_for_account, get_account_snapshot
+from libs.exchange.lighter_ws import get_open_orders_cached, ensure_ws_started, ensure_ws_for_account, get_account_snapshot, ensure_orders_for_account
 from libs.exchange.lighter_signer import signer_create_order, signer_cancel_order, signer_cancel_all_orders
 
 APP_PORT = os.getenv('APP_PORT', 5000)
@@ -35,6 +36,19 @@ app = Quart(__name__)
 app = cors(app, 
            allow_origin=CORS_ORIGIN,  # 设置前端地址
            allow_credentials=True)  # 允许携带 cookie 或凭据
+
+# Reduce noisy DEBUG logs from third-party libs
+for _name in (
+    "asyncio",
+    "ccxt",
+    "ccxt.base.exchange",
+    "websockets",
+    "websockets.client",
+):
+    try:
+        logging.getLogger(_name).setLevel(logging.WARNING)
+    except Exception:
+        pass
 
 
 # Secret key for JWT
@@ -1002,7 +1016,8 @@ async def api_lighter_open_orders(user_data):
         if account_index_str is None or account_index_str == '':
             return jsonify({"status": False, "message": "account_index is required"}), 400
         account_index = int(account_index_str)
-        await ensure_ws_for_account(account_index)
+        await ensure_ws_for_account(account_index)  # keep account_all for counts
+        await ensure_orders_for_account(account_index)  # start account_all_orders details
         orders = await get_open_orders_cached(account_index)
         return jsonify({"status": True, "data": orders})
     except Exception as e:
