@@ -1,4 +1,5 @@
 import os
+import time
 from typing import Any, Tuple, Optional
 
 from dotenv import load_dotenv
@@ -33,6 +34,38 @@ def _create_signer():
 		api_key_index=int(api_key_index),
 	)
 	return lighter, client
+
+
+_AUTH_CACHE: dict[str, Any] = {
+	"token": None,
+	"expires_at": 0,
+}
+
+async def get_auth_token(ttl_seconds: int = 600) -> str:
+	"""
+	Generate (and cache) an auth token for private API calls.
+	"""
+	now = int(time.time())
+	token = _AUTH_CACHE.get("token")
+	expires_at = int(_AUTH_CACHE.get("expires_at") or 0)
+	if token and now < expires_at - 30:
+		return str(token)
+
+	lighter, client = _create_signer()
+	try:
+		# SDK exposes default expiry constant; returns (token, err)
+		expiry = getattr(lighter.SignerClient, "DEFAULT_10_MIN_AUTH_EXPIRY", ttl_seconds)  # type: ignore[attr-defined]
+		auth_token, err = client.create_auth_token_with_expiry(expiry)  # type: ignore[attr-defined]
+		if err is not None:
+			raise Exception(err)
+		_AUTH_CACHE["token"] = auth_token
+		_AUTH_CACHE["expires_at"] = now + int(ttl_seconds)
+		return str(auth_token)
+	finally:
+		try:
+			await client.close()
+		except Exception:
+			pass
 
 
 async def signer_create_order(

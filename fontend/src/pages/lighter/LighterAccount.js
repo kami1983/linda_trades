@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Button, Typography, Space, Spin, Alert, Row, Col, Table, Descriptions, Tag, Collapse } from 'antd';
+import { Card, Button, Typography, Space, Spin, Alert, Row, Col, Table, Descriptions, Collapse } from 'antd';
 import { lighterAccountByL1, lighterAccountByIndex, lighterAccountInactiveOrders, lighterSignerCancelOrder, lighterSignerCancelAllOrders } from '../../utils/OptionApis';
 
 const { Text } = Typography;
@@ -18,6 +18,10 @@ const LighterAccount = () => {
 		if (payload.accounts && Array.isArray(payload.accounts) && payload.accounts.length > 0) return payload.accounts[0];
 		if (payload.account) return payload.account;
 		return payload;
+	};
+	const getSubAccounts = (payload) => {
+		if (payload && Array.isArray(payload.sub_accounts)) return payload.sub_accounts;
+		return [];
 	};
 	const toNumber = (v) => {
 		if (v === null || v === undefined) return '-';
@@ -44,9 +48,10 @@ const LighterAccount = () => {
 				setData(res.data);
 				// try to derive account index from response and fetch orders
 				try {
-					const first =
+					let first =
 						(res.data && res.data.accounts && res.data.accounts[0]) ? res.data.accounts[0] :
-						(res.data && res.data.account) ? res.data.account : null;
+						(res.data && res.data.account) ? res.data.account :
+						(res.data && Array.isArray(res.data.sub_accounts) && res.data.sub_accounts.length > 0) ? res.data.sub_accounts[0] : null;
 					const accIndex = first?.account_index ?? first?.index ?? res.data?.account_index ?? res.data?.index;
 					if (accIndex !== undefined && accIndex !== null) {
 						const idxStr = String(accIndex);
@@ -105,35 +110,56 @@ const LighterAccount = () => {
 			{loading && <Spin size="large" />}
 			{error && <Alert message={error} type="error" showIcon style={{ marginBottom: 16 }} />}
 			{data && (() => {
-				const acc = getAccountObject(data);
+				const subs = getSubAccounts(data);
 				return (
 					<Card title="Account Overview" style={{ marginBottom: 16 }}>
 						<Descriptions bordered size="small" column={{ xs: 1, sm: 2, md: 3 }}>
-							<Descriptions.Item label="Account Index">{acc?.account_index ?? acc?.index ?? '-'}</Descriptions.Item>
-							<Descriptions.Item label="L1 Address">{acc?.l1_address ?? '-'}</Descriptions.Item>
-							<Descriptions.Item label="Account Type">{acc?.account_type ?? '-'}</Descriptions.Item>
-							<Descriptions.Item label="Status">
-								{acc?.status !== undefined ? <Tag color={acc.status === 0 ? 'green' : 'blue'}>{acc.status}</Tag> : '-'}
-							</Descriptions.Item>
-							<Descriptions.Item label="Collateral">{fmtNum(acc?.collateral)}</Descriptions.Item>
-							<Descriptions.Item label="Available">{fmtNum(acc?.available_balance)}</Descriptions.Item>
-							<Descriptions.Item label="Total Asset">{fmtNum(acc?.total_asset_value)}</Descriptions.Item>
-							<Descriptions.Item label="Cross Asset">{fmtNum(acc?.cross_asset_value)}</Descriptions.Item>
-							<Descriptions.Item label="Pending Orders">{acc?.pending_order_count ?? '-'}</Descriptions.Item>
-							<Descriptions.Item label="Total Orders">{acc?.total_order_count ?? '-'}</Descriptions.Item>
-							<Descriptions.Item label="Isolated Orders">{acc?.total_isolated_order_count ?? '-'}</Descriptions.Item>
-							<Descriptions.Item label="Cancel All Time">{acc?.cancel_all_time ?? '-'}</Descriptions.Item>
+							<Descriptions.Item label="L1 Address">{data?.l1_address ?? '-'}</Descriptions.Item>
+							<Descriptions.Item label="Sub Accounts">{subs.length}</Descriptions.Item>
 						</Descriptions>
-						<div style={{ marginTop: 12 }}>
-							<Text type="secondary">
-								Positions: {Array.isArray(acc?.positions) ? acc.positions.length : 0} | Shares: {Array.isArray(acc?.shares) ? acc.shares.length : 0}
-							</Text>
-						</div>
+						{subs.length > 0 && (
+							<div style={{ marginTop: 12 }}>
+								<Table
+									size="small"
+									dataSource={subs}
+									rowKey={(row, idx) => row?.index ?? idx}
+									pagination={false}
+									columns={[
+										{ title: 'Type', dataIndex: 'account_type', key: 'account_type' },
+										{ title: 'Index', dataIndex: 'index', key: 'index' },
+										{ title: 'Collateral', dataIndex: 'collateral', key: 'collateral', render: (v) => fmtNum(v) },
+										{ title: 'Available', dataIndex: 'available_balance', key: 'available_balance', render: (v) => fmtNum(v) },
+										{ title: 'Action', key: 'action', render: (_, r) => (
+											<Button
+												size="small"
+												onClick={async () => {
+													try {
+														setIndex(String(r.index));
+														setLoading(true);
+														const ordersRes = await lighterAccountInactiveOrders(Number(r.index), 0, 50);
+														if (ordersRes && ordersRes.status) {
+															const list = Array.isArray(ordersRes.data?.orders) ? ordersRes.data.orders : (ordersRes.data || []);
+															setOrders(list);
+														} else {
+															setOrders([]);
+														}
+													} finally {
+														setLoading(false);
+													}
+												}}
+											>
+												View Orders
+											</Button>
+										) },
+									]}
+								/>
+							</div>
+						)}
 						<div style={{ marginTop: 12 }}>
 							<Collapse>
 								<Collapse.Panel header="Raw JSON (debug)" key="raw">
 									<pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
-{JSON.stringify(acc, null, 2)}
+{JSON.stringify(data, null, 2)}
 									</pre>
 								</Collapse.Panel>
 							</Collapse>

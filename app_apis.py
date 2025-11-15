@@ -959,11 +959,17 @@ async def api_lighter_account_inactive_orders(user_data):
         if account_index_str is None or account_index_str == '':
             return jsonify({"status": False, "message": "account_index is required"}), 400
         account_index = int(account_index_str)
-        index_str = request.args.get('index') or '0'
+        # Support both 'cursor' and legacy 'index'
+        cursor_param_raw = request.args.get('cursor')
+        if cursor_param_raw is None or cursor_param_raw == '':
+            cursor_param_raw = request.args.get('index')
         limit_str = request.args.get('limit') or '50'
-        index = int(index_str)
+        cursor_val_str = None
+        if cursor_param_raw is not None and cursor_param_raw != '':
+            # Keep as string for SDKs that require string cursor; numeric strings are fine
+            cursor_val_str = str(cursor_param_raw)
         limit = int(limit_str)
-        data = await lighter_account_inactive_orders(account_index=account_index, index=index, limit=limit)
+        data = await lighter_account_inactive_orders(account_index=account_index, cursor=cursor_val_str, limit=limit)
         return jsonify({"status": True, "data": _jsonable(data)})
     except Exception as e:
         return jsonify({"status": False, "message": str(e)}), 200

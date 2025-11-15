@@ -123,7 +123,7 @@ async def lighter_account_by_index(index: int) -> Any:
 			pass
 
 
-async def lighter_account_inactive_orders(account_index: int, index: int = 0, limit: int = 50) -> Any:
+async def lighter_account_inactive_orders(account_index: int, cursor: str | None = None, limit: int = 50) -> Any:
 	"""
 	Fetch historical (inactive) orders for an account.
 	"""
@@ -131,8 +131,39 @@ async def lighter_account_inactive_orders(account_index: int, index: int = 0, li
 	client = _create_client()
 	try:
 		order_api = lighter.OrderApi(client)  # type: ignore[attr-defined]
-		# OpenAPI usually uses pagination with index/limit
-		return await order_api.account_inactive_orders(account_index=account_index, index=index, limit=limit)  # type: ignore[func-returns-value]
+		# Auth token required for private account endpoints
+		try:
+			from libs.exchange.lighter_signer import get_auth_token  # local import to avoid cycles
+			auth_token = await get_auth_token()
+		except Exception:
+			auth_token = None
+		# Some versions accept cursor (string)/limit, others support index(int)/limit or no pagination args.
+		try:
+			if cursor is None:
+				if auth_token:
+					return await order_api.account_inactive_orders(account_index=account_index, limit=limit, auth=auth_token)  # type: ignore[func-returns-value]
+				return await order_api.account_inactive_orders(account_index=account_index, limit=limit)  # type: ignore[func-returns-value]
+			# Try 'cursor'
+			if auth_token:
+				return await order_api.account_inactive_orders(account_index=account_index, cursor=cursor, limit=limit, auth=auth_token)  # type: ignore[func-returns-value]
+			return await order_api.account_inactive_orders(account_index=account_index, cursor=cursor, limit=limit)  # type: ignore[func-returns-value]
+		except TypeError:
+			# Fallback: try with 'index' if SDK expects it
+			try:
+				if cursor is None:
+					if auth_token:
+						return await order_api.account_inactive_orders(account_index=account_index, limit=limit, auth=auth_token)  # type: ignore[func-returns-value]
+					return await order_api.account_inactive_orders(account_index=account_index, limit=limit)  # type: ignore[func-returns-value]
+				# attempt int conversion for index-based pagination
+				cursor_index = int(cursor)
+				if auth_token:
+					return await order_api.account_inactive_orders(account_index=account_index, index=cursor_index, limit=limit, auth=auth_token)  # type: ignore[func-returns-value]
+				return await order_api.account_inactive_orders(account_index=account_index, index=cursor_index, limit=limit)  # type: ignore[func-returns-value]
+			except Exception:
+				# As a last resort, call without any pagination arg
+				if auth_token:
+					return await order_api.account_inactive_orders(account_index=account_index, auth=auth_token)  # type: ignore[func-returns-value]
+				return await order_api.account_inactive_orders(account_index=account_index)  # type: ignore[func-returns-value]
 	finally:
 		try:
 			await client.close()
