@@ -11,6 +11,7 @@ const LighterAccount = () => {
 	const [index, setIndex] = useState('');
 	const [error, setError] = useState(null);
 	const [data, setData] = useState(null);
+	const [config, setConfig] = useState(null);
 	const [orders, setOrders] = useState([]);
 	const [acting, setActing] = useState(false);
 	const getAccountObject = (payload) => {
@@ -84,6 +85,7 @@ const LighterAccount = () => {
 				setLoading(true);
 				const res = await fetch(`${apiHost}/api/lighter/config`, { credentials: 'include' });
 				const json = await res.json();
+				setConfig(json?.data || null);
 				const serverL1 = json?.data?.l1_address;
 				if (serverL1) {
 					setAddress(serverL1);
@@ -116,6 +118,8 @@ const LighterAccount = () => {
 						<Descriptions bordered size="small" column={{ xs: 1, sm: 2, md: 3 }}>
 							<Descriptions.Item label="L1 Address">{data?.l1_address ?? '-'}</Descriptions.Item>
 							<Descriptions.Item label="Sub Accounts">{subs.length}</Descriptions.Item>
+							<Descriptions.Item label="API Key Index">{config?.api_key_index ?? '-'}</Descriptions.Item>
+							<Descriptions.Item label="API Key Public Key" span={3}>{config?.api_key_public_key ?? '-'}</Descriptions.Item>
 						</Descriptions>
 						{subs.length > 0 && (
 							<div style={{ marginTop: 12 }}>

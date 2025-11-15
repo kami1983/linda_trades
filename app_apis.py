@@ -895,7 +895,9 @@ async def api_lighter_config():
         return jsonify({
             "status": True,
             "data": {
-                "l1_address": os.getenv("LIGHTER_L1_ADDRESS", "")
+                "l1_address": os.getenv("LIGHTER_L1_ADDRESS", ""),
+                "api_key_public_key": os.getenv("LIGHTER_API_KEY_PUBLIC_KEY", ""),
+                "api_key_index": os.getenv("LIGHTER_API_KEY_INDEX", "")
             }
         })
     except Exception as e:
