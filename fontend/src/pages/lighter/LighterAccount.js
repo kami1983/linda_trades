@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, Button, Typography, Space, Spin, Alert, Row, Col, Table, Descriptions, Collapse } from 'antd';
-import { lighterAccountByL1, lighterAccountByIndex, lighterAccountInactiveOrders, lighterOpenOrders, lighterSignerCancelOrder, lighterSignerCancelAllOrders } from '../../utils/OptionApis';
+import { lighterAccountByL1, lighterAccountByIndex, lighterAccountInactiveOrders, lighterOpenOrders, lighterWsAccountSnapshot, lighterSignerCancelOrder, lighterSignerCancelAllOrders } from '../../utils/OptionApis';
 
 const { Text } = Typography;
 
@@ -14,6 +14,7 @@ const LighterAccount = () => {
 	const [config, setConfig] = useState(null);
 	const [orders, setOrders] = useState([]);
 	const [openOrders, setOpenOrders] = useState([]);
+	const [wsSnapshot, setWsSnapshot] = useState(null);
 	const [acting, setActing] = useState(false);
 	const getAccountObject = (payload) => {
 		if (!payload) return null;
@@ -195,7 +196,26 @@ const LighterAccount = () => {
 				);
 			})()}
 			{(index && String(index).length > 0) && (
-				<Card title="Active Orders" style={{ marginTop: 16 }}>
+				<Card title="Active Orders" style={{ marginTop: 16 }}
+					extra={
+						<Button size="small" onClick={async () => {
+							try {
+								setLoading(true);
+								const idx = parseInt(index, 10);
+								const res = await lighterWsAccountSnapshot(idx);
+								if (res && res.status) {
+									setWsSnapshot(res.data || null);
+								} else {
+									setWsSnapshot({ error: res?.message || 'No data' });
+								}
+							} finally {
+								setLoading(false);
+							}
+						}}>
+							Debug WS Snapshot
+						</Button>
+					}
+				>
 					<Table
 						dataSource={openOrders || []}
 						rowKey={(row, idx) => row?.id || row?.order_id || row?.client_order_index || idx}
@@ -245,6 +265,13 @@ const LighterAccount = () => {
 							) },
 						]}
 					/>
+				</Card>
+			)}
+			{wsSnapshot && (
+				<Card title="WS Account Snapshot (debug)" style={{ marginTop: 12 }}>
+					<pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', margin: 0 }}>
+{JSON.stringify(wsSnapshot, null, 2)}
+					</pre>
 				</Card>
 			)}
 			{(index && String(index).length > 0) && (

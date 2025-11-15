@@ -477,6 +477,35 @@ const lighterOpenOrders = (accountIndex) => {
   });
 }
 
+// Lighter: get WS account snapshot (debug)
+const lighterWsAccountSnapshot = (accountIndex) => {
+  return new Promise((resolve, reject) => {
+    const params = new URLSearchParams();
+    params.set('account_index', String(accountIndex));
+    const url = `${apiHost}/api/lighter/ws_account_snapshot?${params.toString()}`;
+    fetch(url, {
+      method: "GET",
+      credentials: "include"
+    })
+      .then(response => {
+        if (response.status === 401) {
+          alert('Please login first');
+          reject('Unauthorized');
+          return null;
+        }
+        return response.json();
+      })
+      .then((data) => {
+        if (data) {
+          resolve(data);
+        } else {
+          reject('error');
+        }
+      })
+      .catch(err => reject(err));
+  });
+}
+
 export { 
   reduceMargin,
   addMargin,
@@ -494,6 +523,7 @@ export {
   lighterAccountByIndex,
   lighterAccountInactiveOrders,
   lighterOpenOrders,
+  lighterWsAccountSnapshot,
   lighterSignerCreateOrder,
   lighterSignerCancelOrder,
   lighterSignerCancelAllOrders
